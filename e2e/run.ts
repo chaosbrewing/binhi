@@ -178,6 +178,7 @@ async function main() {
     // 7b. Revision history: restore the first edit's revision and confirm the document changed back
     await page.getByRole("button", { name: "History" }).click();
     await page.getByRole("dialog", { name: "Revision history" }).waitFor();
+    await page.locator(".rev-item").first().waitFor({ timeout: 20_000 }); // the list loads after a flush
     const restoreButtons = page.getByRole("dialog").getByRole("button", { name: "Restore" });
     assert((await restoreButtons.count()) >= 1, "earlier revisions are listed");
     await restoreButtons.last().click(); // revision 0 = the template

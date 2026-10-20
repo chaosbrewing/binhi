@@ -4,11 +4,25 @@ Date: 2026-10-20 · Branch: `claude/binhi-visual-editor-12arge` · Scope: standa
 
 ## Verdict
 
-**Ready for a private beta on the standalone host; not yet a public GA.**
-Every primary-journey step works against a real database and a real
-browser, publishing is verified before it is called live, and ownership is
-enforced on every API. The items under *Not done* are honest gaps, not
-hidden ones.
+**Code and artifact are deployment-ready; the product is not yet verified in
+production because no BINHI instance has been deployed.** Every
+primary-journey step works against a real database and a real browser,
+the compiled production artifact runs with Replit-style environment
+variables, publishing is verified before it is called live, and ownership is
+enforced on every API. Production readiness will be claimed only after the
+remote journey (`npm run test:e2e:remote`) passes against a deployed
+instance with isolated databases — see *Deployment status*.
+
+## Deployment status (standalone host)
+
+| Item | State |
+| --- | --- |
+| Standalone repository `chaosbrewing/binhi` | **Not created** — needs an organisation owner. History-preserving export prepared and verified (see `RELOCATION.md`); handoff branch `binhi-standalone-export` on the Tala remote. |
+| Replit application | **Not created** — owner action (`RELEASE.md` → Replit steps). `.replit` and host-default configuration are in the repository. |
+| Development / production databases | **Not provisioned**. Isolation is designed (host `DATABASE_URL` differs per environment; `npm run db:check` proves which one is in use) but unverified until the app exists. |
+| Secrets | `BINHI_SESSION_SECRET` must be generated per environment; the server refuses to boot in production with the example value. |
+| Production artifact rehearsal | **Passed locally**: `node dist/server/start.js` with `DATABASE_URL`, `PORT`, `REPLIT_DEPLOYMENT=1`, `REPLIT_DOMAINS` resolved correctly (env=production, public URL derived); `scripts/smoke.mjs` 7/7 checks passed. |
+| Complete journey against a deployed instance | **Not run** (no instance). The same journey passes locally in 13 steps, including sign-up, canvas editing, autosave, revision restore, publish, anonymous desktop + mobile access, unpublish and cleanup. |
 
 ## Evidence (all run in this session, Node 22, PostgreSQL 16)
 
@@ -17,7 +31,9 @@ hidden ones.
 | Typecheck | `npm run typecheck --workspace apps/binhi` | clean (client + server) |
 | Unit + integration tests | `npm test --workspace apps/binhi` | **9 files, 69 tests passed** (unit: document, operations, render, store, geometry; integration: auth, sites, assets, publish) |
 | Production build | `npm run build --workspace apps/binhi` | client 494 kB JS / 24 kB CSS (gzip 145 / 5 kB), server compiled |
-| Browser journey | `npm run test:e2e --workspace apps/binhi` | **11/11 steps passed**: sign up → template → canvas render → properties edit → inline canvas edit → insert element → autosave (server revision advanced) → undo → mobile breakpoint → publish (verified live) → anonymous visit desktop + mobile (no horizontal overflow, second page) → unpublish (410) |
+| Browser journey | `npm run test:e2e --workspace apps/binhi` | **13/13 steps passed**: sign up → template → canvas render → properties edit → inline canvas edit → insert element → autosave (server revision advanced) → undo → revision restore from history (and undo) → mobile breakpoint → publish (verified live) → anonymous visit desktop + mobile (no horizontal overflow, second page) → unpublish (410) → account cleanup (site stays offline) |
+| Compiled artifact + smoke | `node dist/server/start.js` + `node scripts/smoke.mjs` | passed (7/7) with Replit-style environment |
+| Exported standalone tree | `npm install && npm run typecheck && npm test && npm run build && npm run test:e2e` in the split repository | EXPORT_RESULT_PLACEHOLDER |
 | Freeform interactions (browser probe) | ad-hoc Playwright probes | drag (+300/+99 px), resize via handle, rotation persisted to the document (73°), multi-select + group, undo removes group, mobile view, layers panel |
 
 Screenshots from the journey are produced under `apps/binhi/e2e/screenshots/`
@@ -71,12 +87,28 @@ Screenshots from the journey are produced under `apps/binhi/e2e/screenshots/`
 7. **Collaboration** — single editor per site is assumed; concurrent edits are
    detected (409) and resolved by choice, not merged.
 8. **Replit deployment** — documented in `RELEASE.md`; creating the Replit
-   project, database and secrets is an owner action and has not been done.
+   project, databases and secrets is an owner action and has not been done,
+   so the remote journey has not been run.
+9. **Standalone repository** — `chaosbrewing/binhi` does not exist yet; the
+   export is prepared and verified, creation needs an owner.
 
-## Owner actions required before a public launch
+## Owner actions required (in order)
 
-- Provision the standalone host (Replit) with a dedicated Postgres and
-  secrets; set `BINHI_PUBLIC_URL`.
-- Decide whether sign-ups are open (`BINHI_ALLOW_SIGNUP`).
-- Approve the BINHI brand treatment used in the editor (green seed mark) or
-  supply the approved sector icon derivative.
+1. Create the empty private repository `chaosbrewing/binhi` and push the
+   export (`RELOCATION.md`, steps 1–4). Keep `apps/binhi` in Tala until the
+   new repository's CI is green.
+2. Create the BINHI Replit app from that repository; add the workspace
+   PostgreSQL and the separate production database; set
+   `BINHI_SESSION_SECRET` (different values) in workspace and deployment
+   secrets (`RELEASE.md` → Replit steps 1–5).
+3. Run `node scripts/smoke.mjs https://<app>` and
+   `BINHI_E2E_BASE=https://<app> npm run test:e2e:remote`; run
+   `npm run db:check` in both the workspace and a deployment shell and
+   confirm the database hosts/names differ.
+4. Decide whether sign-ups stay open (`BINHI_ALLOW_SIGNUP`).
+5. Approve the BINHI brand treatment used in the editor (green seed mark) or
+   supply the approved sector icon derivative.
+6. Only then: remove `apps/binhi` from Tala in a reviewed pull request.
+
+Integration contracts for ORIGIN, TALA, AGOS and LIYAB remain documented in
+`ORIGIN_INTEGRATION.md` and inactive; nothing in this release talks to them.
