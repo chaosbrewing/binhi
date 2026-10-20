@@ -1,7 +1,7 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import type { Db } from "../db/client.js";
-import { assets } from "../db/schema.js";
+import { assets, sites } from "../db/schema.js";
 import { newId } from "../../core/ids.js";
 import { badRequest, notFound } from "../security/errors.js";
 import type { ObjectStorage } from "./storage.js";
@@ -115,10 +115,15 @@ export class AssetService {
     await audit(this.db, { actorId: ownerId, siteId, action: "asset.deleted", details: { id: assetId }, ip });
   }
 
-  /** Public read: anyone with the unguessable URL may fetch a live asset. */
+  /** Public read: anyone with the unguessable URL may fetch a live asset of a live (non-deleted) site. */
   async readPublic(assetId: string): Promise<{ data: Buffer; mimeType: string; filename: string } | null> {
-    const rows = await this.db.select().from(assets).where(and(eq(assets.id, assetId), isNull(assets.deletedAt))).limit(1);
-    const row = rows[0];
+    const rows = await this.db
+      .select({ asset: assets })
+      .from(assets)
+      .innerJoin(sites, eq(sites.id, assets.siteId))
+      .where(and(eq(assets.id, assetId), isNull(assets.deletedAt), isNull(sites.deletedAt)))
+      .limit(1);
+    const row = rows[0]?.asset;
     if (!row) return null;
     const data = await this.storage.get(row.storageKey);
     if (!data) return null;

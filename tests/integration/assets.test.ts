@@ -53,6 +53,15 @@ describe("media library", () => {
     expect((await api(b.app, other).del(`/api/sites/${siteId}/assets/${mine.id}`)).statusCode).toBe(404);
   });
 
+  it("stops serving media once its site is deleted", async () => {
+    const other = await signup(b.app);
+    const site = await createSite(b.app, other);
+    const asset = (await upload(other, site.id, TINY_PNG)).json().asset;
+    expect((await b.app.inject({ method: "GET", url: asset.url })).statusCode).toBe(200);
+    await api(b.app, other).del(`/api/sites/${site.id}`);
+    expect((await b.app.inject({ method: "GET", url: asset.url })).statusCode).toBe(404);
+  });
+
   it("updates alt text and deletes assets (public URL stops working)", async () => {
     const asset = (await upload(s, siteId, TINY_PNG)).json().asset;
     const patched = await api(b.app, s).patch(`/api/sites/${siteId}/assets/${asset.id}`, { alt: "A tiny square" });
