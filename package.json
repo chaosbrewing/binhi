@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "description": "BINHI \u2014 standalone visual website editor and publishing platform (CHAOS ORIGINS). Independently operable; integrates with ORIGIN through contracts only.",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "tsx watch src/server/start.ts",
     "dev:client": "vite",
@@ -16,11 +19,15 @@
     "test:unit": "vitest run tests/unit",
     "test:e2e": "node --import tsx e2e/run.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx src/server/db/migrate.ts"
+    "db:migrate": "tsx src/server/db/migrate.ts",
+    "test:e2e:remote": "node --import tsx e2e/run.ts --remote",
+    "smoke": "node scripts/smoke.mjs",
+    "db:check": "node --import tsx scripts/db-check.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.1",
     "@fastify/static": "^8.0.1",
+    "dotenv": "^17.2.2",
     "drizzle-orm": "^0.36.1",
     "fastify": "^5.0.0",
     "postgres": "^3.4.4",
@@ -30,11 +37,13 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/node": "^22.7.4",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "drizzle-kit": "^0.28.0",
-    "playwright": "^1.56.1",
+    "playwright": "1.56.1",
+    "tsx": "^4.19.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "vitest": "^2.1.4"

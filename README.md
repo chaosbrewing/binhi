@@ -55,6 +55,8 @@ npm run typecheck --workspace apps/binhi   # client + server
 npm test --workspace apps/binhi            # unit (no DB) + integration (needs BINHI_TEST_DATABASE_URL or binhi_test on localhost)
 npm run build --workspace apps/binhi
 npm run test:e2e --workspace apps/binhi    # real Chromium: sign up → edit → publish → visit live site
+BINHI_E2E_BASE=https://<deployed-host> npm run test:e2e:remote --workspace apps/binhi   # same journey against a deployment
+node apps/binhi/scripts/smoke.mjs https://<deployed-host>                              # browser-less smoke test
 ```
 
 CI runs all four on every change under `apps/binhi/`
@@ -84,4 +86,5 @@ apps/binhi/
 - [ORIGIN integration plan](docs/ORIGIN_INTEGRATION.md)
 - [Testing](docs/TESTING.md)
 - [Release, hosting and rollback](docs/RELEASE.md)
+- [Relocating to its own repository](docs/RELOCATION.md)
 - [Release readiness report](docs/RELEASE_READINESS.md)

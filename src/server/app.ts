@@ -132,7 +132,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   /* ---------------------------------------------------------------- health */
   app.get("/api/health", async () => {
     await sql`select 1`;
-    return { ok: true, service: "binhi", version: "0.1.0" };
+    return { ok: true, service: "binhi", version: "0.1.0", env: config.env, signupEnabled: config.allowSignup };
   });
 
   /* ------------------------------------------------------------------ auth */

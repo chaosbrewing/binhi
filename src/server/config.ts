@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 const Env = z.object({
-  BINHI_DATABASE_URL: z.string().min(1, "BINHI_DATABASE_URL is required"),
+  BINHI_DATABASE_URL: z.string().min(1, "BINHI_DATABASE_URL (or DATABASE_URL) is required"),
   BINHI_SESSION_SECRET: z.string().min(16, "BINHI_SESSION_SECRET must be at least 16 characters"),
-  BINHI_PUBLIC_URL: z.string().url().default("http://127.0.0.1:4100"),
+  BINHI_PUBLIC_URL: z.string().url(),
   BINHI_PORT: z.coerce.number().int().min(1).max(65535).default(4100),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   BINHI_MEDIA_STORAGE: z.enum(["postgres", "disk"]).default("postgres"),
@@ -29,7 +29,32 @@ export type Config = {
   verifyBaseUrl: string;
 };
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
+/**
+ * Resolve host-provided defaults before validation so a Replit deployment needs
+ * only BINHI_SESSION_SECRET set by hand:
+ * - database: BINHI_DATABASE_URL, else the host's DATABASE_URL (Replit's dev or
+ *   production database — they are different values in each environment);
+ * - port: BINHI_PORT, else the host's PORT;
+ * - public URL: BINHI_PUBLIC_URL, else https://<REPLIT_DOMAINS first entry>
+ *   (deployments), else https://<REPLIT_DEV_DOMAIN> (workspace), else localhost.
+ */
+export function resolveHostDefaults(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const out: NodeJS.ProcessEnv = { ...env };
+  if (!out.BINHI_DATABASE_URL && out.DATABASE_URL) out.BINHI_DATABASE_URL = out.DATABASE_URL;
+  if (!out.BINHI_PORT && out.PORT) out.BINHI_PORT = out.PORT;
+  if (!out.BINHI_PUBLIC_URL) {
+    const deployed = out.REPLIT_DOMAINS?.split(",")[0]?.trim();
+    const dev = out.REPLIT_DEV_DOMAIN?.trim();
+    if (deployed) out.BINHI_PUBLIC_URL = `https://${deployed}`;
+    else if (dev) out.BINHI_PUBLIC_URL = `https://${dev}`;
+    else out.BINHI_PUBLIC_URL = `http://127.0.0.1:${out.BINHI_PORT ?? 4100}`;
+  }
+  if (!out.NODE_ENV && out.REPLIT_DEPLOYMENT) out.NODE_ENV = "production";
+  return out;
+}
+
+export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): Config {
+  const env = resolveHostDefaults(rawEnv);
   const parsed = Env.safeParse(env);
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");

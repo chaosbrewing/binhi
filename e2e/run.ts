@@ -6,7 +6,11 @@
  * adds an element → sees autosave confirm → publishes → opens the live URL in
  * a fresh browser context → checks mobile rendering → unpublishes.
  *
- * Run: npm run test:e2e --workspace apps/binhi   (needs Postgres + built client)
+ * Run locally: npm run test:e2e   (needs Postgres + built client)
+ * Run against a deployed instance (no local server, no database access):
+ *   BINHI_E2E_BASE=https://your-binhi.replit.app npm run test:e2e:remote
+ * In remote mode the account and website created by the journey are deleted
+ * at the end, so the deployment is left as it was found.
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import { createRequire } from "node:module";
@@ -26,9 +30,14 @@ try {
   pw = require("/opt/node-tools/node_modules/playwright") as PW;
 }
 
+const REMOTE = process.argv.includes("--remote") || !!process.env.BINHI_E2E_BASE;
 const DB = process.env.BINHI_TEST_DATABASE_URL ?? "postgres://binhi:binhi_dev_pw@127.0.0.1:5432/binhi_test";
 const PORT = Number(process.env.BINHI_E2E_PORT ?? 4310);
-const BASE = `http://127.0.0.1:${PORT}`;
+const BASE = REMOTE ? (process.env.BINHI_E2E_BASE ?? "").replace(/\/$/, "") : `http://127.0.0.1:${PORT}`;
+if (REMOTE && !/^https?:\/\//.test(BASE)) {
+  console.error("Set BINHI_E2E_BASE=https://host to run against a deployed instance");
+  process.exit(2);
+}
 const SHOTS = process.env.BINHI_E2E_SHOTS ?? path.join(root, "e2e", "screenshots");
 mkdirSync(SHOTS, { recursive: true });
 
@@ -74,8 +83,20 @@ async function startServer(): Promise<ChildProcess> {
 }
 
 async function main() {
-  const server = await startServer();
-  const browser = await pw.chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH, headless: true });
+  const server = REMOTE ? null : await startServer();
+  if (REMOTE) {
+    const health = await fetch(`${BASE}/api/health`).then((r) => r.json()).catch(() => null);
+    if (!health?.ok) throw new Error(`${BASE}/api/health is not healthy`);
+    if (health.signupEnabled === false) throw new Error("Sign-ups are disabled on this instance; the journey needs BINHI_ALLOW_SIGNUP=true (or run it before closing sign-ups)");
+    console.log(`Running against ${BASE} (env ${health.env})`);
+  }
+  let browser: import("playwright").Browser;
+  try {
+    browser = await pw.chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH, headless: true });
+  } catch (e) {
+    server?.kill("SIGTERM");
+    throw e;
+  }
   const results: string[] = [];
   const step = (s: string) => {
     results.push(s);
@@ -90,12 +111,13 @@ async function main() {
       if (r.status() >= 400 && r.url().includes("/api/")) console.error(`[api ${r.status()}] ${r.request().method()} ${r.url()} → ${(await r.text().catch(() => "")).slice(0, 300)}`);
     });
     const email = `e2e-${Date.now()}@example.com`;
+    const password = "a-very-good-password";
 
     // 1. Sign up
     await page.goto(`${BASE}/signup`);
     await page.getByLabel("Your name").fill("E2E Tester");
     await page.getByLabel("Email").fill(email);
-    await page.getByLabel(/^Password/).fill("a-very-good-password");
+    await page.getByLabel(/^Password/).fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
     await page.waitForURL(/\/sites\/new/);
     step("account created and redirected to template picker");
@@ -153,6 +175,22 @@ async function main() {
     await waitForSaved(page);
     step("undo applied and saved");
 
+    // 7b. Revision history: restore the first edit's revision and confirm the document changed back
+    await page.getByRole("button", { name: "History" }).click();
+    await page.getByRole("dialog", { name: "Revision history" }).waitFor();
+    const restoreButtons = page.getByRole("dialog").getByRole("button", { name: "Restore" });
+    assert((await restoreButtons.count()) >= 1, "earlier revisions are listed");
+    await restoreButtons.last().click(); // revision 0 = the template
+    await page.getByRole("dialog", { name: "Revision history" }).waitFor({ state: "detached", timeout: 20_000 });
+    await frame.locator("h1").first().waitFor();
+    const restoredHeading = await frame.locator("h1").first().textContent();
+    assert(restoredHeading && !restoredHeading.includes("Inline edited headline"), `restore brought back the template heading (got "${restoredHeading}")`);
+    await waitForSaved(page);
+    await page.keyboard.press("ControlOrMeta+Z"); // undo the restore so the published site carries the edit
+    await frame.locator("h1", { hasText: "Inline edited headline" }).first().waitFor();
+    await waitForSaved(page);
+    step("restored an earlier revision from history and undid it");
+
     // 8. Responsive preview
     await page.getByRole("button", { name: "mobile view" }).click();
     await page.waitForTimeout(600);
@@ -201,10 +239,16 @@ async function main() {
     assert(gone.status === 410, `unpublished site returns 410 (got ${gone.status})`);
     step("unpublished; public URL now returns 410");
 
-    console.log(`\nE2E passed: ${results.length} steps. Screenshots in ${SHOTS}`);
+    // 12. Clean up: delete the account (and with it the site, media and publications)
+    const deleted = await page.evaluate(async (pw) => (await fetch("/api/auth/account", { method: "DELETE", headers: { "x-binhi-request": "editor", "content-type": "application/json" }, body: JSON.stringify({ password: pw }) })).status, password);
+    assert(deleted === 200, `account cleanup returned ${deleted}`);
+    assert((await fetch(liveLink!)).status === 410, "deleted account's site stays offline");
+    step("cleaned up the test account and website");
+
+    console.log(`\nE2E passed: ${results.length} steps against ${BASE}. Screenshots in ${SHOTS}`);
   } finally {
     await browser.close();
-    server.kill("SIGTERM");
+    server?.kill("SIGTERM");
   }
 }
 
