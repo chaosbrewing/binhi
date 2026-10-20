@@ -108,11 +108,13 @@ function documentShell(ctx: Ctx, body: string, css: string): string {
   if (favicon) head.push(`<link rel="icon" href="${esc(favicon)}">`);
   head.push(`<meta name="generator" content="BINHI">`);
   if (opts.publicationId) head.push(`<meta name="binhi-publication" content="${esc(opts.publicationId)}">`);
-  head.push(fontsLink(doc.theme));
   head.push(`<style>${css}</style>`);
   const runtime = ctx.needsRuntime && opts.runtimeHref && !ctx.editor ? `<script src="${esc(opts.runtimeHref)}" defer></script>` : "";
   const skip = `<a class="b-skip" href="#b-main">Skip to content</a>`;
-  return `<!doctype html>\n<html lang="${esc(doc.settings.language)}"${ctx.editor ? ' data-binhi-editor="1"' : ""}>\n<head>\n${head.join("\n")}\n</head>\n<body class="b-body">\n${skip}\n${body}\n${runtime}\n</body>\n</html>`;
+  // Web fonts load at the end of the body so a slow font CDN never blanks the
+  // page (or the editor canvas); text paints with the fallback first.
+  const fonts = fontsLink(doc.theme);
+  return `<!doctype html>\n<html lang="${esc(doc.settings.language)}"${ctx.editor ? ' data-binhi-editor="1"' : ""}>\n<head>\n${head.join("\n")}\n</head>\n<body class="b-body">\n${skip}\n${body}\n${fonts}\n${runtime}\n</body>\n</html>`;
 }
 
 /* ------------------------------------------------------------------------ */

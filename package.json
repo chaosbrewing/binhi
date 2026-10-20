@@ -2,7 +2,7 @@
   "name": "binhi",
   "private": true,
   "version": "0.1.0",
-  "description": "BINHI — standalone visual website editor and publishing platform (CHAOS ORIGINS). Independently operable; integrates with ORIGIN through contracts only.",
+  "description": "BINHI \u2014 standalone visual website editor and publishing platform (CHAOS ORIGINS). Independently operable; integrates with ORIGIN through contracts only.",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server/start.ts",
@@ -34,6 +34,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "drizzle-kit": "^0.28.0",
+    "playwright": "^1.56.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "vitest": "^2.1.4"

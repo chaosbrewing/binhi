@@ -1,0 +1,66 @@
+import type { SVGProps } from "react";
+
+const base = (props: SVGProps<SVGSVGElement>, d: string, size = 18) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    {d.split("|").map((p, i) => (
+      <path key={i} d={p} />
+    ))}
+  </svg>
+);
+
+export const I = {
+  undo: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 7v6h6|M21 17a9 9 0 0 0-15-6.7L3 13"),
+  redo: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M21 7v6h-6|M3 17a9 9 0 0 1 15-6.7L21 13"),
+  desktop: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 4h18v12H3z|M8 20h8|M12 16v4"),
+  tablet: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z|M12 18h.01"),
+  mobile: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z|M12 18h.01"),
+  eye: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"),
+  eyeOff: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94|M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19|M1 1l22 22"),
+  history: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 12a9 9 0 1 0 3-6.7L3 8|M3 3v5h5|M12 7v5l4 2"),
+  lock: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M5 11h14v10H5z|M8 11V7a4 4 0 0 1 8 0v4"),
+  unlock: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M5 11h14v10H5z|M8 11V7a4 4 0 0 1 7.5-2"),
+  trash: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 6h18|M8 6V4h8v2|M19 6l-1 14H6L5 6|M10 11v6|M14 11v6"),
+  copy: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M9 9h11v11H9z|M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"),
+  plus: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 5v14|M5 12h14"),
+  minus: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M5 12h14"),
+  fit: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M8 3H5a2 2 0 0 0-2 2v3|M21 8V5a2 2 0 0 0-2-2h-3|M3 16v3a2 2 0 0 0 2 2h3|M16 21h3a2 2 0 0 0 2-2v-3"),
+  settings: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"),
+  globe: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z|M2 12h20|M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"),
+  pages: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8"),
+  layers: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5"),
+  elements: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z"),
+  image: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 5h18v14H3z|M8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21"),
+  palette: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 22a10 10 0 1 1 0-20c5.5 0 10 3.6 10 8 0 2.2-1.8 4-4 4h-2a2 2 0 0 0-1.5 3.3c.3.4.5.8.5 1.2a2 2 0 0 1-2 2.5z|M7.5 11.5h.01|M11 7.5h.01|M16 8.5h.01"),
+  sections: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 4h18v6H3z|M3 14h18v6H3z"),
+  menu: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 12h18|M3 6h18|M3 18h18"),
+  chevron: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M9 18l6-6-6-6"),
+  chevronDown: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M6 9l6 6 6-6"),
+  up: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 19V5|M5 12l7-7 7 7"),
+  down: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 5v14|M19 12l-7 7-7-7"),
+  check: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M20 6L9 17l-5-5"),
+  x: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M18 6L6 18|M6 6l12 12"),
+  alert: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z|M12 9v4|M12 17h.01"),
+  group: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 3h8v8H3z|M13 13h8v8h-8z|M11 7h5v4|M7 11v5h4"),
+  ungroup: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 3h8v8H3z|M13 13h8v8h-8z"),
+  alignLeft: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M4 3v18|M8 7h10v3H8z|M8 14h6v3H8z"),
+  alignCenterX: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 3v18|M6 7h12v3H6z|M8 14h8v3H8z"),
+  alignRight: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M20 3v18|M6 7h10v3H6z|M10 14h6v3h-6z"),
+  alignTop: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 4h18|M7 8h3v10H7z|M14 8h3v6h-3z"),
+  alignCenterY: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 12h18|M7 6h3v12H7z|M14 8h3v8h-3z"),
+  alignBottom: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 20h18|M7 6h3v10H7z|M14 10h3v6h-3z"),
+  distributeH: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 4v16|M21 4v16|M9 8h6v8H9z"),
+  distributeV: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M4 3h16|M4 21h16|M8 9h8v6H8z"),
+  front: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M8 8h13v13H8z|M3 3h13v4H7v9H3z"),
+  back: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 3h13v13H3z|M8 8h13v13H8"),
+  text: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M4 7V4h16v3|M9 20h6|M12 4v16"),
+  link: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7|M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"),
+  external: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6|M15 3h6v6|M10 14L21 3"),
+  search: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z|M21 21l-4.3-4.3"),
+  drag: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M9 5h.01|M15 5h.01|M9 12h.01|M15 12h.01|M9 19h.01|M15 19h.01"),
+  home: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 10l9-7 9 7v11a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"),
+  inbox: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M22 12h-6l-2 3h-4l-2-3H2|M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z"),
+  sun: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z|M12 1v2|M12 21v2|M4.2 4.2l1.4 1.4|M18.4 18.4l1.4 1.4|M1 12h2|M21 12h2|M4.2 19.8l1.4-1.4|M18.4 5.6l1.4-1.4"),
+  moon: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"),
+  more: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z|M19 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z|M5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"),
+  rocket: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2 0-2.8a2 2 0 0 0-3 0z|M12 15l-3-3a22 22 0 0 1 2-3.9A12.6 12.6 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z|M9 12H4s.6-3.3 2-4c1.6-.9 5 0 5 0|M12 15v5s3.3-.6 4-2c.9-1.6 0-5 0-5"),
+};
