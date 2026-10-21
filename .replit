@@ -3,7 +3,7 @@ modules = ["web", "postgresql-16", "nodejs-22"]
 [nix]
 channel = "stable-25_05"
 
-run = "npm run build && NODE_ENV=production npm start"
+run = "npm run build && npm start"
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -16,6 +16,7 @@ externalPort = 80
 
 [env]
 BINHI_PORT = "5000"
+BINHI_SERVE_BUILT_CLIENT = "true"
 
 [workflows]
 runButton = "Project"
@@ -35,7 +36,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run build && NODE_ENV=production npm start"
+args = "npm run build && npm start"
 waitForPort = 5000
 
 [workflows.workflow.metadata]

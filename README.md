@@ -51,9 +51,9 @@ npm run dev:client     # editor UI on :4173 (proxies /api, /s, /media to :4100)
 
 Open http://localhost:4173, create an account, start a website.
 
-Production: `npm run build` then
-`NODE_ENV=production npm start` serves the editor,
-the API, media and published sites from one process on `BINHI_PORT`.
+Production: apply development migrations first, then run `npm run build` and
+`NODE_ENV=production npm start`. Production startup does not run migrations;
+Replit Publish applies managed production schema changes.
 See [`docs/RELEASE.md`](docs/RELEASE.md) for Replit.
 
 ## Tests

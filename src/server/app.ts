@@ -346,7 +346,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   /* ------------------------------------------------------------- client SPA */
   // Built client: dist/client next to dist/server, or (when running from source) ../../dist/client.
   const clientDir = [path.resolve(here, "..", "client"), path.resolve(here, "..", "..", "dist", "client")].find((d) => existsSync(path.join(d, "index.html")));
-  if (config.env === "production" && clientDir) {
+  if (config.serveBuiltClient && clientDir) {
     await app.register(fastifyStatic, { root: clientDir, prefix: "/", wildcard: false, index: false, decorateReply: true });
     app.setNotFoundHandler(async (req, reply) => {
       if (req.url.startsWith("/api/") || req.url.startsWith("/s/") || req.url.startsWith("/media/")) {
