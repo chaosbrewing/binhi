@@ -1,8 +1,4 @@
-# BINHI on Replit — standalone host configuration.
-# Workspace ("Run") uses the Replit development PostgreSQL; the deployment
-# uses a separate production database. BINHI_SESSION_SECRET must be set as a
-# Secret in both. See docs/RELEASE.md.
-modules = ["nodejs-22", "postgresql-16"]
+modules = ["nodejs-20", "web"]
 
 [nix]
 channel = "stable-25_05"
