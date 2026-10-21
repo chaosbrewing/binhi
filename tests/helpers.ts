@@ -3,8 +3,9 @@ import { buildApp, type BinhiApp } from "../src/server/app.js";
 import { loadConfig } from "../src/server/config.js";
 import { runMigrations } from "../src/server/db/migrate.js";
 import { createDb } from "../src/server/db/client.js";
+import { getTestDatabaseUrl } from "./test-database.js";
 
-export const TEST_DATABASE_URL = process.env.BINHI_TEST_DATABASE_URL ?? "postgres://binhi:binhi_dev_pw@127.0.0.1:5432/binhi_test";
+export const TEST_DATABASE_URL = getTestDatabaseUrl();
 
 /** Build a fresh app against the test database with every BINHI table emptied. */
 export interface TestAppOptions {

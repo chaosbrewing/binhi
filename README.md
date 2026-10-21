@@ -60,27 +60,28 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for Replit.
 
 ```bash
 npm run typecheck   # client + server
-npm test            # unit (no DB) + integration (needs a disposable BINHI_TEST_DATABASE_URL or binhi_test on localhost)
+npm test            # unit + integration (uses disposable BINHI_TEST_DATABASE_URL or local binhi_test)
 npm run build
 npm run test:e2e    # real Chromium: sign up → edit → publish → visit live site
 BINHI_E2E_BASE=https://<deployed-host> npm run test:e2e:remote   # same journey against a deployment
 node scripts/smoke.mjs https://<deployed-host>                 # browser-less smoke test
 ```
 
-CI runs all four on every change under `apps/binhi/`
-(`.github/workflows/binhi-ci.yml`).
+CI runs these checks from the repository root (`.github/workflows/ci.yml`).
+Integration tests and the local browser journey truncate their target
+database, so use a separate disposable `BINHI_TEST_DATABASE_URL`—never the
+workspace or production database.
 
 ## Layout
 
 ```
-apps/binhi/
-  src/core/        canonical model, registry, operations, renderer, templates, validation (isomorphic)
-  src/server/      Fastify API: auth, sites, revisions, media, publishing, public site serving
-  src/client/      React editor: dashboard, canvas, panels, properties, dialogs
-  migrations/      Drizzle SQL migrations (tables prefixed binhi_)
-  tests/           vitest unit + Postgres integration tests
-  e2e/             Playwright journey
-  docs/            product charter, architecture, data model, operations, layout, publishing, ORIGIN integration, testing, release
+src/core/        canonical model, registry, operations, renderer, templates, validation (isomorphic)
+src/server/      Fastify API: auth, sites, revisions, media, publishing, public site serving
+src/client/      React editor: dashboard, canvas, panels, properties, dialogs
+migrations/      Drizzle SQL migrations (tables prefixed binhi_)
+tests/           vitest unit + Postgres integration tests
+e2e/             Playwright journey
+docs/            product charter, architecture, data model, operations, layout, publishing, ORIGIN integration, testing, release
 ```
 
 ## Documentation

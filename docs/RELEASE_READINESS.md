@@ -39,12 +39,12 @@ rerun. No production publish or production database query was performed.
 | Production build | `npm run build` | **Passed**; client and server compiled |
 | Development database check | `npm run db:check` | **Connected to Replit development database; 12 BINHI tables** |
 | Production DDL guard | `tests/unit/migrations.test.ts` and startup condition | **Unit tests verify the migration runner refuses production; app startup skips it**. Replit Publish owns production schema changes. |
-| Browser journey | `npm run test:e2e --workspace apps/binhi` | **13/13 steps passed**: sign up → template → canvas render → properties edit → inline canvas edit → insert element → autosave (server revision advanced) → undo → revision restore from history (and undo) → mobile breakpoint → publish (verified live) → anonymous visit desktop + mobile (no horizontal overflow, second page) → unpublish (410) → account cleanup (site stays offline) |
+| Browser journey | `npm run test:e2e` | **13/13 steps passed**: sign up → template → canvas render → properties edit → inline canvas edit → insert element → autosave (server revision advanced) → undo → revision restore from history (and undo) → mobile breakpoint → publish (verified live) → anonymous visit desktop + mobile (no horizontal overflow, second page) → unpublish (410) → account cleanup (site stays offline) |
 | Compiled artifact + smoke | `node dist/server/start.js` + `node scripts/smoke.mjs` | passed (7/7) with Replit-style environment |
 | Exported standalone tree | `npm install && npm run typecheck && npm test && npm run build && npm run test:e2e` in the split repository | EXPORT_RESULT_PLACEHOLDER |
 | Freeform interactions (browser probe) | ad-hoc Playwright probes | drag (+300/+99 px), resize via handle, rotation persisted to the document (73°), multi-select + group, undo removes group, mobile view, layers panel |
 
-Screenshots from the journey are produced under `apps/binhi/e2e/screenshots/`
+Screenshots from the journey are produced under `e2e/screenshots/`
 (uploaded as a CI artifact).
 
 ## Milestone status

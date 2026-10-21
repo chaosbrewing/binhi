@@ -2,13 +2,16 @@
 
 | Layer | Command | Needs | Covers |
 | --- | --- | --- | --- |
-| Typecheck | `npm run typecheck --workspace apps/binhi` | — | client (`tsconfig.json`) and server/core (`tsconfig.server.json`) |
-| Unit | `npx vitest run tests/unit` (in `apps/binhi`) | — | document schema invariants, every template, registry defaults, all operation groups (insert/validate/lock/free layout/group/align/distribute/layers/duplicate/paste/delete/move/pages/theme/reusable/atomic batches/replaceDocument), renderer (escaping, link and media sanitisation, responsive CSS, freeform placement, editor vs publish mode, forms, embeds sandboxing, animations runtime, rich text, columns stacking) |
-| Integration | `npm test --workspace apps/binhi` | Postgres (`BINHI_TEST_DATABASE_URL`, default `binhi_test` on localhost) | auth (signup/login/logout/duplicate/short password/wrong credentials/CSRF guard/rate limit/account deletion), sites (templates, create, ops batches, revision bump, stale 409 with server doc, idempotent replay, 422/400, atomic batch, restore, preview, cross-account 404s, slug validation, delete), media (upload real PNG, reject SVG/mislabelled/oversized, filename sanitising, ownership, alt update, delete), publishing (publish → live + public fetch + CSP + redirects + 404, supersede/unpublish/rollback, validation gate with duplicate anchors, honest failure when verification fails, live-slug lock, stranger 404s, form submissions with validation/honeypot/owner access, delete takes site offline) |
-| Browser e2e | `npm run test:e2e --workspace apps/binhi` | Postgres, built client, Chromium (Playwright) | sign up → template → canvas render → select + edit via properties → inline text edit → insert element → autosave persisted → undo → mobile breakpoint → publish → anonymous live visit (desktop + mobile, no horizontal overflow, second page) → unpublish 410 |
+| Typecheck | `npm run typecheck` | — | client (`tsconfig.json`) and server/core (`tsconfig.server.json`) |
+| Unit | `npm run test:unit` | — | document schema invariants, every template, registry defaults, all operation groups (insert/validate/lock/free layout/group/align/distribute/layers/duplicate/paste/delete/move/pages/theme/reusable/atomic batches/replaceDocument), renderer (escaping, link and media sanitisation, responsive CSS, freeform placement, editor vs publish mode, forms, embeds sandboxing, animations runtime, rich text, columns stacking), and destructive-test database safety |
+| Integration | `npm test` | Disposable Postgres (`BINHI_TEST_DATABASE_URL`; defaults to local `binhi_test`) | auth (signup/login/logout/duplicate/short password/wrong credentials/CSRF guard/rate limit/account deletion), sites (templates, create, ops batches, revision bump, stale 409 with server doc, idempotent replay, 422/400, atomic batch, restore, preview, cross-account 404s, slug validation, delete), media (upload real PNG, reject SVG/mislabelled/oversized, filename sanitising, ownership, alt update, delete), publishing (publish → live + public fetch + CSP + redirects + 404, supersede/unpublish/rollback, validation gate with duplicate anchors, honest failure when verification fails, live-slug lock, stranger 404s, form submissions with validation/honeypot/owner access, delete takes site offline) |
+| Browser e2e | `npm run test:e2e` | Disposable Postgres, built client, Chromium (Playwright) | sign up → template → canvas render → select + edit via properties → inline text edit → insert element → autosave persisted → undo → revision history → mobile breakpoint → publish → anonymous live visit (desktop + mobile, no horizontal overflow, second page) → unpublish 410 → verify temporary account cleanup |
 
-CI (`.github/workflows/binhi-ci.yml`) runs all of these with a Postgres 16
-service and uploads e2e screenshots.
+CI (`.github/workflows/ci.yml`) runs all of these with a dedicated Postgres 16
+service. Configure `BINHI_TEST_DATABASE_URL` to a disposable database only;
+both integration tests and the local browser journey truncate their target,
+and the test helpers reject the configured app/workspace database. Browser
+screenshots and Playwright output are ignored by Git.
 
 ## What is not automated yet
 

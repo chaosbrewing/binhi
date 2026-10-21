@@ -4,6 +4,7 @@ modules = ["web", "postgresql-16", "nodejs-22"]
 channel = "stable-25_05"
 
 run = "npm run build && npm start"
+packages = ["glib", "nspr", "nss", "dbus", "atk", "at-spi2-atk", "cups", "xorg.libxcb", "libxkbcommon", "at-spi2-core", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "mesa", "cairo", "pango", "alsa-lib"]
 
 [deployment]
 deploymentTarget = "autoscale"
