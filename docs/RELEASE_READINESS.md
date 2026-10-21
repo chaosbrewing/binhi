@@ -17,7 +17,7 @@ instance with isolated databases — see *Deployment status*.
 
 | Item | State |
 | --- | --- |
-| Standalone repository `chaosbrewing/binhi` | **Created and populated** — `main` holds the six `apps/binhi` commits plus the standalone root commit; first CI run (`CI` #1 on `main`) was in progress when this was written; its result is recorded in the next commit. `apps/binhi` remains in Tala until a reviewed removal PR (see `RELOCATION.md`). |
+| Standalone repository `chaosbrewing/binhi` | **Created and populated** — `main` holds the six `apps/binhi` commits plus the standalone root commit; first CI run (`CI` #1 on `main`, https://github.com/chaosbrewing/binhi/actions/runs/39551335289) **passed**: typecheck, 70 tests on Postgres 16, production build, Chromium browser journey. `apps/binhi` remains in Tala until a reviewed removal PR (see `RELOCATION.md`). |
 | Replit application | **Not created** — owner action (`RELEASE.md` → Replit steps). `.replit` and host-default configuration are in the repository. |
 | Development / production databases | **Not provisioned**. Isolation is designed (host `DATABASE_URL` differs per environment; `npm run db:check` proves which one is in use) but unverified until the app exists. |
 | Secrets | `BINHI_SESSION_SECRET` must be generated per environment; the server refuses to boot in production with the example value. |
