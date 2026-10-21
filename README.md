@@ -29,34 +29,42 @@ ORIGIN tomorrow, integrating through contracts rather than shared tables
 
 ## Run it locally
 
+### Replit workspace
+
+Click **Run**, then open Preview and select **Create an account**.
+The configured workflow builds and serves the entire app on port 5000,
+using the workspace PostgreSQL database and existing `SESSION_SECRET`.
+See [replit.md](replit.md) for configuration, verification, and publishing
+considerations. This repository is standalone; commands run from its root.
+
 Requirements: Node 22, PostgreSQL 14+.
 
 ```bash
 # from the repository root
 npm install
 createdb binhi_dev            # or any Postgres you control
-cp apps/binhi/.env.example apps/binhi/.env   # set BINHI_DATABASE_URL + BINHI_SESSION_SECRET
+cp .env.example .env   # set BINHI_DATABASE_URL + BINHI_SESSION_SECRET
 
-npm run dev --workspace apps/binhi            # API + published sites on :4100 (runs migrations first)
-npm run dev:client --workspace apps/binhi     # editor UI on :4173 (proxies /api, /s, /media to :4100)
+npm run dev            # API + published sites on :4100 (runs migrations first)
+npm run dev:client     # editor UI on :4173 (proxies /api, /s, /media to :4100)
 ```
 
 Open http://localhost:4173, create an account, start a website.
 
-Production: `npm run build --workspace apps/binhi` then
-`NODE_ENV=production npm start --workspace apps/binhi` serves the editor,
+Production: `npm run build` then
+`NODE_ENV=production npm start` serves the editor,
 the API, media and published sites from one process on `BINHI_PORT`.
 See [`docs/RELEASE.md`](docs/RELEASE.md) for Replit.
 
 ## Tests
 
 ```bash
-npm run typecheck --workspace apps/binhi   # client + server
-npm test --workspace apps/binhi            # unit (no DB) + integration (needs BINHI_TEST_DATABASE_URL or binhi_test on localhost)
-npm run build --workspace apps/binhi
-npm run test:e2e --workspace apps/binhi    # real Chromium: sign up → edit → publish → visit live site
-BINHI_E2E_BASE=https://<deployed-host> npm run test:e2e:remote --workspace apps/binhi   # same journey against a deployment
-node apps/binhi/scripts/smoke.mjs https://<deployed-host>                              # browser-less smoke test
+npm run typecheck   # client + server
+npm test            # unit (no DB) + integration (needs a disposable BINHI_TEST_DATABASE_URL or binhi_test on localhost)
+npm run build
+npm run test:e2e    # real Chromium: sign up → edit → publish → visit live site
+BINHI_E2E_BASE=https://<deployed-host> npm run test:e2e:remote   # same journey against a deployment
+node scripts/smoke.mjs https://<deployed-host>                 # browser-less smoke test
 ```
 
 CI runs all four on every change under `apps/binhi/`

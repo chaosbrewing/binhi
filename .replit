@@ -1,9 +1,9 @@
-modules = ["nodejs-20", "web"]
+modules = ["web", "postgresql-16", "nodejs-22"]
 
 [nix]
 channel = "stable-25_05"
 
-run = "npm run dev"
+run = "npm run build && NODE_ENV=production npm start"
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -11,8 +11,32 @@ build = ["sh", "-c", "npm ci && npm run build"]
 run = ["sh", "-c", "NODE_ENV=production node dist/server/start.js"]
 
 [[ports]]
-localPort = 4100
+localPort = 5000
 externalPort = 80
 
 [env]
-BINHI_PORT = "4100"
+BINHI_PORT = "5000"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build && NODE_ENV=production npm start"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"

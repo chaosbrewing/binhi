@@ -31,7 +31,7 @@ export type Config = {
 
 /**
  * Resolve host-provided defaults before validation so a Replit deployment needs
- * only BINHI_SESSION_SECRET set by hand:
+ * a session secret (BINHI_SESSION_SECRET or the host's SESSION_SECRET):
  * - database: BINHI_DATABASE_URL, else the host's DATABASE_URL (Replit's dev or
  *   production database — they are different values in each environment);
  * - port: BINHI_PORT, else the host's PORT;
@@ -41,6 +41,7 @@ export type Config = {
 export function resolveHostDefaults(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const out: NodeJS.ProcessEnv = { ...env };
   if (!out.BINHI_DATABASE_URL && out.DATABASE_URL) out.BINHI_DATABASE_URL = out.DATABASE_URL;
+  if (!out.BINHI_SESSION_SECRET && out.SESSION_SECRET) out.BINHI_SESSION_SECRET = out.SESSION_SECRET;
   if (!out.BINHI_PORT && out.PORT) out.BINHI_PORT = out.PORT;
   if (!out.BINHI_PUBLIC_URL) {
     const deployed = out.REPLIT_DOMAINS?.split(",")[0]?.trim();

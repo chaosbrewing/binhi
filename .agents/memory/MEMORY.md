@@ -1,0 +1,1 @@
+- [Imported toolchain constraints](toolchain-constraints.md) — the package firewall can block legacy test tooling; preserve security enforcement when updating compatible tooling.
