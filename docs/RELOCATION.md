@@ -19,32 +19,37 @@ repository, `chaosbrewing/binhi`. This is the procedure; the history of
   **`binhi-standalone-export`**. It does not touch `main` or any MAYARI
   branch and can be deleted once the new repository exists.
 
-## Owner steps (repository creation needs an organisation owner)
+## Status (2026-10-21)
 
-1. Create an empty **private** repository `chaosbrewing/binhi` on GitHub
-   (no README, no licence, no `.gitignore` — the export already has them).
-2. Push the export branch into it as `main`:
+- `chaosbrewing/binhi` was created by the owner and the verified export was
+  pushed to it as `main` (7 commits: the six `apps/binhi` commits plus the
+  standalone root commit). GitHub Actions ran the CI workflow on that push.
+- `apps/binhi` in Tala is **still present**. It is removed only in a
+  separate, reviewed pull request once the new repository's CI is green and
+  the owner says so; until then the standalone repository is the place to
+  develop and `apps/binhi` is a frozen copy.
+- The handoff branch `binhi-standalone-export` on the Tala remote is no
+  longer needed and can be deleted.
 
-   ```bash
-   git clone --branch binhi-standalone-export --single-branch git@github.com:chaosbrewing/Tala.git binhi
-   cd binhi
-   git remote remove origin
-   git remote add origin git@github.com:chaosbrewing/binhi.git
-   git branch -M main
-   git push -u origin main
-   ```
+## Remaining owner steps
 
-3. In the new repository: enable Actions (the CI workflow runs on push),
-   protect `main`, and install the Claude GitHub App if it should be used
-   there.
-4. Verify: `npm ci && npm run typecheck && npm test && npm run build`
-   (tests need `BINHI_TEST_DATABASE_URL`).
-5. Only after step 4 is green: remove `apps/binhi`, the BINHI CI workflow
-   and the README note from Tala in a separate, reviewed pull request, and
-   delete the `binhi-standalone-export` branch.
+1. In `chaosbrewing/binhi`: protect `main`, and install the Claude GitHub
+   App if it should be used there.
+2. Remove `apps/binhi`, `.github/workflows/binhi-ci.yml` and the README
+   note from Tala in a reviewed pull request; delete
+   `binhi-standalone-export`.
 
-## Why not create the repository automatically
+## How the export was made
 
-The GitHub access available to the development session is scoped to
-`chaosbrewing/ORIGIN` and `chaosbrewing/Tala`. Creating repositories in the
-organisation is an owner action, so the procedure stops at step 1.
+```bash
+# in the Tala clone
+git subtree split --prefix=apps/binhi -b binhi-standalone-history
+git clone --branch binhi-standalone-history <tala> export && cd export
+# add .github/workflows/ci.yml (workspace-free CI) and run npm install for a lockfile
+git commit -m "Standalone repository root"
+git push https://github.com/chaosbrewing/binhi HEAD:refs/heads/main
+```
+
+Creating the repository itself was an owner action: the development
+session's GitHub access was scoped to `chaosbrewing/ORIGIN` and
+`chaosbrewing/Tala`.

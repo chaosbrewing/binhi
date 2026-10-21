@@ -17,7 +17,7 @@ instance with isolated databases — see *Deployment status*.
 
 | Item | State |
 | --- | --- |
-| Standalone repository `chaosbrewing/binhi` | **Not created** — needs an organisation owner. History-preserving export prepared and verified (see `RELOCATION.md`); handoff branch `binhi-standalone-export` on the Tala remote. |
+| Standalone repository `chaosbrewing/binhi` | **Created and populated** — `main` holds the six `apps/binhi` commits plus the standalone root commit; first CI run (`CI` #1 on `main`) was in progress when this was written; its result is recorded in the next commit. `apps/binhi` remains in Tala until a reviewed removal PR (see `RELOCATION.md`). |
 | Replit application | **Not created** — owner action (`RELEASE.md` → Replit steps). `.replit` and host-default configuration are in the repository. |
 | Development / production databases | **Not provisioned**. Isolation is designed (host `DATABASE_URL` differs per environment; `npm run db:check` proves which one is in use) but unverified until the app exists. |
 | Secrets | `BINHI_SESSION_SECRET` must be generated per environment; the server refuses to boot in production with the example value. |
@@ -89,15 +89,14 @@ Screenshots from the journey are produced under `apps/binhi/e2e/screenshots/`
 8. **Replit deployment** — documented in `RELEASE.md`; creating the Replit
    project, databases and secrets is an owner action and has not been done,
    so the remote journey has not been run.
-9. **Standalone repository** — `chaosbrewing/binhi` does not exist yet; the
-   export is prepared and verified, creation needs an owner.
+9. **Workspace removal from Tala** — `apps/binhi` is still in Tala; remove
+   it in a reviewed pull request once the standalone CI is green.
 
 ## Owner actions required (in order)
 
-1. Create the empty private repository `chaosbrewing/binhi` and push the
-   export (`RELOCATION.md`, steps 1–4). Keep `apps/binhi` in Tala until the
-   new repository's CI is green.
-2. Create the BINHI Replit app from that repository; add the workspace
+1. ~~Create the repository and push the export~~ — done (`chaosbrewing/binhi`,
+   `main`). Protect `main`.
+2. Create the BINHI Replit app from `chaosbrewing/binhi`; add the workspace
    PostgreSQL and the separate production database; set
    `BINHI_SESSION_SECRET` (different values) in workspace and deployment
    secrets (`RELEASE.md` → Replit steps 1–5).
