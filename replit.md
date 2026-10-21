@@ -16,6 +16,10 @@ and published websites together on `0.0.0.0:5000`. Open Preview and choose
 **Create an account** to start. No demo account or password is seeded.
 Source changes appear after restarting the workflow, which rebuilds the app.
 
+After a task merges, Replit runs `scripts/post-merge.sh` to install locked
+dependencies, apply development database migrations, and rebuild the app,
+then reconciles the running workflow. The hook refuses production execution.
+
 Node.js 22 is configured. Dependencies are installed from `package-lock.json`.
 Vite, its React plugin, and Vitest were upgraded together because the
 imported Vitest version was blocked by the package security firewall.
