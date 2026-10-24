@@ -14,10 +14,12 @@
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import { createRequire } from "node:module";
-import { createWriteStream, mkdirSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import postgres from "postgres";
+import { runMigrations } from "../src/server/db/migrate.js";
+import { getTestDatabaseUrl } from "../tests/test-database.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -31,7 +33,7 @@ try {
 }
 
 const REMOTE = process.argv.includes("--remote") || !!process.env.BINHI_E2E_BASE;
-const DB = process.env.BINHI_TEST_DATABASE_URL ?? "postgres://binhi:binhi_dev_pw@127.0.0.1:5432/binhi_test";
+const DB = REMOTE ? null : getTestDatabaseUrl();
 const PORT = Number(process.env.BINHI_E2E_PORT ?? 4310);
 const BASE = REMOTE ? (process.env.BINHI_E2E_BASE ?? "").replace(/\/$/, "") : `http://127.0.0.1:${PORT}`;
 if (REMOTE && !/^https?:\/\//.test(BASE)) {
@@ -51,9 +53,23 @@ function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(`Assertion failed: ${msg}`);
 }
 
+/** Nix exposes Chromium's GBM library in the store without adding it to the loader path. */
+function configureNixBrowserLibraries() {
+  if (process.platform !== "linux" || !existsSync("/nix/store")) return;
+  const libDir = readdirSync("/nix/store")
+    .filter((entry) => entry.includes("mesa-libgbm"))
+    .map((entry) => path.join("/nix/store", entry, "lib"))
+    .find((candidate) => existsSync(path.join(candidate, "libgbm.so.1")));
+  if (!libDir) return;
+  const current = process.env.LD_LIBRARY_PATH?.split(":").filter(Boolean) ?? [];
+  if (!current.includes(libDir)) process.env.LD_LIBRARY_PATH = [libDir, ...current].join(":");
+}
+
 async function startServer(): Promise<ChildProcess> {
+  if (!DB) throw new Error("A local test database is required for the local browser journey.");
+  await runMigrations(DB);
   const sql = postgres(DB, { max: 1, onnotice: () => {} });
-  await sql`do $$ begin if exists (select 1 from information_schema.tables where table_name='binhi_sites') then truncate binhi_users, binhi_sessions, binhi_sites, binhi_site_revisions, binhi_op_batches, binhi_assets, binhi_asset_blobs, binhi_publications, binhi_published_pages, binhi_form_submissions, binhi_audit_log cascade; end if; end $$`;
+  await sql`do $$ begin if exists (select 1 from information_schema.tables where table_name='binhi_sites') then truncate binhi_users, binhi_sessions, binhi_sites, binhi_site_revisions, binhi_op_batches, binhi_assets, binhi_asset_blobs, binhi_publications, binhi_published_pages, binhi_form_submissions, binhi_audit_log, binhi_projects, binhi_library_assets, binhi_asset_usages, binhi_brand_kits cascade; end if; end $$`;
   await sql.end();
   const child = spawn(process.execPath, ["--import", "tsx", path.join(root, "src", "server", "start.ts")], {
     cwd: root,
@@ -83,6 +99,7 @@ async function startServer(): Promise<ChildProcess> {
 }
 
 async function main() {
+  configureNixBrowserLibraries();
   const server = REMOTE ? null : await startServer();
   if (REMOTE) {
     const health = await fetch(`${BASE}/api/health`).then((r) => r.json()).catch(() => null);
@@ -244,6 +261,15 @@ async function main() {
     const deleted = await page.evaluate(async (pw) => (await fetch("/api/auth/account", { method: "DELETE", headers: { "x-binhi-request": "editor", "content-type": "application/json" }, body: JSON.stringify({ password: pw }) })).status, password);
     assert(deleted === 200, `account cleanup returned ${deleted}`);
     assert((await fetch(liveLink!)).status === 410, "deleted account's site stays offline");
+    if (DB) {
+      const cleanupSql = postgres(DB, { max: 1, onnotice: () => {} });
+      try {
+        const activeAccounts = await cleanupSql`select id from binhi_users where email = ${email} and deleted_at is null`;
+        assert(activeAccounts.length === 0, "temporary account is no longer active in the disposable test database");
+      } finally {
+        await cleanupSql.end();
+      }
+    }
     step("cleaned up the test account and website");
 
     console.log(`\nE2E passed: ${results.length} steps against ${BASE}. Screenshots in ${SHOTS}`);

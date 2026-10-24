@@ -8,6 +8,13 @@
       "when": 1792462813565,
       "tag": "0000_binhi_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792835271269,
+      "tag": "0001_binhi_creative_studio",
+      "breakpoints": true
     }
   ]
 }
