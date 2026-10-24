@@ -9,7 +9,11 @@ import { AccountPage } from "./dashboard/AccountPage.js";
 import { EditorRoute } from "./editor/EditorRoute.js";
 import { ToastProvider } from "./components/Toast.js";
 import { applyStoredTheme } from "./theme.js";
+import { StudioHome } from "./studio/StudioHome.js";
+import { PhotoEditor } from "./studio/photo/PhotoEditor.js";
+import { ComingSoon } from "./studio/ComingSoon.js";
 import "./styles/app.css";
+import "./studio/studio.css";
 
 applyStoredTheme();
 
@@ -26,7 +30,13 @@ function App() {
     <Routes>
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
-      <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
+      <Route path="/" element={<RequireAuth><StudioHome /></RequireAuth>} />
+      <Route path="/websites" element={<RequireAuth><Dashboard /></RequireAuth>} />
+      <Route path="/studio/photo" element={<RequireAuth><PhotoEditor mode="photo" /></RequireAuth>} />
+      <Route path="/studio/compress" element={<RequireAuth><PhotoEditor mode="compress" /></RequireAuth>} />
+      <Route path="/studio/design" element={<RequireAuth><ComingSoon tool="design" /></RequireAuth>} />
+      <Route path="/studio/convert" element={<RequireAuth><ComingSoon tool="convert" /></RequireAuth>} />
+      <Route path="/studio/forms" element={<RequireAuth><ComingSoon tool="forms" /></RequireAuth>} />
       <Route path="/sites/new" element={<RequireAuth><NewSite /></RequireAuth>} />
       <Route path="/sites/:siteId/edit" element={<RequireAuth><EditorRoute /></RequireAuth>} />
       <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />

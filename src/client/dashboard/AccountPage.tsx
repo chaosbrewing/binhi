@@ -3,10 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api.js";
 import { useAuth } from "../auth/AuthContext.js";
 import { Logo } from "../components/Logo.js";
+import { clearOwnerPhotoDrafts } from "../studio/photo/repository.js";
+import { useToast } from "../components/Toast.js";
 
 export function AccountPage() {
   const { user, setUser } = useAuth();
   const nav = useNavigate();
+  const toast = useToast();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -16,6 +19,10 @@ export function AccountPage() {
     setError(null);
     try {
       await api.deleteAccount(password);
+      if (user) {
+        try { await clearOwnerPhotoDrafts(user.id); }
+        catch { toast("Account deleted, but local photo drafts could not be cleared. Clear this browser's BINHI site data.", "error"); }
+      }
       setUser(null);
       nav("/signin", { replace: true });
     } catch (err) {
@@ -27,7 +34,7 @@ export function AccountPage() {
     <div className="shell">
       <header className="shell-header">
         <Link to="/" className="plain-link"><Logo /></Link>
-        <Link to="/" className="btn btn-ghost">Back to your websites</Link>
+        <Link to="/" className="btn btn-ghost">Back to studio</Link>
       </header>
       <main className="shell-main narrow">
         <h1>Your account</h1>
@@ -38,6 +45,7 @@ export function AccountPage() {
         <section className="danger-zone">
           <h2>Delete account</h2>
           <p className="muted">Deleting your account removes every website, image, revision and published page. Published sites go offline immediately.</p>
+          <p className="muted">Photo drafts on this browser are also cleared. Drafts saved on other devices remain in those browsers until you clear their BINHI site data.</p>
           {!confirming ? (
             <button className="btn btn-danger" onClick={() => setConfirming(true)}>Delete my account…</button>
           ) : (

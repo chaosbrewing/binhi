@@ -38,7 +38,7 @@ export function NewSite() {
     <div className="shell">
       <header className="shell-header">
         <Link to="/" className="plain-link"><Logo /></Link>
-        <Link to="/" className="btn btn-ghost">Back to your websites</Link>
+        <Link to="/websites" className="btn btn-ghost">Back to your websites</Link>
       </header>
       <main className="shell-main narrow">
         <h1>Start a new website</h1>

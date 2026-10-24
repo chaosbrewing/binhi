@@ -16,11 +16,11 @@ async function request<T>(method: string, url: string, body?: unknown, init: Req
   let res: Response;
   try {
     res = await fetch(url, {
+      ...init,
       method,
       credentials: "same-origin",
       headers: { "x-binhi-request": "editor", ...(body !== undefined && !(body instanceof Blob || body instanceof ArrayBuffer) ? { "content-type": "application/json" } : {}), ...(init.headers as Record<string, string> | undefined) },
       body: body === undefined ? undefined : body instanceof Blob || body instanceof ArrayBuffer ? body : JSON.stringify(body),
-      ...init,
     });
   } catch {
     throw new ApiError(0, "OFFLINE", "You appear to be offline. Changes are kept locally until the connection returns.");

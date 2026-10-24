@@ -3,6 +3,19 @@
 This is the standalone repository: run commands from the repository root.
 Keep the existing React/Vite client, Fastify server, and PostgreSQL storage.
 
+## Creative studio milestone
+
+The signed-in home now links to the existing Website Builder (`/websites`),
+Photo Editor and Image Compressor. Design, general conversion and standalone
+forms have explicit coming-soon screens. Website create/edit URLs remain
+unchanged. Photo processing/drafts are browser-local; only an explicitly
+confirmed exported copy goes to existing public website media.
+
+Architecture and phased plan: `docs/CREATIVE_STUDIO.md`.
+Completed/planned scope, limits, cost/privacy notes and verification evidence:
+`docs/CREATIVE_STUDIO_RELEASE.md`. Nothing in this milestone publishes the app
+or changes the production schema.
+
 ## Run
 
 Click **Run** to start the `Start application` workflow:
@@ -52,6 +65,10 @@ npm run typecheck
 npm run test:unit
 node scripts/smoke.mjs "https://$REPLIT_DEV_DOMAIN"
 ```
+
+With a separate disposable `BINHI_TEST_DATABASE_URL`, run `npm test`,
+`npm run test:e2e`, then `npm run test:e2e:studio` sequentially. The studio
+runner refuses remote mode; never point destructive suites at dev/production.
 
 Setup verification passed the build, both TypeScript checks, 45 unit tests,
 and all seven smoke checks. The sign-in page was visually checked. HTTP
