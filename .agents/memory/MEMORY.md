@@ -1,0 +1,2 @@
+- [Imported toolchain constraints](toolchain-constraints.md) — the package firewall can block legacy test tooling; preserve security enforcement when updating compatible tooling.
+- [Playwright on Replit Nix](playwright-nix.md) — Chromium may need the Nix-store GBM library added to its loader path even when the package is installed.
