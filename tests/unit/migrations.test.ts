@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { assertMigrationsAllowed } from "../../src/server/db/migrate.js";
+import { checkMigrationFiles, inspectMigrationSql } from "../../scripts/check-migration-compat.mjs";
 
 describe("migration environment guard", () => {
   it("allows local and development migration runs", () => {
@@ -14,5 +15,38 @@ describe("migration environment guard", () => {
     expect(() => assertMigrationsAllowed({ REPLIT_DEPLOYMENT: "1" })).toThrow(
       "Replit Publish manages the production schema",
     );
+  });
+});
+
+describe("migration compatibility check", () => {
+  it("does not treat the already-applied bootstrap as a new compatibility change", async () => {
+    const results = await checkMigrationFiles();
+    expect(results).toEqual([]);
+  });
+
+  it.each([
+    ["ALTER TABLE binhi_sites DROP COLUMN slug;", "drop"],
+    ["ALTER TABLE binhi_sites RENAME COLUMN slug TO handle;", "rename"],
+    ["ALTER TABLE binhi_sites ALTER COLUMN slug SET NOT NULL;", "alter-column"],
+    ["ALTER TABLE binhi_sites ADD COLUMN handle text NOT NULL;", "required-column-without-default"],
+    ["CREATE UNIQUE INDEX binhi_sites_handle_idx ON binhi_sites (handle);", "unique"],
+    ["ALTER TABLE binhi_sites ADD CONSTRAINT valid_slug CHECK (length(slug) > 0);", "new-constraint"],
+    ["DELETE FROM binhi_sites;", "data-removal"],
+  ])("flags risky SQL: %s", (sql, rule) => {
+    expect(inspectMigrationSql(sql).map((finding) => finding.name)).toContain(rule);
+  });
+
+  it("ignores risky-looking text in SQL comments", () => {
+    expect(inspectMigrationSql("-- DROP TABLE binhi_sites;\nCREATE INDEX binhi_sites_name_idx ON binhi_sites (name);"))
+      .toEqual([]);
+  });
+
+  it("does not flag a required added column that has a database default", () => {
+    expect(inspectMigrationSql(
+      "ALTER TABLE binhi_sites ADD COLUMN handle text NOT NULL DEFAULT '';",
+    )).toEqual([]);
+    expect(inspectMigrationSql(
+      "ALTER TABLE binhi_sites ADD COLUMN handle text DEFAULT '' NOT NULL;",
+    )).toEqual([]);
   });
 });

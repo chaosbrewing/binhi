@@ -91,23 +91,78 @@ not provide out of the box; path-based URLs are the honest default.
 
 - `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e` green
   (CI does this).
+- `npm run db:compat` passes. Review each migration against both the current
+  release and the immediately previous release, including their reads and
+  writes; the checker flags common incompatible/destructive SQL but is not a
+  substitute for this review.
 - Migrations reviewed (`migrations/`), forward-only; development schema is
-  current before Publish.
+  current before Publish. Follow the expand/contract and review steps below.
+- Never edit a migration already applied to an environment. Add a new
+  incremental migration instead; `npm run db:compat` intentionally scans
+  incremental migrations, not the immutable bootstrap.
 - Production schema changes are made only by the Replit Publish flow, never
   by app startup or deploy builds.
 - `BINHI_SESSION_SECRET` is not the example value (the server refuses to boot
   in production otherwise).
 - Smoke: health, sign-in, open editor, publish, visit live page, unpublish.
 
+## Schema compatibility review
+
+The checked-in `0000_binhi_initial.sql` is the only migration today. It creates
+the initial tables, indexes, and foreign keys; it is a bootstrap, not evidence
+that a future migration is compatible with every previously published build.
+Once applied, migration files are immutable: change the schema only in a new
+incremental migration.
+For later migrations, check the actual current and immediately previous
+application versions, including rollback builds. Preserve every column,
+constraint, default, and data shape those versions still read or write.
+
+Use an expand/contract sequence:
+
+1. **Expand:** add new tables or nullable columns, or columns with a safe
+   database default. Avoid renames, drops, new required columns without a
+   default, and constraints that old writes can violate. Consider the table
+   size and lock/backfill cost as well as application compatibility.
+2. **Transition:** release code that works with both old and new schema,
+   backfill data separately when needed, and keep old write paths valid.
+   Verify reads and writes for both the current and previous build against the
+   expanded schema.
+3. **Contract:** remove old columns or constraints only in a later release,
+   after the oldest supported/rollback build no longer uses them and a rollback
+   to it is no longer expected.
+
+Run `npm run db:compat` for a quick scan of migration SQL. It blocks common
+drop, rename, column-contract, uniqueness, and data-removal operations unless
+the migration includes a reasoned
+`-- binhi:compatibility-reviewed: <reason>` annotation. This annotation only
+records that a reviewer considered the risk; it does not make a migration
+compatible. The release reviewer must still document which app versions were
+checked and how rollback remains safe. Add a focused test when an SQL change
+cannot be assessed from syntax alone.
+
 ## Rollback
 
-- **Application**: redeploy the previous build; the schema is additive so an
-  older build runs against a newer database.
+- **Application**: redeploying the previous build is safe only if that build
+  is compatible with the schema already applied. Replit Publish's schema
+  change is not undone by rolling back application code. Do not claim an app
+  rollback is safe merely because migrations are forward-only; use the schema
+  compatibility review above.
 - **A website**: Publish dialog → publication history → *Make live* on an
   earlier publication (re-verified before switching).
 - **Content**: History → *Restore* an earlier revision (creates a new
   revision; nothing is deleted).
-- **Database**: standard Postgres backups; media stored in Postgres is included.
+- **Database**: Replit documents point-in-time database restore for recovery,
+  subject to the account's restore-retention window. A database restore does
+  not roll application code back; coordinate and restore the matching app
+  version separately. Restoring the database can discard writes made after
+  the restore point, so it is a data-recovery operation, not a routine schema
+  rollback. See [Replit data recovery](https://docs.replit.com/features/data-and-storage/data-recovery)
+  and [development and production databases](https://docs.replit.com/features/data-and-storage/development-and-production).
+- **Schema**: do not assume Replit Publish provides a reversible migration or
+  that a later schema diff can reconstruct dropped data. Treat applied schema
+  changes as forward-only; prefer a corrective forward migration. Use a
+  coordinated database restore only when necessary and after accounting for
+  writes since the restore point.
 
 ## Operations notes
 

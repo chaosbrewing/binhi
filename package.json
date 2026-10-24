@@ -21,6 +21,7 @@
     "test:e2e:studio": "node --import tsx e2e/studio.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",
+    "db:compat": "node scripts/check-migration-compat.mjs",
     "test:e2e:remote": "node --import tsx e2e/run.ts --remote",
     "smoke": "node scripts/smoke.mjs",
     "db:check": "node --import tsx scripts/db-check.ts"
