@@ -1,6 +1,7 @@
 /**
- * Studio regression journey. Disposable test DB only; never supports remote mode.
- * No production schema or data access. Screenshots/output stay in ignored e2e/screenshots.
+ * Creative studio regression journey (Phase 1). Disposable test DB only;
+ * never supports remote mode. No production schema or data access.
+ * Screenshots/output stay in ignored e2e/screenshots.
  */
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -37,7 +38,19 @@ const cleanup: { ctx: BrowserContext; email: string }[] = [];
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
 let currentPage: Page | undefined;
 let succeeded = false;
+const H = { "x-binhi-request": "editor" };
 
+/** Poll a field until React has committed the expected value (controlled inputs update in an effect). */
+async function expectValue(page: Page, label: string, value: string) {
+  const locator = page.getByLabel(label, { exact: true });
+  const deadline = Date.now() + 5000;
+  let actual = await locator.inputValue();
+  while (actual !== value && Date.now() < deadline) {
+    await page.waitForTimeout(50);
+    actual = await locator.inputValue();
+  }
+  assert.equal(actual, value, label);
+}
 async function signup(ctx: BrowserContext, page: Page) {
   const email = `studio-${randomUUID()}@example.invalid`;
   await page.goto(`${base}/signup`);
@@ -48,8 +61,8 @@ async function signup(ctx: BrowserContext, page: Page) {
   await page.waitForURL(/\/sites\/new/);
   cleanup.push({ ctx, email });
 }
-async function inspectDownload(page: Page) {
-  await page.getByRole("button", { name: "Export image", exact: true }).waitFor();
+async function inspectDownload(page: Page, button = "Export image") {
+  await page.getByRole("button", { name: button, exact: true }).waitFor();
   const link = page.getByRole("link", { name: /^Download (PNG|JPG|WEBP)$/ });
   await link.waitFor();
   const result = await page.evaluate(async () => {
@@ -62,6 +75,7 @@ async function inspectDownload(page: Page) {
     ctx.drawImage(image, 0, 0);
     const result = { mime: blob.type, size: blob.size, width: image.width, height: image.height,
       topLeft: Array.from(ctx.getImageData(10, 10, 1, 1).data),
+      center: Array.from(ctx.getImageData(Math.floor(image.width / 2), Math.floor(image.height / 2), 1, 1).data),
       bottomRight: Array.from(ctx.getImageData(image.width - 10, image.height - 10, 1, 1).data),
       bytes: Array.from(new Uint8Array(await blob.arrayBuffer())) };
     image.close();
@@ -92,19 +106,25 @@ try {
   await page.getByRole("button", { name: "Create website" }).click();
   await page.waitForURL(/\/sites\/site_[a-z0-9]+\/edit/);
   const siteId = /site_[a-z0-9]+/.exec(page.url())![0];
+
+  /* ---------------------------------------------------------------- dashboard */
   await page.goto(base);
   await page.getByRole("heading", { name: "Pick up where you need to work" }).waitFor();
-  for (const name of ["Website Builder", "Design & Templates", "Photo Editor", "Image Compressor", "File Converter", "Form Builder"]) {
-    assert.equal(await page.getByRole("link", { name, exact: !["Design & Templates", "File Converter", "Form Builder"].includes(name) }).count(), 1);
-  }
+  const destinations = ["My Projects", "Website Builder", "Design Studio", "Photo Editor", "Image Compressor", "File Converter, planned, not available yet", "Form Builder, planned, not available yet", "Templates", "Brand Kits", "Asset Library"];
+  for (const name of destinations) assert.equal(await page.locator(".studio-module-grid").getByRole("link", { name, exact: true }).count(), 1, name);
+  assert.equal(await page.locator(".studio-module .module-available").count(), 8);
+  assert.equal(await page.locator(".studio-module .module-soon").count(), 2);
+  await page.getByRole("link", { name: "Studio owned destination" }).waitFor();
   await page.screenshot({ path: `${output}/01-home.png`, fullPage: true });
-  for (const slug of ["design", "convert", "forms"]) {
+  for (const slug of ["convert", "forms"]) {
     await page.goto(`${base}/studio/${slug}`);
     await page.getByText("Planned, not available yet", { exact: true }).waitFor();
   }
   await page.goto(`${base}/websites`);
   await page.getByRole("heading", { name: "Your websites", exact: true }).waitFor();
-  record("studio navigation, website listing and honest planned tools");
+  record("dashboard lists ten destinations with honest availability; planned tools stay planned");
+
+  /* -------------------------------------------------------------------- photo */
   await page.goto(`${base}/studio/photo`);
   const input = page.getByLabel("Choose a PNG, JPEG or static WebP image");
   await input.setInputFiles({ name: "unsafe.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg onload='alert(1)'></svg>") });
@@ -130,7 +150,12 @@ try {
   });
   const source = Buffer.from(fixture, "base64");
   let mediaUploads = 0;
-  page.on("request", request => { if (request.method() === "POST" && request.url().endsWith(`/api/sites/${siteId}/assets`)) mediaUploads++; });
+  let libraryUploads = 0;
+  page.on("request", request => {
+    if (request.method() !== "POST") return;
+    if (request.url().endsWith(`/api/sites/${siteId}/assets`)) mediaUploads++;
+    if (request.url().endsWith("/api/library")) libraryUploads++;
+  });
   await input.setInputFiles({ name: "Source.png", mimeType: "image/png", buffer: source });
   await page.getByRole("img", { name: "Edited preview of Source", exact: true }).waitFor();
   await page.getByLabel("Crop width", { exact: true }).fill("300");
@@ -149,20 +174,35 @@ try {
   await page.getByRole("img", { name: "Original preview of Source" }).waitFor();
   await page.getByRole("button", { name: "Viewing original" }).click();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
-  assert.equal(await page.getByLabel("Height", { exact: true }).inputValue(), "640");
+  await expectValue(page, "Height", "640");
   await page.getByRole("button", { name: "Redo", exact: true }).click();
-  assert.equal(await page.getByLabel("Height", { exact: true }).inputValue(), "100");
-  record("crop, resize, rotate, flip, adjustments, comparison, undo and redo");
-  await page.getByLabel("Draft name", { exact: true }).fill("Verified local photo");
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await page.getByText("Saved in this browser · revision 1.", { exact: false }).first().waitFor();
+  await expectValue(page, "Height", "100");
+  assert.equal(libraryUploads, 0, "editing must not upload anything");
+  record("crop, resize, rotate, flip, adjustments, comparison, undo and redo — nothing uploaded");
+  await page.getByLabel("Project name", { exact: true }).fill("Verified photo");
+  await page.getByRole("button", { name: "Save to projects", exact: true }).click();
+  await page.getByText("Saved to your projects · revision 0", { exact: false }).first().waitFor();
+  await page.waitForURL(/\/studio\/photo\/prj_[a-z0-9]+/);
+  const photoProjectId = /prj_[a-z0-9]+/.exec(page.url())![0];
+  assert.equal(libraryUploads, 1, "the original is uploaded exactly once, privately");
   await page.reload();
-  await page.getByRole("button", { name: "Verified local photo", exact: true }).click();
-  await page.getByRole("img", { name: "Edited preview of Verified local photo", exact: true }).waitFor();
+  await page.getByRole("img", { name: "Edited preview of Verified photo", exact: true }).waitFor();
   assert.equal(await page.getByLabel("Width", { exact: true }).inputValue(), "150");
   assert.equal(await page.getByLabel("Crop width", { exact: true }).inputValue(), "300");
   assert.equal(await page.getByLabel("Flip horizontal").isChecked(), true);
-  record("versioned browser draft survives reload and reopens full recipe");
+  const library = await ctx.request.get(`${base}/api/library`).then(r => r.json());
+  assert.equal(library.assets.length, 1);
+  assert.equal(library.assets[0].origin, "photo-original");
+  assert.deepEqual(library.assets[0].usedBy.map((u: { id: string }) => u.id), [photoProjectId]);
+  const anonymous = await browser.newContext();
+  assert.equal((await anonymous.request.get(`${base}${library.assets[0].url}`)).status(), 401);
+  await anonymous.close();
+  await page.getByLabel("Brightness", { exact: true }).fill("90");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByText("Saved to your projects · revision 1", { exact: false }).first().waitFor();
+  assert.equal(libraryUploads, 1, "re-saving reuses the stored original");
+  record("photo project saved privately, reopened from the server with its full recipe, re-saved without re-upload");
+  await page.getByLabel("Brightness", { exact: true }).fill("120");
   await page.getByLabel("Export format", { exact: true }).selectOption("image/png");
   await page.getByRole("button", { name: "Export image", exact: true }).click();
   const png = await inspectDownload(page);
@@ -193,8 +233,8 @@ try {
   assert.equal(assets.assets.length, 1); assert.equal(assets.assets[0].mimeType, "image/webp");
   record("explicit exported-copy upload reused existing owned website media");
   await page.getByRole("button", { name: "Reset", exact: true }).click();
-  assert.equal(await page.getByLabel("Width", { exact: true }).inputValue(), "640");
-  assert.equal(await page.getByLabel("Crop width", { exact: true }).inputValue(), "640");
+  await expectValue(page, "Width", "640");
+  await expectValue(page, "Crop width", "640");
   assert.equal(await page.getByLabel("Flip horizontal").isChecked(), false);
   record("reset preserves immutable source");
   await page.getByLabel("Export format", { exact: true }).selectOption("image/png");
@@ -233,6 +273,7 @@ try {
   const compressed = await inspectDownload(page);
   assert.equal(compressed.width, 640); assert.equal(compressed.height, 480);
   assert.ok(compressed.size < source.length);
+  await page.getByText(/% smaller against the original file/).waitFor();
   record("compressor shows a genuinely smaller encoded file", { originalBytes: source.length, outputBytes: compressed.size });
   for (const encoded of [jpeg, webp]) {
     const name = encoded.mime === "image/jpeg" ? "Reload-JPEG" : "Reload-WebP";
@@ -249,17 +290,149 @@ try {
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.screenshot({ path: `${output}/03-photo-desktop.png`, fullPage: true });
   record("mobile and desktop photo layout");
-  // Same browser storage, different signed-in account: list must be owner-scoped.
+
+  /* ------------------------------------------------------------------ library */
+  await page.goto(`${base}/library`);
+  await page.getByRole("heading", { name: "Your private images" }).waitFor();
+  await page.getByRole("button", { name: /Verified-photo\.png.*1 use/ }).click();
+  await page.getByRole("dialog").getByText("Verified photo").waitFor();
+  await page.getByLabel("Alt text").fill("A test gradient");
+  await page.getByRole("button", { name: "Save details" }).click();
+  await page.getByText("Details saved").waitFor();
+  page.once("dialog", dialog => void dialog.accept());
+  await page.getByLabel("Copy to a website's media (becomes public)").selectOption(siteId);
+  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  await page.getByText("Copied to the website's media library").waitFor();
+  const siteAssets = await ctx.request.get(`${base}/api/sites/${siteId}/assets`).then(r => r.json());
+  assert.equal(siteAssets.assets.length, 2);
+  assert.equal(siteAssets.assets[0].folder, "From asset library");
+  assert.equal((await ctx.request.get(`${base}${siteAssets.assets[0].url}`)).status(), 200);
+  await page.keyboard.press("Escape");
+  await page.screenshot({ path: `${output}/04-library.png`, fullPage: true });
+  record("asset library shows usage, edits metadata and copies to public website media only on request");
+
+  /* ------------------------------------------------------------------- design */
+  await page.goto(`${base}/studio/design`);
+  await page.getByRole("button", { name: /Instagram post/ }).click();
+  await page.waitForURL(/\/studio\/design\/prj_[a-z0-9]+/);
+  const designId = /prj_[a-z0-9]+/.exec(page.url())![0];
+  await page.getByText("1080 × 1080px", { exact: false }).first().waitFor();
+  await page.getByRole("button", { name: "Text", exact: true }).click();
+  await page.getByLabel("Content").fill("Hello BINHI");
+  await page.getByLabel("Colour", { exact: true }).fill("#ff0000");
+  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+  await page.getByLabel("Fill", { exact: true }).fill("#0000ff");
+  await page.getByLabel("X", { exact: true }).fill("0");
+  await page.getByLabel("Y", { exact: true }).fill("0");
+  await page.getByLabel("Width", { exact: true }).fill("200");
+  await page.getByLabel("Height", { exact: true }).fill("200");
+  await page.getByRole("button", { name: "Image", exact: true }).click();
+  await page.getByRole("dialog", { name: "Add an image" }).getByRole("button", { name: /Use Verified-photo/ }).click();
+  await page.locator('.design-save[data-state="saved"]').waitFor();
+  assert.equal(await page.locator(".layer-list .layer-row").count(), 3);
+  const saved = await ctx.request.get(`${base}/api/projects/${designId}`).then(r => r.json());
+  assert.equal(saved.project.document.layers.length, 3);
+  assert.equal(saved.project.document.layers[0].text, "Hello BINHI");
+  assert.ok(saved.project.revision >= 1);
+  // Drag the rectangle: select it in the layer list, then drag it on the artboard.
+  await page.getByRole("button", { name: /^▭/ }).click();
+  const rect = page.locator('.design-layer[data-layer-id]').nth(1);
+  const box = (await rect.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2 + 60, { steps: 6 });
+  await page.mouse.up();
+  await page.locator('.design-save[data-state="saved"]').waitFor();
+  const moved = await ctx.request.get(`${base}/api/projects/${designId}`).then(r => r.json());
+  const rectLayer = moved.project.document.layers.find((l: { type: string }) => l.type === "rect");
+  assert.ok(rectLayer.x > 100 && rectLayer.y > 50, `rectangle moved to ${rectLayer.x},${rectLayer.y}`);
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await page.locator('.design-save[data-state="saved"]').waitFor();
+  const undone = await ctx.request.get(`${base}/api/projects/${designId}`).then(r => r.json());
+  assert.equal(undone.project.document.layers.find((l: { type: string }) => l.type === "rect").x, 0);
+  record("design editor adds text, shape and library image, autosaves with revisions, drags and undoes");
+  await page.getByRole("button", { name: "Export design", exact: true }).click();
+  const designPng = await inspectDownload(page, "Export design");
+  assert.equal(designPng.width, 1080); assert.equal(designPng.height, 1080); assert.equal(designPng.mime, "image/png");
+  assert.deepEqual(designPng.topLeft.slice(0, 3), [0, 0, 255], "blue rectangle at the top-left corner");
+  await page.getByLabel("Export format", { exact: true }).selectOption("image/jpeg");
+  await page.getByRole("button", { name: "Export design", exact: true }).click();
+  const designJpeg = await inspectDownload(page, "Export design");
+  assert.equal(designJpeg.mime, "image/jpeg");
+  record("design exports verified PNG and JPEG at native size", { pngBytes: designPng.size, jpegBytes: designJpeg.size });
+  await page.getByLabel("Template name").fill("Promo template");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByText("Template \"Promo template\" saved").waitFor();
+  await page.screenshot({ path: `${output}/05-design.png` });
+  await page.goto(`${base}/templates`);
+  await page.getByRole("heading", { name: "Promo template" }).waitFor();
+  assert.ok((await page.getByRole("list", { name: "Website templates" }).getByRole("listitem").count()) >= 5);
+  await page.getByRole("button", { name: "Use template" }).click();
+  await page.waitForURL(/\/studio\/design\/prj_[a-z0-9]+/);
+  assert.notEqual(/prj_[a-z0-9]+/.exec(page.url())![0], designId);
+  await page.locator(".layer-list .layer-row").nth(2).waitFor();
+  assert.equal(await page.locator(".layer-list .layer-row").count(), 3);
+  record("designs become editable templates that start new designs");
+
+  /* --------------------------------------------------------------- brand kits */
+  await page.goto(`${base}/brand-kits`);
+  await page.getByLabel("Kit name").fill("Chaos kit");
+  await page.getByLabel("Colour 1 hex").fill("#123456");
+  await page.getByLabel("Heading font").selectOption("Playfair Display");
+  await page.getByLabel("Tagline").fill("Complexity, Simplified.");
+  await page.getByRole("button", { name: "Choose logo" }).click();
+  await page.getByRole("dialog", { name: "Choose a logo" }).getByRole("button", { name: /Use Verified-photo/ }).click();
+  await page.getByRole("button", { name: "Create brand kit" }).click();
+  await page.getByText("Brand kit created").waitFor();
+  await page.getByRole("list", { name: "Brand kits" }).getByRole("heading", { name: "Chaos kit" }).waitFor();
+  const siteBefore = await ctx.request.get(`${base}/api/sites/${siteId}`).then(r => r.json());
+  page.once("dialog", dialog => void dialog.accept());
+  await page.getByLabel("Website to apply Chaos kit to").selectOption(siteId);
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await page.getByText(/Applied to Studio owned destination/).waitFor();
+  const siteAfter = await ctx.request.get(`${base}/api/sites/${siteId}`).then(r => r.json());
+  assert.equal(siteAfter.site.revision, siteBefore.site.revision + 1);
+  assert.equal(siteAfter.site.document.theme.colors.primary, "#123456");
+  assert.equal(siteAfter.site.document.theme.fonts.heading, "Playfair Display");
+  await page.goto(`${base}/studio/design/${designId}`);
+  await page.getByLabel("Brand kit").selectOption({ label: "Chaos kit" });
+  await page.getByRole("button", { name: /^▭/ }).click();
+  await page.getByRole("button", { name: "Apply Primary" }).click();
+  await page.locator('.design-save[data-state="saved"]').waitFor();
+  const recoloured = await ctx.request.get(`${base}/api/projects/${designId}`).then(r => r.json());
+  assert.equal(recoloured.project.document.layers.find((l: { type: string }) => l.type === "rect").fill, "#123456");
+  record("brand kit created with a library logo, applied to a website theme as a revision and to a design layer");
+
+  /* -------------------------------------------------------------- my projects */
+  await page.goto(`${base}/projects`);
+  await page.getByRole("heading", { name: "Everything you are working on" }).waitFor();
+  const projectCards = page.getByRole("list", { name: "Projects" }).getByRole("listitem");
+  await projectCards.nth(4).waitFor();
+  assert.equal(await projectCards.count(), 5, "1 website + 1 photo + 2 designs + 1 template");
+  await page.getByRole("tab", { name: /^Templates/ }).click();
+  await projectCards.nth(1).waitFor({ state: "detached" });
+  assert.equal(await projectCards.count(), 1);
+  await page.getByRole("tab", { name: /^Photos/ }).click();
+  await page.getByRole("button", { name: "Delete Verified photo" }).click();
+  await page.getByRole("button", { name: "Delete project" }).click();
+  await page.getByText("was deleted").waitFor();
+  const libraryAfter = await ctx.request.get(`${base}/api/library`).then(r => r.json());
+  assert.equal(libraryAfter.assets.length, 1, "the original stays in the library");
+  assert.ok(!libraryAfter.assets[0].usedBy.some((u: { id: string }) => u.id === photoProjectId));
+  record("My Projects merges websites and creative projects; deleting a project keeps its library original");
+  assert.deepEqual(pageErrors, []);
+
+  /* ---------------------------------------------------------------- isolation */
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await page.waitForURL(/\/signin/);
   await signup(ctx, page);
-  await page.goto(`${base}/studio/photo`);
-  await page.getByText("No saved drafts in this browser yet.", { exact: true }).waitFor();
-  assert.equal(await page.getByRole("button", { name: "Verified local photo", exact: true }).count(), 0);
-  const foreign = await ctx.request.get(`${base}/api/sites/${siteId}/assets`);
-  assert.equal(foreign.status(), 404);
-  record("account-scoped browser drafts and existing server asset ownership");
-  assert.deepEqual(pageErrors, []);
+  await page.goto(`${base}/projects`);
+  await page.getByRole("heading", { name: "Nothing planted yet" }).waitFor();
+  for (const url of [`/api/projects/${designId}`, `/api/library/${library.assets[0].id}/file`, `/api/sites/${siteId}/assets`]) {
+    assert.equal((await ctx.request.get(`${base}${url}`)).status(), 404, url);
+  }
+  assert.equal((await ctx.request.get(`${base}/api/brand-kits`).then(r => r.json())).kits.length, 0);
+  record("projects, private files, media and brand kits are invisible to another account");
   succeeded = true;
 } finally {
   if (!succeeded) {
@@ -270,11 +443,11 @@ try {
   let cleanupFailed = false;
   for (const { ctx, email } of cleanup) {
     try {
-      const login = await ctx.request.post(`${base}/api/auth/login`, { headers: { "x-binhi-request": "editor" }, data: { email, password } });
+      const login = await ctx.request.post(`${base}/api/auth/login`, { headers: H, data: { email, password } });
       assert.equal(login.status(), 200);
       const me = await ctx.request.get(`${base}/api/auth/me`).then(r => r.json());
       assert.equal(me.user.email, email);
-      const deleted = await ctx.request.delete(`${base}/api/auth/account`, { headers: { "x-binhi-request": "editor" }, data: { password } });
+      const deleted = await ctx.request.delete(`${base}/api/auth/account`, { headers: H, data: { password } });
       assert.equal(deleted.status(), 200);
     } catch { cleanupFailed = true; console.error("A disposable studio test account could not be cleaned up."); }
   }

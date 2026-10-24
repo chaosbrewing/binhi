@@ -87,6 +87,19 @@ Custom domains / tenant subdomains: not supported in v0.1. They require
 wildcard DNS, TLS issuance and host-based routing that Replit Autoscale does
 not provide out of the box; path-based URLs are the honest default.
 
+## Phase 1 schema change (owner approval needed before publishing)
+
+`migrations/0001_binhi_creative_studio.sql` adds four tables
+(`binhi_projects`, `binhi_library_assets`, `binhi_asset_usages`,
+`binhi_brand_kits`). It is additive: no existing table or column changes, and
+the previous build runs unchanged against the new schema. In the Replit
+workspace the development database picks it up on the next start or
+`npm run db:migrate`; production receives it only through the Replit Publish
+schema diff, which is an owner action. Library originals are stored in the
+existing Postgres blob storage, so the managed database grows with uploads
+(up to 300 MB per account by the service limit); no new paid service is
+introduced.
+
 ## Release checklist
 
 - `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e` green

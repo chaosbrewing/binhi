@@ -7,11 +7,21 @@ import "./studio.css";
 
 type StudioShellProps = { children: ReactNode };
 
+const NAV: { to: string; label: string; match: (path: string) => boolean }[] = [
+  { to: "/", label: "Studio", match: (p) => p === "/" },
+  { to: "/projects", label: "Projects", match: (p) => p === "/projects" },
+  { to: "/websites", label: "Websites", match: (p) => p === "/websites" || p.startsWith("/sites/") },
+  { to: "/studio/design", label: "Design", match: (p) => p.startsWith("/studio/design") },
+  { to: "/studio/photo", label: "Photo", match: (p) => p.startsWith("/studio/photo") || p === "/studio/compress" },
+  { to: "/library", label: "Library", match: (p) => p === "/library" },
+  { to: "/templates", label: "Templates", match: (p) => p === "/templates" },
+  { to: "/brand-kits", label: "Brand", match: (p) => p === "/brand-kits" },
+];
+
 export function StudioShell({ children }: StudioShellProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const isWebsiteRoute = location.pathname === "/websites" || location.pathname.startsWith("/sites/");
   return (
     <div className="binhi-studio">
       <header className="studio-header">
@@ -19,9 +29,9 @@ export function StudioShell({ children }: StudioShellProps) {
           <Logo />
         </Link>
         <nav className="studio-nav" aria-label="Studio">
-          <Link to="/" aria-current={location.pathname === "/" ? "page" : undefined}>Studio</Link>
-          <Link to="/websites" aria-current={isWebsiteRoute ? "page" : undefined}>Websites</Link>
-          <Link to="/studio/photo" aria-current={location.pathname === "/studio/photo" ? "page" : undefined}>Photo tools</Link>
+          {NAV.map((item) => (
+            <Link key={item.to} to={item.to} aria-current={item.match(location.pathname) ? "page" : undefined}>{item.label}</Link>
+          ))}
         </nav>
         <nav className="studio-account" aria-label="Account">
           <ThemeToggle />

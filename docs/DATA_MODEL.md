@@ -1,7 +1,8 @@
 # BINHI data model
 
-All tables are prefixed `binhi_` and created by `migrations/0000_binhi_initial.sql`
-(tracked in `binhi_migrations`). Ownership is explicit on every reachable row.
+All tables are prefixed `binhi_` and created by the forward-only migrations in
+`migrations/` (`0000_binhi_initial.sql`, `0001_binhi_creative_studio.sql`),
+tracked in `drizzle.binhi_migrations`. Ownership is explicit on every reachable row.
 
 | Table | Purpose | Key columns |
 | --- | --- | --- |
@@ -16,6 +17,10 @@ All tables are prefixed `binhi_` and created by `migrations/0000_binhi_initial.s
 | `binhi_published_pages` | Rendered HTML per page | `(publication_id, path)` unique, `html` |
 | `binhi_form_submissions` | Visitor form posts | `site_id`, `form_node_id`, `fields` (label → value) |
 | `binhi_audit_log` | Who did what | `actor_id`, `site_id`, `action`, `details`, `ip` |
+| `binhi_library_assets` | Private, account-level image library (Phase 1) | `owner_id`, `mime_type`, `width/height`, `alt`, `tags`, `origin` (upload / photo-original), `storage_key`, `sha256`, `deleted_at` |
+| `binhi_projects` | Creative projects with a per-kind document (Phase 1) | `owner_id`, `kind` (photo / design / design-template), `document` (jsonb, validated per kind), `revision`, `deleted_at` |
+| `binhi_asset_usages` | Which projects reference which library files (Phase 1) | `(asset_id, project_id)` unique; recomputed on every project save |
+| `binhi_brand_kits` | Colours, fonts, logo and tagline per account (Phase 1) | `owner_id`, `document` (jsonb), `deleted_at` |
 
 ## The canonical document (`binhi_sites.document`)
 
@@ -59,3 +64,21 @@ matching a strict grammar, enumerated keywords); bounded array sizes.
   unpublished immediately; media bytes are removed on asset deletion.
 - **Publication**: `live_publication_id` is the only pointer the public route
   follows. It is moved after verification succeeds, never before.
+
+## Creative documents (Phase 1)
+
+Website projects stay in `binhi_sites`; the dashboard merges them read-only
+with `binhi_projects`. Each project kind has its own Zod document in
+`src/core/creative/`, validated on every write:
+
+```
+PhotoProjectDocument   schemaVersion 1, sourceAssetId (library), source {mimeType,width,height}, recipe (crop, size, rotation, flips, adjustments)
+DesignDocument         schemaVersion 1, width/height (64–4096px, ≤16 MP), background, layers[] (text | rect | ellipse | image; ≤200)
+BrandKitDocument       schemaVersion 1, colors[] (1–12), fonts {heading, body}, logoAssetId?, tagline
+```
+
+Projects use the same optimistic-concurrency contract as websites: a save
+carries `baseRevision`; a mismatch is a 409 with the server copy. Library
+files are private: bytes are served only to their owner through
+`/api/library/:id/file`; a copy enters a website's public media only through
+the explicit copy-to-site action, which runs the existing media checks.

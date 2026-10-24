@@ -8,11 +8,14 @@ It is built to run on its own today and to become the website sector of
 ORIGIN tomorrow, integrating through contracts rather than shared tables
 (see [`docs/ORIGIN_INTEGRATION.md`](docs/ORIGIN_INTEGRATION.md)).
 
-> Status: **v0.1 — functional standalone editor.** Standalone accounts,
-> real persistence, canvas editing with structured and freeform layouts,
-> media library, templates, revisions, and verified path-based publishing
-> under `/s/<site>/`. Custom domains, TALA assistance and ORIGIN identity
-> are deliberately not part of v0.1.
+> Status: **v0.1 website builder + Phase 1 creative studio (in review).**
+> Standalone accounts, real persistence, canvas editing with structured and
+> freeform layouts, media library, templates, revisions, and verified
+> path-based publishing under `/s/<site>/`. Phase 1 adds a unified studio
+> dashboard, a non-destructive photo editor and image compressor, a
+> fixed-size design studio with PNG/JPEG export, editable design templates,
+> brand kits and a private asset library. Custom domains, TALA assistance
+> and ORIGIN identity are deliberately not part of it.
 
 ## What it does
 
@@ -26,6 +29,13 @@ ORIGIN tomorrow, integrating through contracts rather than shared tables
   versioned JSON document; HTML/CSS is always derived from it.
 - **Publishing** — snapshot → render → deploy → verify → live. Unpublish,
   rollback, form submissions, and honest failure states.
+- **Creative studio (Phase 1)** — one dashboard that says plainly which
+  tools work today; a photo editor and image compressor that never modify the
+  original; a design studio for social, print and web sizes with text, shapes
+  and your own images; design templates; brand kits that apply to designs or
+  push a website theme as a reviewable revision; and a private asset library
+  that tracks where every file is used. File Converter and Form Builder are
+  planned destinations with scoped roadmaps, not working tools.
 
 ## Run it locally
 
@@ -63,6 +73,7 @@ npm run typecheck   # client + server
 npm test            # unit + integration (uses disposable BINHI_TEST_DATABASE_URL or local binhi_test)
 npm run build
 npm run test:e2e    # real Chromium: sign up → edit → publish → visit live site
+npm run test:e2e:studio   # real Chromium: dashboard → photo → library → design → templates → brand kits
 BINHI_E2E_BASE=https://<deployed-host> npm run test:e2e:remote   # same journey against a deployment
 node scripts/smoke.mjs https://<deployed-host>                 # browser-less smoke test
 ```
@@ -97,3 +108,5 @@ docs/            product charter, architecture, data model, operations, layout, 
 - [Release, hosting and rollback](docs/RELEASE.md)
 - [Relocating to its own repository](docs/RELOCATION.md)
 - [Release readiness report](docs/RELEASE_READINESS.md)
+- [Creative studio architecture and gates](docs/CREATIVE_STUDIO.md)
+- [Phase 1 status and gap assessment](docs/PHASE1_STATUS.md)

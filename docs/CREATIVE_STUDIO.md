@@ -179,3 +179,33 @@ threat modelling and policies. Existing website forms continue unchanged.
 metadata + separate per-document payloads, revisions, private assets and
 export jobs; no destructive site-table changes. Prove older builds tolerate
 new schema, then review Replit's schema diff and request owner publish.
+
+## 8. Phase 1 implementation notes (2026-10-24)
+
+What changed relative to the milestone 1 plan above:
+
+- **Persistence moved from the browser to the account.** Browser-local
+  IndexedDB drafts were replaced by server-side projects
+  (`binhi_projects`) with per-kind validated documents, so photos and designs
+  reopen on any device and appear in My Projects. The photo original is
+  uploaded exactly once, privately, into the asset library when the owner
+  saves; editing and exporting still upload nothing.
+- **Private asset library** (`binhi_library_assets`): PNG/JPEG/static WebP
+  only, header dimensions bounded before any decode, animated files refused,
+  originals preserved byte-for-byte, bytes served only to the owner, usage
+  tracked per project and deletion protected while a file is in use. Copying
+  into a website's public media is explicit and goes through the existing
+  media checks.
+- **Design Studio**: `DesignDocument` (artboard + text/shape/image layers)
+  with whole-document validated saves, optimistic concurrency, undo/redo,
+  pointer drag/resize, keyboard nudging and verified PNG/JPEG export rendered
+  in the browser. Fonts are the website font allowlist; canvas text uses the
+  fonts the browser has loaded, which the UI states.
+- **Templates and brand kits**: a design can be saved as an editable template
+  (`design-template` kind) and templates start new designs; brand kits hold
+  colours, fonts, logo and tagline, apply to design layers as swatches and
+  push a website theme through the existing `updateTheme` operation as a new
+  revision (never silently).
+- **Still planned, still labelled planned:** File Converter and Form Builder.
+- **No new paid services.** Processing stays in the browser; storage uses the
+  existing Postgres blob adapter.

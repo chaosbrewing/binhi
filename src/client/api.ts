@@ -1,4 +1,5 @@
 import type { SiteDocument, Operation, ValidationReport } from "../core/index.js";
+import type { BrandKitDocument, DesignDocument, PhotoProjectDocument, ProjectKind } from "../core/creative/index.js";
 
 export class ApiError extends Error {
   constructor(
@@ -16,11 +17,11 @@ async function request<T>(method: string, url: string, body?: unknown, init: Req
   let res: Response;
   try {
     res = await fetch(url, {
+      ...init,
       method,
       credentials: "same-origin",
       headers: { "x-binhi-request": "editor", ...(body !== undefined && !(body instanceof Blob || body instanceof ArrayBuffer) ? { "content-type": "application/json" } : {}), ...(init.headers as Record<string, string> | undefined) },
       body: body === undefined ? undefined : body instanceof Blob || body instanceof ArrayBuffer ? body : JSON.stringify(body),
-      ...init,
     });
   } catch {
     throw new ApiError(0, "OFFLINE", "You appear to be offline. Changes are kept locally until the connection returns.");
@@ -109,6 +110,42 @@ export interface Submission {
   createdAt: string;
 }
 
+export interface LibraryAsset {
+  id: string;
+  filename: string;
+  mimeType: string;
+  byteSize: number;
+  width: number;
+  height: number;
+  alt: string;
+  tags: string;
+  origin: string;
+  sha256: string;
+  url: string;
+  createdAt: string;
+  usedBy: { id: string; name: string; kind: string }[];
+}
+export interface ProjectSummary {
+  id: string;
+  kind: ProjectKind;
+  name: string;
+  revision: number;
+  schemaVersion: number;
+  createdAt: string;
+  updatedAt: string;
+  meta: { width?: number; height?: number; sourceAssetId?: string; layers?: number };
+}
+export interface ProjectDetail<D = DesignDocument | PhotoProjectDocument> extends ProjectSummary {
+  document: D;
+}
+export interface BrandKit {
+  id: string;
+  name: string;
+  document: BrandKitDocument;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const api = {
   me: () => request<{ user: User | null; signupEnabled: boolean }>("GET", "/api/auth/me"),
   signup: (email: string, password: string, displayName: string) => request<{ user: User }>("POST", "/api/auth/signup", { email, password, displayName }),
@@ -140,4 +177,32 @@ export const api = {
   rollback: (id: string, publicationId: string) => request<{ publication: PublicationSummary }>("POST", `/api/sites/${id}/publications/${publicationId}/rollback`),
   submissions: (id: string) => request<{ submissions: Submission[] }>("GET", `/api/sites/${id}/submissions`),
   deleteSubmission: (id: string, subId: string) => request<{ ok: true }>("DELETE", `/api/sites/${id}/submissions/${subId}`),
+
+  /* ---- creative studio: private library, projects, brand kits ---- */
+  library: () => request<{ assets: LibraryAsset[] }>("GET", "/api/library"),
+  libraryAsset: (assetId: string) => request<{ asset: LibraryAsset }>("GET", `/api/library/${assetId}`),
+  uploadToLibrary: (file: Blob, opts: { filename: string; alt?: string; tags?: string; origin?: "upload" | "photo-original" }) =>
+    request<{ asset: LibraryAsset }>("POST", "/api/library", file, {
+      headers: {
+        "content-type": file.type || "application/octet-stream",
+        "x-binhi-filename": encodeURIComponent(opts.filename),
+        "x-binhi-alt": encodeURIComponent(opts.alt ?? ""),
+        "x-binhi-tags": encodeURIComponent(opts.tags ?? ""),
+        ...(opts.origin ? { "x-binhi-origin": opts.origin } : {}),
+      },
+    }),
+  updateLibraryAsset: (assetId: string, patch: { alt?: string; tags?: string; filename?: string }) => request<{ asset: LibraryAsset }>("PATCH", `/api/library/${assetId}`, patch),
+  deleteLibraryAsset: (assetId: string, force = false) => request<{ ok: true }>("DELETE", `/api/library/${assetId}${force ? "?force=true" : ""}`),
+  copyLibraryAssetToSite: (assetId: string, siteId: string) => request<{ asset: AssetRecord }>("POST", `/api/library/${assetId}/copy-to-site`, { siteId }),
+  projects: (kind?: ProjectKind) => request<{ projects: ProjectSummary[] }>("GET", `/api/projects${kind ? `?kind=${kind}` : ""}`),
+  project: <D = DesignDocument | PhotoProjectDocument>(projectId: string) => request<{ project: ProjectDetail<D> }>("GET", `/api/projects/${projectId}`),
+  createProject: <D = DesignDocument | PhotoProjectDocument>(kind: ProjectKind, name: string, document: D) => request<{ project: ProjectDetail<D> }>("POST", "/api/projects", { kind, name, document }),
+  updateProject: <D = DesignDocument | PhotoProjectDocument>(projectId: string, patch: { name?: string; document?: D; baseRevision: number }) =>
+    request<{ project: ProjectDetail<D> }>("PATCH", `/api/projects/${projectId}`, patch),
+  duplicateProject: (projectId: string, input: { name?: string; kind?: ProjectKind } = {}) => request<{ project: ProjectDetail }>("POST", `/api/projects/${projectId}/duplicate`, input),
+  deleteProject: (projectId: string) => request<{ ok: true }>("DELETE", `/api/projects/${projectId}`),
+  brandKits: () => request<{ kits: BrandKit[] }>("GET", "/api/brand-kits"),
+  createBrandKit: (name: string, document: BrandKitDocument) => request<{ kit: BrandKit }>("POST", "/api/brand-kits", { name, document }),
+  updateBrandKit: (kitId: string, patch: { name?: string; document?: BrandKitDocument }) => request<{ kit: BrandKit }>("PATCH", `/api/brand-kits/${kitId}`, patch),
+  deleteBrandKit: (kitId: string) => request<{ ok: true }>("DELETE", `/api/brand-kits/${kitId}`),
 };
