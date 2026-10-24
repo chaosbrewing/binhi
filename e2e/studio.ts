@@ -116,6 +116,9 @@ try {
   assert.equal(await page.locator(".studio-module .module-soon").count(), 2);
   await page.getByRole("link", { name: "Studio owned destination" }).waitFor();
   await page.screenshot({ path: `${output}/01-home.png`, fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "dashboard fits a phone width");
+  await page.setViewportSize({ width: 1366, height: 900 });
   for (const slug of ["convert", "forms"]) {
     await page.goto(`${base}/studio/${slug}`);
     await page.getByText("Planned, not available yet", { exact: true }).waitFor();
@@ -360,6 +363,11 @@ try {
   const designJpeg = await inspectDownload(page, "Export design");
   assert.equal(designJpeg.mime, "image/jpeg");
   record("design exports verified PNG and JPEG at native size", { pngBytes: designPng.size, jpegBytes: designJpeg.size });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator(".design-stage").waitFor();
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "design editor fits a phone width");
+  await page.screenshot({ path: `${output}/06-design-mobile.png`, fullPage: true });
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.getByLabel("Template name").fill("Promo template");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await page.getByText("Template \"Promo template\" saved").waitFor();

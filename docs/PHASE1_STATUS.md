@@ -33,8 +33,13 @@ Two deliberate departures from the imported work, both documented in
 `docs/CREATIVE_STUDIO.md` §8: browser-local IndexedDB photo drafts were
 replaced by account projects (the directive requires save/reopen and
 server-side permissions), and `.env.example` was kept because the README
-refers to it. The Replit Agent reported itself busy throughout the import,
-so the workspace may hold edits newer than this snapshot; see *Open items*.
+refers to it. After the import, the Replit Agent reported (read-only) a clean working
+tree on its local branch `feat/binhi-studio-m1` at commit 5bf6148: ten
+commits that were never pushed to GitHub, no task in progress, and further
+tasks (#6–#14) queued or proposed in its own registry. GitHub `main` in turn
+holds two documentation commits the workspace never fetched. The file-level
+import above captured that branch's tree; its commit history stays only in
+the workspace until the owner reconciles it (see *Open items*).
 
 ## 1. Gap assessment against the Phase 1 directive
 
@@ -86,8 +91,11 @@ Screenshots: `e2e/screenshots/studio/01-home.png`, `03-photo-desktop.png`,
 ## 4. Open items (owner)
 
 1. Reconcile the Replit workspace with this branch before any further Replit
-   Agent session: pull `claude/binhi-visual-editor-12arge` into the workspace
-   (or merge to `main` and pull). Two diverging copies cannot both be canonical.
+   Agent session: in the workspace, fetch `claude/binhi-visual-editor-12arge`
+   and check it out (or merge it to `main` on GitHub first and pull). The
+   workspace's queued tasks #6–#14 should be reviewed against this branch
+   rather than run on the old `feat/binhi-studio-m1` tree; two diverging
+   copies cannot both be canonical.
 2. Review and merge the branch; CI runs both browser journeys.
 3. Publish from Replit when ready. The Publish schema diff will add the four
    Phase 1 tables (additive). Nothing was published automatically.
