@@ -1,0 +1,250 @@
+001	S	selection-cursor
+002	L	mouse-pointer
+003	L	square-dashed
+004	L	circle-dashed
+005	L	lasso
+006	C	lasso + straight segments
+007	O	lasso with edge-snap anchors
+008	S	magic-wand
+009	C	brush + dashed circle
+010	C	scan + silhouette
+011	L	hand
+012	S	zoom-in
+013	S	zoom-out
+014	C	zoom + "1:1"
+015	S	fit-to-screen
+016	L	frame
+017	L	ruler-dimension-line
+018	C	crossed dashed lines
+019	S	snap-to-grid
+020	L	square-split-horizontal
+021	S	undo
+022	S	redo
+023	S	version-history
+024	C	aperture badge + stack
+025	L	rotate-ccw
+026	S	save
+027	L	save-all
+028	L	cloud-check
+029	L	git-branch
+030	C	shield-check + ledger
+031	L	file-plus
+032	L	folder-open
+033	L	import
+034	L	hard-drive-upload
+035	C	file + pen node
+036	C	file + checkerboard
+037	C	file + landscape
+038	C	file + bolt
+039	C	knife over @1x/@2x/@3x
+040	C	file + trim marks
+041	S	pen-tool
+042	C	pen + plus
+043	C	pen + minus
+044	O	vertex to arc with handle
+045	O	curve with tangent balls
+046	C	blade + path
+047	S	cut
+048	O	boolean union
+049	O	boolean subtract
+050	O	boolean intersect
+051	S	paintbrush
+052	L	spray-can
+053	S	edit
+054	S	paint-bucket
+055	S	eraser
+056	C	finger + blur wake
+057	S	blur
+058	L	gem
+059	C	stipple cluster
+060	C	stylus + variable-width line
+061	S	healing-brush
+062	C	patch + stitches
+063	S	clone-stamp
+064	C	stamp + grid
+065	C	lasso + sparkles
+066	O	dodge wand
+067	O	burn hand
+068	O	sponge
+069	S	red-eye-correction
+070	O	tooth + glints
+071	L	spline
+072	C	histogram + triangles
+073	S	contrast
+074	S	exposure
+075	S	saturation
+076	C	three overlapping circles
+077	L	scale
+078	O	half-split disc
+079	C	two inverting arrows
+080	C	cube + gradient points
+081	S	eyedropper
+082	S	artist-palette
+083	S	gradient
+084	L	target
+085	C	conic sweep disc
+086	C	hash + lens
+087	C	two chips + swap arrows
+088	O	reset chips
+089	C	crosshair + 1
+090	C	triangle-alert + drop
+091	L	layers-plus
+092	L	layers-minus
+093	S	duplicate
+094	S	group
+095	S	ungroup
+096	S	lock
+097	S	visibility
+098	S	bring-to-front
+099	S	send-to-back
+100	L	merge
+101	C	rectangle + dashed circle
+102	C	rectangle + circle nodes
+103	L	corner-right-down
+104	L	corner-right-up
+105	O	inverted mask
+106	O	feathered circle
+107	C	checkerboard + lock
+108	L	square
+109	O	solid square
+110	C	dashed circle + hatch
+111	S	free-transform
+112	S	rotate
+113	S	horizontal-flip
+114	S	vertical-flip
+115	O	skewed parallelogram
+116	O	receding grid
+117	S	align-left
+118	S	align-center-horizontally
+119	S	align-right
+120	S	distribute-horizontally
+121	S	text-tool
+122	C	T + down arrow
+123	C	T on wave
+124	L	a-large-small
+125	S	bold
+126	S	letter-spacing
+127	L	between-horizontal-start
+128	C	A | T with blade
+129	L	case-upper
+130	C	A + anchor nodes
+131	C	nested rectangles
+132	C	margin arrows
+133	C	padding arrows
+134	C	border frame
+135	L	square-round-corner
+136	S	layers
+137	C	box clipping circle
+138	L	pin
+139	C	anchor in corner
+140	S	aspect-ratio-lock
+141	C	row of blocks + arrow
+142	C	column of blocks + arrow
+143	L	align-horizontal-justify-start
+144	L	align-horizontal-justify-center
+145	L	align-horizontal-space-between
+146	L	stretch-vertical
+147	L	grid-3x3
+148	C	wide cell in grid
+149	C	tall cell in grid
+150	C	grid + gap callouts
+151	S	desktop-monitor
+152	S	laptop
+153	C	tablet portrait
+154	C	tablet landscape
+155	S	smartphone
+156	C	phone landscape
+157	O	curved ultrawide
+158	L	watch
+159	C	dotted box + caliper
+160	C	phone + rotate arrow
+161	S	menu
+162	L	ellipsis-vertical
+163	S	more-options
+164	S	chevron-down
+165	C	navbar + column grid
+166	C	linked steps
+167	C	chevrons + 1 2 3
+168	S	sidebar
+169	L	anchor
+170	S	external-link
+171	S	popup
+172	L	panel-right-open
+173	S	accordion
+174	S	tabs
+175	C	bubble + info
+176	S	carousel
+177	C	floating pill
+178	L	circle-plus
+179	C	progress track
+180	C	skeleton blocks
+181	S	text-input
+182	C	box + lines + grip
+183	L	toggle-right
+184	S	checkbox
+185	S	radio-button
+186	S	dropdown
+187	C	dashed box + arrow
+188	L	eye-off
+189	C	field + plus/minus
+190	C	field + alert
+191	S	image-element
+192	S	video-element
+193	L	audio-lines
+194	S	map
+195	S	embed
+196	L	rotate-3d
+197	C	timeline + diamonds
+198	C	post card
+199	L	file-search
+200	L	terminal
+201	L	code-xml
+202	L	braces
+203	C	scroll + js
+204	L	database
+205	L	variable
+206	L	cable
+207	L	webhook
+208	L	file-json
+209	L	user-lock
+210	S	shopping-cart
+211	S	heading
+212	C	result card
+213	C	share nodes + card
+214	L	network
+215	L	bot
+216	L	bookmark
+217	L	gauge
+218	S	analytics
+219	L	fingerprint-pattern
+220	S	accessibility
+221	C	card + offset shadow
+222	O	inner glow
+223	O	misty circles
+224	O	grain
+225	S	vignette
+226	O	halftone
+227	C	sun + streak
+228	O	tilt-shift bars
+229	O	frosted pane
+230	O	chromatic split
+231	C	two cursors + tags
+232	C	pin + bubble
+233	L	at-sign
+234	C	user + plane
+235	C	user + shield + key
+236	S	task
+237	L	diff
+238	L	binoculars
+239	C	lock + avatar
+240	L	headset
+241	S	site-settings
+242	L	sun-moon
+243	L	command
+244	L	puzzle
+245	C	globe + chain
+246	S	password-lock
+247	C	server + refresh
+248	L	flask-conical
+249	S	publish
+250	L	activity

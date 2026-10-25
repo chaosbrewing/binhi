@@ -1,0 +1,250 @@
+001	cursor-default	Pointer Cursor	C01
+002	cursor-direct	Direct Selection Cursor	C01
+003	select-marquee-rect	Rectangular Marquee	C01
+004	select-marquee-ellipse	Elliptical Marquee	C01
+005	select-lasso	Freehand Lasso	C01
+006	select-lasso-poly	Polygonal Lasso	C01
+007	select-lasso-magnetic	Magnetic Lasso	C01
+008	tool-wand	Magic Wand	C01
+009	select-quick-brush	Quick Selection Brush	C01
+010	select-object-ai	Object / Subject Finder	C01
+011	view-pan-hand	Hand / Pan Tool	C02
+012	view-zoom-in	Zoom In	C02
+013	view-zoom-out	Zoom Out	C02
+014	view-zoom-actual	Zoom to 100% / Actual Pixels	C02
+015	view-fit-screen	Fit Artboard to Window	C02
+016	view-artboard	Artboard Tool	C02
+017	view-rulers	Horizontal & Vertical Rulers	C02
+018	view-guides	Canvas Guides	C02
+019	view-snap-grid	Snap to Grid Toggle	C02
+020	view-split-screen	Split Dual View	C02
+021	history-undo	Undo	C03
+022	history-redo	Redo	C03
+023	history-states	History Timeline / State	C03
+024	history-snapshot	Snapshot / Checkpoint	C03
+025	history-revert	Revert to Original	C03
+026	file-save	Save Document	C03
+027	file-save-as	Save As / Duplicate Project	C03
+028	file-autosave	Auto-Save Indicator	C03
+029	file-branches	Version Branching	C03
+030	file-audit	Document Audit Trail	C03
+031	doc-new	New Project	C04
+032	doc-open	Open Existing Asset	C04
+033	doc-import	Import File	C04
+034	doc-export	Quick Export	C04
+035	export-svg	Vector SVG Export	C04
+036	export-png	Raster PNG Export	C04
+037	export-jpg	JPEG Compression Export	C04
+038	export-webp	WebP / Modern Web Image	C04
+039	export-slices	Multi-Scale Asset Slices	C04
+040	export-pdf	Print PDF / CMYK Export	C04
+041	vector-pen	Pen Tool	C05
+042	vector-node-add	Add Anchor Point	C05
+043	vector-node-delete	Delete Anchor Point	C05
+044	vector-node-convert	Convert Point / Smooth-Sharp	C05
+045	vector-curvature	Curvature Tool	C05
+046	vector-knife	Knife / Path Cutter	C05
+047	vector-scissors	Scissors / Point Splitter	C05
+048	bool-union	Boolean Union	C05
+049	bool-subtract	Boolean Subtract	C05
+050	bool-intersect	Boolean Intersect	C05
+051	paint-brush-round	Round Paintbrush	C06
+052	paint-airbrush	Airbrush	C06
+053	paint-pencil	Pencil Tool	C06
+054	paint-bucket	Paint Bucket	C06
+055	paint-eraser	Eraser Tool	C06
+056	paint-smudge	Smudge / Finger Blend	C06
+057	paint-blur	Soft Blur Brush	C06
+058	paint-sharpen	Sharpen Brush	C06
+059	paint-scatter	Spray / Scatter Brush	C06
+060	paint-stylus-pressure	Pressure Sensitivity Mode	C06
+061	retouch-spot-healing	Spot Healing Brush	C07
+062	retouch-patch	Patch Tool	C07
+063	retouch-clone-stamp	Clone Stamp	C07
+064	retouch-pattern-stamp	Pattern Stamp	C07
+065	retouch-content-aware	Content-Aware Fill	C07
+066	retouch-dodge	Dodge Tool (Lighten)	C07
+067	retouch-burn	Burn Tool (Darken)	C07
+068	retouch-sponge	Sponge Tool (Saturation)	C07
+069	retouch-red-eye	Red-Eye Removal	C07
+070	retouch-whiten	Teeth / Object Whiten	C07
+071	adjust-curves	Curves Adjustment	C08
+072	adjust-levels	Levels Adjustment	C08
+073	adjust-brightness	Brightness / Contrast	C08
+074	adjust-exposure	Exposure Value	C08
+075	adjust-vibrance	Vibrance & Saturation	C08
+076	adjust-hue	Hue Wheel / HSL	C08
+077	adjust-color-balance	Color Balance	C08
+078	adjust-monochrome	Black & White Conversion	C08
+079	adjust-invert	Invert Tones	C08
+080	adjust-lut	Color Lookup Table (LUT)	C08
+081	color-pipette	Eye Dropper / Pipette	C09
+082	color-palette	Color Swatch Palette	C09
+083	color-grad-linear	Linear Gradient	C09
+084	color-grad-radial	Radial Gradient	C09
+085	color-grad-conic	Angular / Conic Gradient	C09
+086	color-hex	Hexadecimal Code Picker	C09
+087	color-swap	Foreground / Background Swap	C09
+088	color-default-bw	Default Pure Colors (B/W)	C09
+089	color-sampler	Color Sampler Point	C09
+090	color-gamut-warn	Gamut Warning	C09
+091	layer-new	Add New Layer	C10
+092	layer-delete	Delete Layer	C10
+093	layer-duplicate	Duplicate Layer	C10
+094	layer-group	Group Layers into Folder	C10
+095	layer-ungroup	Ungroup Layers	C10
+096	layer-lock	Lock Layer	C10
+097	layer-visibility	Layer Visibility (Show/Hide)	C10
+098	layer-bring-front	Bring to Front	C10
+099	layer-send-back	Send to Back	C10
+100	layer-merge	Merge Down / Flatten	C10
+101	mask-add	Add Layer Mask	C11
+102	mask-vector	Vector Path Mask	C11
+103	mask-clip-create	Create Clipping Mask	C11
+104	mask-clip-release	Release Clipping Mask	C11
+105	mask-invert	Invert Mask	C11
+106	mask-feather	Feather Mask Edge	C11
+107	mask-alpha-lock	Lock Transparent Pixels	C11
+108	mask-reveal-all	Reveal All Mask	C11
+109	mask-hide-all	Hide All Mask	C11
+110	mask-quick-mode	Quick Mask Mode	C11
+111	transform-free	Free Transform Box	C12
+112	transform-rotate-cw	Rotate 90° Clockwise	C12
+113	transform-flip-h	Flip Horizontally	C12
+114	transform-flip-v	Flip Vertically	C12
+115	transform-skew	Skew / Shear	C12
+116	transform-perspective	Perspective Distortion	C12
+117	align-left	Align Left Edges	C12
+118	align-center-h	Align Horizontal Centers	C12
+119	align-right	Align Right Edges	C12
+120	align-distribute	Distribute Spacing Evenly	C12
+121	type-tool-h	Horizontal Type Tool	C13
+122	type-tool-v	Vertical Type Tool	C13
+123	type-on-path	Type on Curved Path	C13
+124	type-family	Font Family Picker	C13
+125	type-weight	Font Weight Selector	C13
+126	type-tracking	Tracking / Letter Spacing	C13
+127	type-leading	Leading / Line Height	C13
+128	type-kerning	Kerning Adjustment	C13
+129	type-all-caps	Text Case (All Caps)	C13
+130	type-convert-curves	Convert Text to Outlines	C13
+131	box-model	Box Model Diagram	C14
+132	box-margin	Margin Inset	C14
+133	box-padding	Padding Offset	C14
+134	box-border	Border Thickness	C14
+135	box-corner-radius	Corner Radius	C14
+136	box-z-index	Z-Index / Stacking Order	C14
+137	box-overflow-hidden	CSS Overflow Hidden	C14
+138	box-position-sticky	Sticky Positioning	C14
+139	box-position-fixed	Fixed Viewport Pin	C14
+140	box-aspect-ratio	Aspect Ratio Lock	C14
+141	flex-dir-row	Flex Direction Row	C15
+142	flex-dir-col	Flex Direction Column	C15
+143	flex-justify-start	Justify Content: Flex Start	C15
+144	flex-justify-center	Justify Content: Center	C15
+145	flex-justify-between	Justify Content: Space Between	C15
+146	flex-align-stretch	Align Items: Stretch	C15
+147	grid-template	CSS Grid Template	C15
+148	grid-col-span	Grid Column Span	C15
+149	grid-row-span	Grid Row Span	C15
+150	grid-gap	Gap / Gutters	C15
+151	screen-desktop	Desktop Screen (>1200px)	C16
+152	screen-laptop	Laptop Screen (~1024px)	C16
+153	screen-tablet-p	Tablet Portrait (~768px)	C16
+154	screen-tablet-l	Tablet Landscape (~1024px)	C16
+155	screen-mobile-p	Mobile Device Portrait (~375px)	C16
+156	screen-mobile-l	Mobile Device Landscape	C16
+157	screen-ultrawide	Ultra-Wide / 4K Display	C16
+158	screen-watch	Smartwatch / Wearable Screen	C16
+159	screen-container-query	Container Query Breakpoint	C16
+160	screen-orient-swap	Orientation Flip Toggle	C16
+161	nav-hamburger	Hamburger Menu	C17
+162	nav-kebab	Kebab Menu (Vertical Dots)	C17
+163	nav-meatballs	Meatballs Menu (Horizontal Dots)	C17
+164	nav-caret-down	Dropdown Caret Down	C17
+165	nav-mega-menu	Mega Menu Structure	C17
+166	nav-breadcrumbs	Breadcrumb Trail	C17
+167	nav-pagination	Pagination Controls	C17
+168	nav-sidebar	Sidebar Drawer	C17
+169	nav-anchor	Anchor Link / Jump Target	C17
+170	nav-external-link	External Link	C17
+171	comp-modal	Modal Dialog / Lightbox	C18
+172	comp-drawer	Slide-out Drawer	C18
+173	comp-accordion	Accordion Collapse/Expand	C18
+174	comp-tabs	Tab Bar Switcher	C18
+175	comp-tooltip	Tooltip Popover	C18
+176	comp-carousel	Carousel / Slider	C18
+177	comp-toast	Toast Notification	C18
+178	comp-fab	Floating Action Button (FAB)	C18
+179	comp-progress-bar	Progress Bar / Meter	C18
+180	comp-skeleton	Skeleton Loading State	C18
+181	form-input-text	Single-Line Text Input	C19
+182	form-textarea	Multi-Line Textarea	C19
+183	form-toggle-active	Toggle / Switch	C19
+184	form-checkbox-checked	Checkbox Checked	C19
+185	form-radio-selected	Radio Button Selected	C19
+186	form-select	Dropdown Select Menu	C19
+187	form-upload-dropzone	File Upload / Dropzone	C19
+188	form-password-mask	Password Eye (Show/Mask)	C19
+189	form-stepper	Numeric Stepper	C19
+190	form-validation-error	Form Validation Error	C19
+191	media-image	Image Placeholder	C20
+192	media-video	Video Player	C20
+193	media-audio	Audio / Podcast Track	C20
+194	media-map	Interactive Map Pin	C20
+195	media-iframe	Iframe Embed	C20
+196	media-3d-model	3D Model / Canvas Viewer	C20
+197	media-animation	Lottie / Vector Animation	C20
+198	media-social-feed	Social Feed Embed	C20
+199	media-pdf-view	PDF Viewer Embed	C20
+200	media-code-block	Code Snippet Embed	C20
+201	code-html	Custom HTML Injection	C21
+202	code-css	Custom CSS Stylesheet	C21
+203	code-js	Custom JavaScript / Logic	C21
+204	cms-database	CMS Database Collection	C21
+205	cms-variable	Dynamic Field Variable	C21
+206	cms-api-rest	REST API Connector	C21
+207	cms-webhook	Webhook Trigger	C21
+208	cms-json-tree	JSON Data Tree	C21
+209	cms-auth-users	User Authentication / Membership	C21
+210	cms-cart	eCommerce Product Cart	C21
+211	seo-heading	Heading Tag Level (H1-H6)	C22
+212	seo-meta-desc	Meta Description / Snippet	C22
+213	seo-open-graph	Open Graph / Social Share Card	C22
+214	seo-sitemap	XML Sitemap	C22
+215	seo-crawler-bot	Robots.txt / Crawler	C22
+216	seo-canonical	Canonical Link Tag	C22
+217	seo-pagespeed	Page Speed / Lighthouse	C22
+218	seo-analytics-chart	Analytics Traffic Chart	C22
+219	seo-heatmap	Heatmap Interaction Tracking	C22
+220	seo-a11y	Accessibility / WCAG	C22
+221	fx-drop-shadow	Drop Shadow	C23
+222	fx-inner-glow	Inner Glow	C23
+223	fx-blur-gaussian	Gaussian Blur Filter	C23
+224	fx-film-grain	Film Grain / Film Noise	C23
+225	fx-vignette	Vignette Darkening	C23
+226	fx-halftone	Halftone Print Effect	C23
+227	fx-bloom	Bloom / Light Leak	C23
+228	fx-tilt-shift	Tilt-Shift Miniature	C23
+229	fx-glassmorphism	Glassmorphism / Frosted Glass	C23
+230	fx-chromatic-glitch	Glitch / Chromatic Aberration	C23
+231	collab-cursors	Multi-User Live Cursors	C24
+232	collab-comment-pin	Pin Comment	C24
+233	collab-mention	Unread Mention	C24
+234	collab-share-invite	Share / Invite Team	C24
+235	collab-permissions	User Permission Role	C24
+236	collab-review-approve	Design Review / Approval	C24
+237	collab-version-diff	Version Comparison / Diff	C24
+238	collab-follow-view	Follow User / Screen View	C24
+239	collab-locked-editing	Lock for Editing	C24
+240	collab-audio-huddle	Voice Chat / Huddle	C24
+241	sys-settings	Global Workspace Settings	C25
+242	sys-theme-toggle	Dark / Light Theme Mode	C25
+243	sys-keyboard-shortcuts	Keyboard Shortcut Reference	C25
+244	sys-plugins	Plugin / Add-on Marketplace	C25
+245	sys-custom-domain	Custom Domain Connection	C25
+246	sys-ssl-secure	SSL Security Certificate	C25
+247	sys-cdn-purge	CDN Cache Clear	C25
+248	sys-staging-preview	Site Staging Preview	C25
+249	sys-publish-rocket	One-Click Publish / Go Live	C25
+250	sys-production-status	Live Production Status	C25
