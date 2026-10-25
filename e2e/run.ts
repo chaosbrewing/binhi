@@ -1,7 +1,8 @@
 /**
  * BINHI end-to-end journey in a real browser (Chromium via Playwright).
  *
- * Boots the real server against the test database, then: signs up → creates a
+ * Boots the real server against the test database, then runs a keyboard-only
+ * signup-to-publish journey followed by the mouse-driven journey: signs up → creates a
  * site from a template → edits text in the canvas and properties panel →
  * adds an element → sees autosave confirm → publishes → opens the live URL in
  * a fresh browser context → checks mobile rendering → unpublishes.
@@ -51,6 +52,174 @@ async function waitForSaved(page: import("playwright").Page) {
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(`Assertion failed: ${msg}`);
+}
+
+async function tabTo(
+  page: import("playwright").Page,
+  target: import("playwright").Locator,
+  reverse = false,
+  maxTabs = 120,
+) {
+  for (let i = 0; i <= maxTabs; i++) {
+    if (await target.evaluate((el) => el === document.activeElement)) return;
+    if (i < maxTabs) await page.keyboard.press(reverse ? "Shift+Tab" : "Tab");
+  }
+  throw new Error(`Could not reach ${await target.getAttribute("aria-label").catch(() => null) ?? "the requested control"} with ${reverse ? "Shift+Tab" : "Tab"}`);
+}
+
+async function runKeyboardJourney(browser: import("playwright").Browser, step: (label: string) => void) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  const email = `e2e-keyboard-${Date.now()}@example.com`;
+  const password = "a-very-good-password";
+  let accountCreated = false;
+  let liveLink: string | null = null;
+  try {
+    // Signup: reach and submit every form field using the keyboard.
+    await page.goto(`${BASE}/signup`);
+    const name = page.getByLabel("Your name");
+    const signupEmail = page.getByLabel("Email");
+    const signupPassword = page.getByLabel(/^Password/);
+    const createAccount = page.getByRole("button", { name: "Create account" });
+    await tabTo(page, name);
+    await page.keyboard.type("Keyboard E2E Tester");
+    await tabTo(page, signupEmail);
+    await page.keyboard.type(email);
+    await tabTo(page, signupPassword);
+    await page.keyboard.type(password);
+    await tabTo(page, createAccount);
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/sites\/new/);
+    accountCreated = true;
+
+    // Site setup uses forward and reverse tabbing, a radio key, and Enter to submit.
+    const siteName = page.getByLabel("Website name");
+    const template = page.getByRole("radio", { name: /Creative studio/ });
+    const createSite = page.getByRole("button", { name: "Create website" });
+    await tabTo(page, siteName);
+    await page.keyboard.type("Keyboard Studio");
+    await tabTo(page, createSite);
+    const selectedTemplate = page.getByRole("radio", { checked: true });
+    await tabTo(page, selectedTemplate, true);
+    for (let i = 0; i < await page.getByRole("radio").count(); i++) {
+      if (await template.evaluate((el) => el === document.activeElement)) break;
+      await page.keyboard.press("ArrowRight");
+    }
+    assert(await template.evaluate((el) => el === document.activeElement), "radio arrow navigation reaches the requested template");
+    await page.keyboard.press("Space");
+    await tabTo(page, createSite);
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/sites\/site_[a-z0-9]+\/edit/);
+    const frame = page.frameLocator("iframe[title^='Canvas preview']");
+    await frame.locator("h1").first().waitFor({ timeout: 30_000 });
+
+    // Ctrl+A in the editor's search field must select that field's contents,
+    // not all canvas siblings through the editor shortcut handler.
+    const elementSearch = page.getByLabel("Search elements");
+    await tabTo(page, elementSearch);
+    await page.keyboard.type("paragraph");
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.type("heading");
+    assert(await elementSearch.inputValue() === "heading", "select-all while typing stays in the focused search field");
+    assert(!(await page.locator(".status").innerText()).includes("elements selected"), "typing shortcut did not select canvas elements");
+
+    // Enter activates the filtered element button; the properties textarea is
+    // reached using Tab and edited without mouse or locator focus/fill helpers.
+    const insertHeading = page.getByRole("button", { name: "Heading", exact: true });
+    await tabTo(page, insertHeading);
+    await page.keyboard.press("Enter");
+    const textArea = page.locator("#c-text");
+    await tabTo(page, textArea);
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.type("Keyboard-edited headline");
+    await page.keyboard.press("Tab");
+    const editedHeading = frame.locator("h2", { hasText: "Keyboard-edited headline" }).first();
+    try {
+      await editedHeading.waitFor({ timeout: 8000 });
+    } catch {
+      const siteId = /site_[a-z0-9]+/.exec(page.url())![0];
+      const persisted = await page.evaluate(async (id) => (await (await fetch(`/api/sites/${id}`, { headers: { "x-binhi-request": "editor" } })).json()).site, siteId);
+      throw new Error(`keyboard text edit did not render (input=${JSON.stringify(await textArea.inputValue())}; headings=${JSON.stringify(await frame.locator("h1,h2,h3,h4").allTextContents())}; savedText=${JSON.stringify(JSON.stringify(persisted?.document).includes("Keyboard-edited headline"))})`);
+    }
+    await waitForSaved(page);
+
+    // Exercise the editor's undo shortcut without a mouse.
+    const historyButton = page.getByRole("button", { name: "History" });
+    await tabTo(page, historyButton, true);
+    await page.keyboard.press("ControlOrMeta+Z");
+    const restoredHeadingTexts = await frame.locator("h2").allTextContents();
+    assert(!restoredHeadingTexts.some((text) => text.includes("Keyboard-edited headline")), "undo restored the previous text");
+
+    // Open history by keyboard. The modal must wrap both forward and backward,
+    // and return focus to its opener after restoring a revision.
+    await page.keyboard.press("Enter");
+    const historyDialog = page.getByRole("dialog", { name: "Revision history" });
+    await historyDialog.waitFor();
+    await page.locator(".rev-item").first().waitFor({ timeout: 20_000 });
+    const restoreButtons = historyDialog.getByRole("button", { name: "Restore" });
+    assert((await restoreButtons.count()) > 0, "revision restore controls are available");
+    const closeDialog = historyDialog.getByRole("button", { name: "Close" });
+    assert(await closeDialog.evaluate((el) => el === document.activeElement), "history dialog receives focus on open");
+    await page.keyboard.press("Shift+Tab");
+    assert(await restoreButtons.last().evaluate((el) => el === document.activeElement), "Shift+Tab wraps to the last history action");
+    await page.keyboard.press("Tab");
+    assert(await closeDialog.evaluate((el) => el === document.activeElement), "Tab wraps back to the first history action");
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Enter");
+    await historyDialog.waitFor({ state: "detached", timeout: 20_000 });
+    assert(await historyButton.evaluate((el) => el === document.activeElement), "closing history returns focus to its opener");
+    await waitForSaved(page);
+
+    // Check the keyboard-shortcuts dialog can be opened and dismissed without
+    // losing its initiating control's focus.
+    const shortcutsButton = page.getByRole("button", { name: "Shortcuts" });
+    await tabTo(page, shortcutsButton);
+    await page.keyboard.press("Enter");
+    const shortcutsDialog = page.getByRole("dialog", { name: "Keyboard shortcuts" });
+    await shortcutsDialog.waitFor();
+    assert(await shortcutsDialog.getByRole("button", { name: "Close" }).evaluate((el) => el === document.activeElement), "shortcuts dialog receives focus on open");
+    await page.keyboard.press("Escape");
+    await shortcutsDialog.waitFor({ state: "detached" });
+    assert(await shortcutsButton.evaluate((el) => el === document.activeElement), "closing shortcuts returns focus to its opener");
+
+    // Open and use publishing exclusively from the keyboard, including the
+    // reverse-traversal path to the dialog's final action.
+    const publishButton = page.locator('button[title="Publish"]');
+    await tabTo(page, publishButton, true);
+    await page.keyboard.press("Enter");
+    const publishDialog = page.getByRole("dialog", { name: "Publish" });
+    await publishDialog.waitFor();
+    const publishNow = publishDialog.getByRole("button", { name: "Publish now" });
+    await tabTo(page, publishNow, true);
+    await page.keyboard.press("Enter");
+    await page.getByText("Live", { exact: true }).first().waitFor({ timeout: 30_000 });
+    liveLink = await page.locator(".pub-url a").first().getAttribute("href");
+    assert(liveLink && liveLink.includes("/s/"), "keyboard-published live link is present");
+    await page.keyboard.press("Escape");
+    await publishDialog.waitFor({ state: "detached" });
+    assert(await publishButton.evaluate((el) => el === document.activeElement), "closing publish returns focus to its opener");
+    step("keyboard-only signup, site creation, text editing, shortcuts, modal history, and publishing passed");
+
+    const deleted = await page.evaluate(async (pw) => (await fetch("/api/auth/account", {
+      method: "DELETE",
+      headers: { "x-binhi-request": "editor", "content-type": "application/json" },
+      body: JSON.stringify({ password: pw }),
+    })).status, password);
+    assert(deleted === 200, `keyboard journey account cleanup returned ${deleted}`);
+    accountCreated = false;
+    if (liveLink) assert((await fetch(liveLink)).status === 410, "keyboard journey cleanup takes the published site offline");
+  } finally {
+    if (accountCreated) {
+      await page.evaluate(async (pw) => {
+        await fetch("/api/auth/account", {
+          method: "DELETE",
+          headers: { "x-binhi-request": "editor", "content-type": "application/json" },
+          body: JSON.stringify({ password: pw }),
+        });
+      }, password).catch(() => undefined);
+    }
+    await context.close();
+  }
 }
 
 /** Nix exposes Chromium's GBM library in the store without adding it to the loader path. */
@@ -120,6 +289,7 @@ async function main() {
     console.log(`✓ ${s}`);
   };
   try {
+    await runKeyboardJourney(browser, step);
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const page = await ctx.newPage();
     page.on("pageerror", (e) => console.error("[page error]", e.message));
