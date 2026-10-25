@@ -149,6 +149,13 @@ export function useDesignEditor(projectId: string | undefined) {
     if (commit({ ...current, layers: [...current.layers, copy] })) setSelectedId(copy.id);
   }, [commit]);
 
+  const pasteLayer = useCallback((source: DesignLayer) => {
+    const current = docRef.current;
+    if (!current) return;
+    const copy = makeLayer(source.type, current, { ...source, id: undefined, x: source.x + 24, y: source.y + 24, locked: false, name: source.name ? `${source.name} copy` : "" });
+    if (commit({ ...current, layers: [...current.layers, copy] })) setSelectedId(copy.id);
+  }, [commit]);
+
   const moveLayer = useCallback((id: string, direction: -1 | 1 | "front" | "back") => {
     const current = docRef.current;
     if (!current) return;
@@ -232,6 +239,7 @@ export function useDesignEditor(projectId: string | undefined) {
     addLayer,
     removeLayer,
     duplicateLayer,
+    pasteLayer,
     moveLayer,
     setBackground,
     resize,

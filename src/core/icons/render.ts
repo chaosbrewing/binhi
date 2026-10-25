@@ -6,6 +6,8 @@ export const ICON_VARIANTS: readonly IconVariant[] = ["outline", "duotone", "fil
 
 export const ICON_SIZE_PRESETS = [12, 16, 20, 24, 32, 48, 64, 96, 128] as const;
 export const ICON_MIN_SIZE = 8;
+/** Largest size the builder will emit (large Design Studio artboards). The website component limits itself to 400 via `IconSizeSpec`. */
+export const ICON_RENDER_MAX = 8192;
 export const ICON_MAX_SIZE = 400;
 export const ICON_STROKE_MIN = 0.5;
 export const ICON_STROKE_MAX = 4;
@@ -63,7 +65,7 @@ function nodeMarkup(node: IconNode, extra: string): string {
  */
 export function renderIconSvg(nodes: readonly IconNode[], options: IconRenderOptions = {}): string {
   const variant = options.variant ?? "outline";
-  const size = Math.round(clamp(options.size, ICON_MIN_SIZE, ICON_MAX_SIZE, 24));
+  const size = Math.round(clamp(options.size, ICON_MIN_SIZE, ICON_RENDER_MAX, 24));
   const strokeWidth = clamp(options.strokeWidth, ICON_STROKE_MIN, ICON_STROKE_MAX, ICON_STROKE_DEFAULT);
   const safe = nodes.filter((n) => iconNodeProblem(n) === null);
   const color = isSafeIconColor(options.color) ? options.color : "currentColor";

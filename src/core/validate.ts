@@ -1,5 +1,7 @@
 import type { Node, Page, SiteDocument } from "./schema/document.js";
 import { SiteDocument as SiteDocumentSchema } from "./schema/document.js";
+import { iconUsageProblem } from "./icons/spec.js";
+import type { IconVariant } from "./icons/render.js";
 import { walk } from "./schema/traverse.js";
 
 export interface ValidationIssue {
@@ -31,9 +33,19 @@ export function validateForPublish(doc: SiteDocument): ValidationReport {
     return { ok: false, errors, warnings };
   }
   for (const page of doc.pages) checkPage(doc, page, errors, warnings);
+  for (const root of [...doc.pages.flatMap((pg) => pg.sections), ...(doc.header ? [doc.header] : []), ...(doc.footer ? [doc.footer] : [])]) checkIcons(root, errors);
   if (doc.header) checkTree(doc.header, undefined, warnings, { h1: 0, lastLevel: 0 });
   if (doc.footer) checkTree(doc.footer, undefined, warnings, { h1: 0, lastLevel: 0 });
   return { ok: errors.length === 0, errors, warnings };
+}
+
+/** Library icons must resolve in the registry (and support the chosen style) before a site can be published. */
+function checkIcons(root: Node, errors: ValidationIssue[]) {
+  walk(root, (n) => {
+    if (n.type !== "icon" || typeof n.props.icon !== "string") return;
+    const problem = iconUsageProblem(n.props.icon, n.props.variant as IconVariant | undefined);
+    if (problem) errors.push({ severity: "error", code: "UNKNOWN_ICON", message: `An icon can't be published: ${problem}`, nodeId: n.id });
+  });
 }
 
 function checkPage(doc: SiteDocument, page: Page, errors: ValidationIssue[], warnings: ValidationIssue[]) {

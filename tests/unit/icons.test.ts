@@ -187,7 +187,7 @@ describe("icon renderer", () => {
     expect(svg).toContain("rotate(90)");
     expect(svg).toContain("scale(-1 1)");
     const junk = renderIconSvg(star, { size: 99999, strokeWidth: -4, rotation: Number.NaN });
-    expect(junk).toContain('width="400"');
+    expect(junk).toContain('width="8192"');
     expect(junk).toContain('stroke-width="0.5"');
     expect(junk).not.toContain("rotate(");
     for (const preset of ICON_SIZE_PRESETS) expect(renderIconSvg(star, { size: preset })).toContain(`width="${preset}"`);

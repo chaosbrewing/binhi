@@ -39,7 +39,14 @@ export function ElementsPanel() {
               {defs.map((d) => {
                 const Icon = I[ICON_FOR[d.type] ?? "elements"];
                 return (
-                  <button key={d.type} className="element-card" title={d.description} onPointerDown={(e) => startDrag(e, { kind: "component", componentType: d.type }, () => insertComponent(store, d.type))} onKeyDown={(e) => e.key === "Enter" && insertComponent(store, d.type)}>
+                  <button
+                    key={d.type}
+                    className="element-card"
+                    title={d.type === "icon" ? "Open the icon library (250 icons)" : d.description}
+                    onPointerDown={(e) => d.type !== "icon" && startDrag(e, { kind: "component", componentType: d.type }, () => insertComponent(store, d.type))}
+                    onClick={(e) => d.type === "icon" && e.detail >= 0 && store.setLeftTab("icons")}
+                    onKeyDown={(e) => e.key === "Enter" && d.type !== "icon" && insertComponent(store, d.type)}
+                  >
                     <Icon />
                     <span>{d.label}</span>
                   </button>

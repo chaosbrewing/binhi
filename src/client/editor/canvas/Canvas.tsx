@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useStore, useSel } from "../context.js";
 import { dragBridge } from "../dragBridge.js";
+import { getLoadedShape, loadIconShapes, onShapesLoaded } from "../../../core/icons/index.js";
 import { BREAKPOINT_WIDTHS, findNode, getDefinition, renderPage, type Breakpoint, type Node, type Operation, type Placement } from "../../../core/index.js";
 import { angleFrom, dropIndex, normalizeAngle, rectsIntersect, resizePlacement, round, snapMove, type Guide, type HandleName, type Rect } from "./geometry.js";
 import { I } from "../../components/Icons.js";
@@ -65,7 +66,22 @@ export function Canvas() {
   const dragRef = useRef<Drag | null>(null);
   const width = BREAKPOINT_WIDTHS[breakpoint];
 
-  const html = useMemo(() => renderPage(doc, pageId, { mode: "editor", baseHref: "/", formAction: () => "#" }), [doc, pageId]);
+  // Icon geometry loads one category at a time; re-render the canvas when a needed category arrives.
+  const [iconRev, setIconRev] = useState(0);
+  useEffect(() => onShapesLoaded(() => setIconRev((n) => n + 1)), []);
+  useEffect(() => {
+    const ids = new Set<string>();
+    const visit = (n: Node) => {
+      if (n.type === "icon" && typeof n.props.icon === "string") ids.add(n.props.icon);
+      n.children?.forEach(visit);
+    };
+    doc.pages.find((p) => p.id === pageId)?.sections.forEach(visit);
+    if (doc.header) visit(doc.header);
+    if (doc.footer) visit(doc.footer);
+    if (ids.size) void loadIconShapes([...ids]).catch(() => undefined);
+  }, [doc, pageId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- iconRev intentionally triggers a re-render once shapes load
+  const html = useMemo(() => renderPage(doc, pageId, { mode: "editor", baseHref: "/", formAction: () => "#", iconShape: getLoadedShape }), [doc, pageId, iconRev]);
 
   /* ------------------------------------------------------- fit + sizing */
   const recomputeFit = useCallback(() => {

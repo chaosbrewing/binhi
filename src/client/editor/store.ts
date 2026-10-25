@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import {
   applyOperations,
   findNode,
+  newId,
   OperationError,
   validateForPublish,
   type Breakpoint,
@@ -13,7 +14,7 @@ import {
 import { api, ApiError, type AssetRecord, type PublicationSummary, type SiteDetail } from "../api.js";
 
 export type SaveState = "saved" | "unsaved" | "saving" | "error" | "conflict" | "offline";
-export type LeftTab = "pages" | "elements" | "layers" | "media" | "styles" | "sections" | "navigation";
+export type LeftTab = "pages" | "elements" | "icons" | "layers" | "media" | "styles" | "sections" | "navigation";
 export type DragInsert = { kind: "component"; componentType: Node["type"] } | { kind: "reusable"; reusableId: string } | { kind: "asset"; asset: AssetRecord } | null;
 
 export interface EditorState {
@@ -193,8 +194,11 @@ export class EditorStore {
 
   /* -------------------------------------------------------------- editing */
   /** Apply ops locally and queue them for autosave. Returns created ids, or null when rejected. */
-  dispatch(ops: Operation[], opts: { select?: boolean; history?: boolean } = {}): string[] | null {
-    if (!ops.length) return [];
+  dispatch(input: Operation[], opts: { select?: boolean; history?: boolean } = {}): string[] | null {
+    if (!input.length) return [];
+    // An inserted element must carry its id on the wire: otherwise the server mints a different random id and any
+    // edit queued against the new element before the first autosave is rejected ("Element ... does not exist").
+    const ops = input.map((op) => (op.type === "insertComponent" && !op.nodeId ? { ...op, nodeId: newId(op.componentType.slice(0, 4)) } : op));
     try {
       const before = this.state.document;
       const result = applyOperations(before, ops);

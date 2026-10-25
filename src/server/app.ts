@@ -18,6 +18,7 @@ import { AssetService } from "./assets/service.js";
 import { DiskStorage, PostgresBlobStorage, type ObjectStorage } from "./assets/storage.js";
 import { OperationBatch, TEMPLATES, renderPage, type SiteDocument } from "../core/index.js";
 import { newId } from "../core/ids.js";
+import { resolveIconShapeSync } from "../core/icons/shapes-all.js";
 import { audit } from "./audit.js";
 import { PublishService } from "./publish/service.js";
 import { LocalPublishingAdapter } from "./publish/localAdapter.js";
@@ -287,7 +288,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
     const doc = site.document as SiteDocument;
     const page = slug ? doc.pages.find((p) => p.slug === slug) : doc.pages.find((p) => p.isHome);
     if (!page) throw notFound("Page not found");
-    const html = renderPage(doc, page.id, { mode: "preview", baseHref: `/api/sites/${siteId}/preview/`, formAction: () => "#" });
+    const html = renderPage(doc, page.id, { mode: "preview", baseHref: `/api/sites/${siteId}/preview/`, formAction: () => "#", iconShape: resolveIconShapeSync });
     reply.header("Content-Security-Policy", previewCsp(false));
     reply.header("Cache-Control", "no-store");
     return reply.type("text/html; charset=utf-8").send(html);

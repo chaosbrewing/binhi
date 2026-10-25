@@ -21,6 +21,7 @@ export const I = {
   unlock: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M5 11h14v10H5z|M8 11V7a4 4 0 0 1 7.5-2"),
   trash: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M3 6h18|M8 6V4h8v2|M19 6l-1 14H6L5 6|M10 11v6|M14 11v6"),
   copy: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M9 9h11v11H9z|M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"),
+  star: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z", 14),
   plus: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 5v14|M5 12h14"),
   minus: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M5 12h14"),
   fit: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M8 3H5a2 2 0 0 0-2 2v3|M21 8V5a2 2 0 0 0-2-2h-3|M3 16v3a2 2 0 0 0 2 2h3|M16 21h3a2 2 0 0 0 2-2v-3"),

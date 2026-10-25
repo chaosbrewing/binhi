@@ -3,6 +3,7 @@ import { I } from "../../components/Icons.js";
 import type { LeftTab } from "../store.js";
 import { PagesPanel } from "./PagesPanel.js";
 import { ElementsPanel } from "./ElementsPanel.js";
+import { IconsPanel } from "./IconsPanel.js";
 import { LayersPanel } from "./LayersPanel.js";
 import { MediaPanel } from "./MediaPanel.js";
 import { StylesPanel } from "./StylesPanel.js";
@@ -12,6 +13,7 @@ import { NavigationPanel } from "./NavigationPanel.js";
 const TABS: { id: LeftTab; label: string; icon: keyof typeof I }[] = [
   { id: "pages", label: "Pages", icon: "pages" },
   { id: "elements", label: "Elements", icon: "elements" },
+  { id: "icons", label: "Icons", icon: "star" },
   { id: "sections", label: "Sections", icon: "sections" },
   { id: "layers", label: "Layers", icon: "layers" },
   { id: "media", label: "Media", icon: "image" },
@@ -40,6 +42,7 @@ export function LeftSidebar() {
         <section className="left-panel" aria-label={TABS.find((t) => t.id === tab)?.label}>
           {tab === "pages" && <PagesPanel />}
           {tab === "elements" && <ElementsPanel />}
+          {tab === "icons" && <IconsPanel />}
           {tab === "sections" && <SectionsPanel />}
           {tab === "layers" && <LayersPanel />}
           {tab === "media" && <MediaPanel />}

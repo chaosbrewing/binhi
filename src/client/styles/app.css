@@ -1501,3 +1501,169 @@ label {
     animation: none !important;
   }
 }
+
+/* ---- icon library browser (shared by the Website Builder and the Design Studio) ---- */
+.icon-browser {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.icon-browser-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.icon-browser-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.icon-browser-row .field {
+  min-width: 0;
+}
+.icon-colour {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.icon-colour input[type="color"] {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: transparent;
+}
+.icon-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+  padding: 0;
+}
+.icon-swatch.inherit {
+  width: auto;
+  padding: 0 6px;
+  font-size: 11px;
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+.icon-swatch.on {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.icon-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 6px;
+}
+.icon-cell {
+  position: relative;
+}
+.icon-cell-main {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+.icon-cell-main:hover {
+  border-color: var(--accent);
+}
+.icon-cell-main[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.icon-fav {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+}
+.icon-cell:hover .icon-fav,
+.icon-cell:focus-within .icon-fav,
+.icon-fav.on {
+  opacity: 1;
+}
+.icon-fav.on {
+  color: var(--warn);
+}
+.icon-fav.on svg {
+  fill: currentColor;
+}
+.icon-detail {
+  border-top: 1px solid var(--panel-border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.icon-detail-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: var(--text);
+}
+.icon-sizes {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+}
+.icon-size-preview {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--text);
+}
+.icon-glyph {
+  display: inline-block;
+  line-height: 0;
+  flex: none;
+}
+.icon-glyph svg {
+  display: block;
+}
+.icon-about summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.icon-picker-modal .modal-body {
+  max-height: 70vh;
+  overflow: auto;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .icon-cell-main {
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+  }
+}
+.icon-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: var(--text);
+}

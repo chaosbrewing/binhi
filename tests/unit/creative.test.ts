@@ -51,6 +51,18 @@ describe("design documents", () => {
     expect(DesignDocument.safeParse({ ...doc, layers: Array.from({ length: DESIGN_LIMITS.maxLayers + 1 }, () => makeLayer("rect", doc)) }).success).toBe(false);
   });
 
+  it("makes a copy with a fresh id when an existing layer is spread with id undefined (Duplicate / Paste)", () => {
+    const doc = createDesignDocument(1080, 1080);
+    for (const type of ["text", "rect", "ellipse", "image", "icon"] as const) {
+      const extra = type === "image" ? { assetId: "lib_abcdef1234" } : {};
+      const source = makeLayer(type, doc, extra);
+      const copy = makeLayer(source.type, doc, { ...source, id: undefined, x: source.x + 24, y: source.y + 24 });
+      expect(copy.id).not.toBe(source.id);
+      expect(copy).toMatchObject({ type, x: source.x + 24, y: source.y + 24 });
+      expect(DesignDocument.safeParse({ ...doc, layers: [source, copy] }).success).toBe(true);
+    }
+  });
+
   it("bounds text layers", () => {
     const doc = createDesignDocument(800, 600);
     const text = makeLayer("text", doc);
