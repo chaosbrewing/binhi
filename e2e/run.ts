@@ -222,6 +222,76 @@ async function runKeyboardJourney(browser: import("playwright").Browser, step: (
   }
 }
 
+async function editHeroHeading(page: import("playwright").Page, text: string) {
+  const frame = page.frameLocator("iframe[title^='Canvas preview']");
+  const headingBox = await frame.locator("h1").first().boundingBox();
+  assert(headingBox, "hero heading has a box");
+  await page.mouse.click(headingBox.x + 20, headingBox.y + headingBox.height / 2);
+  await page.getByRole("heading", { name: "Heading" }).first().waitFor();
+  const textArea = page.locator("#c-text");
+  await textArea.fill(text);
+  await textArea.blur();
+  await frame.locator("h1", { hasText: text }).first().waitFor();
+}
+
+/** Open the same draft in an isolated session and prove a stale save cannot replace newer work. */
+async function runConcurrentEditorJourney(
+  browser: import("playwright").Browser,
+  firstPage: import("playwright").Page,
+  siteId: string,
+  email: string,
+  password: string,
+  step: (label: string) => void,
+) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const secondPage = await context.newPage();
+  try {
+    await secondPage.goto(`${BASE}/signin`);
+    await secondPage.getByLabel("Email").fill(email);
+    await secondPage.getByLabel("Password").fill(password);
+    await secondPage.getByRole("button", { name: "Sign in" }).click();
+    await secondPage.waitForURL((url) => url.pathname !== "/signin");
+    await secondPage.goto(`${BASE}/sites/${siteId}/edit`);
+    const secondFrame = secondPage.frameLocator("iframe[title^='Canvas preview']");
+    await secondFrame.locator("h1").first().waitFor({ timeout: 30_000 });
+    await secondPage.locator('.save-state[data-state="saved"]').waitFor();
+
+    const initial = await secondPage.evaluate(async (id) => (await (await fetch(`/api/sites/${id}`, {
+      headers: { "x-binhi-request": "editor" },
+    })).json()).site, siteId);
+    assert(initial.revision === 0, `second editor opened revision 0 (got ${initial.revision})`);
+
+    await editHeroHeading(firstPage, "First editor saved this change");
+    await waitForSaved(firstPage);
+    const firstSaved = await firstPage.evaluate(async (id) => (await (await fetch(`/api/sites/${id}`, {
+      headers: { "x-binhi-request": "editor" },
+    })).json()).site, siteId);
+    assert(firstSaved.revision === 1, `first edit advanced the site to revision 1 (got ${firstSaved.revision})`);
+    assert(JSON.stringify(firstSaved.document).includes("First editor saved this change"), "first editor's change is saved on the server");
+
+    await editHeroHeading(secondPage, "Second editor stale change");
+    const conflictBanner = secondPage.getByRole("alert").filter({ hasText: "Someone else changed this website." });
+    await conflictBanner.waitFor({ timeout: 20_000 });
+    await secondPage.locator('.save-state[data-state="conflict"]').waitFor();
+    assert(await conflictBanner.getByRole("button", { name: "Load latest" }).isVisible(), "conflict offers a way to load the saved version");
+    assert(await conflictBanner.getByRole("button", { name: "Keep mine" }).isVisible(), "conflict offers a way to recover the local version");
+    assert((await secondFrame.locator("h1").first().textContent())?.includes("Second editor stale change"), "the unsaved second edit remains visible while resolving the conflict");
+
+    await conflictBanner.getByRole("button", { name: "Load latest" }).click();
+    await secondFrame.locator("h1", { hasText: "First editor saved this change" }).first().waitFor();
+    await secondPage.locator('.save-state[data-state="saved"]').waitFor();
+    const recovered = await secondPage.evaluate(async (id) => (await (await fetch(`/api/sites/${id}`, {
+      headers: { "x-binhi-request": "editor" },
+    })).json()).site, siteId);
+    assert(recovered.revision === 1, `loading latest keeps the saved revision at 1 (got ${recovered.revision})`);
+    assert(JSON.stringify(recovered.document).includes("First editor saved this change"), "first editor's change remains saved after recovery");
+    assert(!JSON.stringify(recovered.document).includes("Second editor stale change"), "stale edit was not silently written over the saved document");
+    step("two isolated editor sessions: stale save showed a conflict, and loading latest preserved the first saved edit");
+  } finally {
+    await context.close();
+  }
+}
+
 /** Nix exposes Chromium's GBM library in the store without adding it to the loader path. */
 function configureNixBrowserLibraries() {
   if (process.platform !== "linux" || !existsSync("/nix/store")) return;
@@ -317,6 +387,7 @@ async function main() {
     const siteId = /site_[a-z0-9]+/.exec(page.url())![0];
     const frame = page.frameLocator("iframe[title^='Canvas preview']");
     await frame.locator("h1").first().waitFor({ timeout: 30_000 });
+    await runConcurrentEditorJourney(browser, page, siteId, email, password, step);
     await page.screenshot({ path: path.join(SHOTS, "01-editor.png") });
     step("editor opened with the template rendered in the canvas");
 
