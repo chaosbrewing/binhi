@@ -125,7 +125,7 @@ rmSync(join(outDir, "shapes"), { recursive: true, force: true });
 mkdirSync(join(outDir, "shapes"), { recursive: true });
 
 const catLines = CATEGORIES.map((c, i) => `  { slug: ${JSON.stringify(c.slug)}, number: ${i + 1}, name: ${JSON.stringify(c.name)} },`);
-const entLines = entries.map((e) => `  { n: ${e.n}, slug: ${JSON.stringify(e.slug)}, name: ${JSON.stringify(e.name)}, cat: ${JSON.stringify(e.cat)}, src: ${JSON.stringify(e.src)}, k: ${JSON.stringify(e.k)}, t: ${JSON.stringify(e.t)}, d: ${e.d}, f: ${e.f}, l: ${e.l} },`);
+const entLines = entries.map((e) => `  { n: ${e.n}, slug: ${JSON.stringify(e.slug)}, name: ${JSON.stringify(e.name)}, cat: ${JSON.stringify(e.cat)}, src: ${JSON.stringify(e.src)}, d: ${e.d}, f: ${e.f}, l: ${e.l} },`);
 writeFileSync(
   join(outDir, "catalog.ts"),
   `${header("Icon catalog metadata: 25 categories × 10 icons, fixed numbers 001–250.")}
@@ -137,10 +137,6 @@ export interface CatalogEntry {
   readonly cat: string;
   /** "lucide:<name>" or "original". */
   readonly src: string;
-  /** Curated search keywords (name words and BINHI synonyms/intents), lower case. */
-  readonly k: readonly string[];
-  /** Lucide's own tags for this glyph (lower-ranked search terms). */
-  readonly t: readonly string[];
   /** 1 when the duotone variant is supported (the icon has at least one closed shape). */
   readonly d: 0 | 1;
   /** 1 when the filled variant is supported (curated; see scripts/icons/variants.mjs). */
@@ -151,6 +147,13 @@ export interface CatalogEntry {
 export const LUCIDE_VERSION = ${JSON.stringify(pkg.version)};
 export const CATALOG_CATEGORIES: readonly CatalogCategory[] = [\n${catLines.join("\n")}\n];
 export const CATALOG_ENTRIES: readonly CatalogEntry[] = [\n${entLines.join("\n")}\n];\n`,
+);
+// Search vocabulary lives in its own module: only the icon browser (a lazy chunk) imports it, so it never weighs on
+// the editor's main bundle or on the server's validation path.
+writeFileSync(
+  join(outDir, "keywords.ts"),
+  `${header("Search vocabulary per icon, indexed by icon number − 1: [curated BINHI keywords, Lucide tags].")}
+export const KEYWORDS: readonly (readonly [readonly string[], readonly string[]])[] = [\n${entries.map((e) => `  [${JSON.stringify(e.k)}, ${JSON.stringify(e.t)}],`).join("\n")}\n];\n`,
 );
 for (const [cat, shapes] of Object.entries(outShapes)) {
   const lines = Object.entries(shapes).map(([slug, nodes]) => `  ${JSON.stringify(slug)}: ${JSON.stringify(nodes)},`);

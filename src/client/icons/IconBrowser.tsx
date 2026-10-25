@@ -7,10 +7,10 @@ import {
   ICON_STROKE_MAX,
   ICON_STROKE_MIN,
   getIcon,
-  searchIcons,
   type IconDefinition,
   type IconVariant,
 } from "../../core/icons/index.js";
+import { searchIcons } from "../../core/icons/search.js";
 import { I } from "../components/Icons.js";
 import { IconGlyph } from "./IconGlyph.js";
 import { FAVORITES_KEY, RECENTS_KEY, pushRecent, readIconList, toggleFavorite, writeIconList } from "./iconPrefs.js";

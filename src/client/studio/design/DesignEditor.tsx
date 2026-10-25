@@ -9,7 +9,8 @@ import { I } from "../../components/Icons.js";
 import { useToast } from "../../components/Toast.js";
 import { getIcon, ICON_STROKE_MAX, ICON_STROKE_MIN, type IconVariant } from "../../../core/icons/index.js";
 import { Modal } from "../../components/Modal.js";
-import { IconBrowser, type IconInsertSettings } from "../../icons/IconBrowser.js";
+import type { IconInsertSettings } from "../../icons/IconBrowser.js";
+import { LazyIconBrowser } from "../../icons/LazyIconBrowser.js";
 import { IconGlyph } from "../../icons/IconGlyph.js";
 import { useAuth } from "../../auth/AuthContext.js";
 import { StudioShell } from "../StudioShell.js";
@@ -17,7 +18,6 @@ import { LibraryPicker } from "../LibraryPicker.js";
 import { bytesLabel } from "../LibraryPage.js";
 import { useDesignEditor } from "./useDesignEditor.js";
 import { libraryImageSource, renderDesign } from "./renderDesign.js";
-import { renderDesignSvg } from "./exportSvg.js";
 
 type Handle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 const HANDLES: Handle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
@@ -187,6 +187,7 @@ export function DesignEditor() {
         for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
         return { mime: blob.type || "image/png", base64: btoa(binary) };
       };
+      const { renderDesignSvg } = await import("./exportSvg.js"); // loaded only when someone exports an SVG
       const svg = await renderDesignSvg(doc, embed, ctx);
       const blob = new Blob([svg], { type: "image/svg+xml" });
       if (exportedSvg) URL.revokeObjectURL(exportedSvg.url);
@@ -453,7 +454,7 @@ export function DesignEditor() {
       </main>
       {iconPicker && doc && (
         <Modal title={iconPicker === "new" ? "Insert an icon" : "Change icon"} onClose={() => setIconPicker(null)} wide initialFocus='input[type="search"]'>
-          <IconBrowser onInsert={insertIcon} insertLabel={iconPicker === "new" ? "Insert icon" : "Use this icon"} palette={iconPalette} defaults={{ size: Math.round(Math.min(doc.width, doc.height) * 0.18 / 8) * 8 || 128 }} initialId={iconPicker !== "new" ? (doc.layers.find((l) => l.id === iconPicker && l.type === "icon") as { icon?: string } | undefined)?.icon : undefined} />
+          <LazyIconBrowser onInsert={insertIcon} insertLabel={iconPicker === "new" ? "Insert icon" : "Use this icon"} palette={iconPalette} defaults={{ size: Math.round(Math.min(doc.width, doc.height) * 0.18 / 8) * 8 || 128 }} initialId={iconPicker !== "new" ? (doc.layers.find((l) => l.id === iconPicker && l.type === "icon") as { icon?: string } | undefined)?.icon : undefined} />
         </Modal>
       )}
       {picker && (

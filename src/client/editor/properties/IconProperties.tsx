@@ -2,7 +2,8 @@ import { useState } from "react";
 import { ICON_SIZE_PRESETS, ICON_STROKE_MAX, ICON_STROKE_MIN, getIcon, legacyFallbackName, type IconVariant } from "../../../core/icons/index.js";
 import { LEGACY_ICON_NAMES, type Node, type StyleSet } from "../../../core/index.js";
 import { Modal } from "../../components/Modal.js";
-import { IconBrowser, type IconInsertSettings } from "../../icons/IconBrowser.js";
+import type { IconInsertSettings } from "../../icons/IconBrowser.js";
+import { LazyIconBrowser } from "../../icons/LazyIconBrowser.js";
 import { IconGlyph } from "../../icons/IconGlyph.js";
 import { useThemePalette } from "../panels/IconsPanel.js";
 import { useAuth } from "../../auth/AuthContext.js";
@@ -79,7 +80,7 @@ export function IconContentEditor({ node, setProps, style, setStyle }: { node: N
       )}
       {picking && (
         <Modal title="Choose an icon" onClose={() => setPicking(false)} wide initialFocus='input[type="search"]'>
-          <IconBrowser onInsert={choose} insertLabel="Use this icon" palette={palette} initialId={def?.id} defaults={{ size, variant: p.variant, strokeWidth: p.strokeWidth }} />
+          <LazyIconBrowser onInsert={choose} insertLabel="Use this icon" palette={palette} initialId={def?.id} defaults={{ size, variant: p.variant, strokeWidth: p.strokeWidth }} />
         </Modal>
       )}
     </>

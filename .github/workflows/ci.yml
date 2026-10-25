@@ -48,6 +48,8 @@ jobs:
         run: npm test
       - name: Production build
         run: npm run build
+      - name: Client bundle budget (main bundle, lazy icon browser, 25 lazy icon chunks)
+        run: npm run check:bundle
       - name: Install Chromium for the browser journey
         run: npx playwright install --with-deps chromium
       - name: Browser end-to-end journey (sign up → edit → publish → visit live site)

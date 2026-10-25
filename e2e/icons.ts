@@ -150,7 +150,7 @@ try {
   await p.getByLabel("Icon style", { exact: true }).selectOption("any");
   await p.getByLabel("Icon category", { exact: true }).selectOption("");
   await audit(p, ".left-panel", "website Icons panel (light)");
-  record("icon browser: lazy category data, keyboard navigation, intent search, categories and style filter", { categoriesLoaded: chunkRequests.size });
+  record("icon browser: lazy category data, keyboard navigation, intent search, categories and style filter", { categoriesOnOpen: firstChunks, categoriesAfterSearchesAndFilters: chunkRequests.size, of: 25 });
 
   /* favourites + recents persist across reloads (per browser) */
   await search.fill("camera");

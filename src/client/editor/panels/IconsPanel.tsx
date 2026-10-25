@@ -3,7 +3,8 @@ import { THEME_COLOR_KEYS, type Operation } from "../../../core/index.js";
 import { legacyFallbackName } from "../../../core/icons/index.js";
 import { useSel, useStore } from "../context.js";
 import { insertComponent } from "../actions.js";
-import { IconBrowser, type IconInsertSettings, type IconPaletteColor } from "../../icons/IconBrowser.js";
+import type { IconInsertSettings, IconPaletteColor } from "../../icons/IconBrowser.js";
+import { LazyIconBrowser } from "../../icons/LazyIconBrowser.js";
 
 /** Theme colours as stored tokens (`var(--b-primary)`) with concrete preview colours, so inserted icons follow later theme changes. */
 export function useThemePalette(): IconPaletteColor[] {
@@ -38,7 +39,7 @@ export function IconsPanel() {
       <header className="panel-head"><h2>Icons</h2></header>
       <div className="panel-body">
         <p className="help icon-help" style={{ marginBottom: 10 }}>Pick an icon, then insert it into the selected section. Double-click inserts straight away.</p>
-        <IconBrowser onInsert={insert} palette={palette} defaults={{ size: 32 }} />
+        <LazyIconBrowser onInsert={insert} palette={palette} defaults={{ size: 32 }} />
       </div>
     </>
   );

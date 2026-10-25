@@ -16,9 +16,9 @@ import {
   iconSupportsVariant,
   isClosedNode,
   renderIconSvg,
-  searchIcons,
   type IconNode,
 } from "../../src/core/icons/index.js";
+import { iconSearchTerms, searchIcons } from "../../src/core/icons/search.js";
 import { CATALOG_ENTRIES } from "../../src/core/icons/generated/catalog.js";
 import { ALL_ICON_SHAPES } from "../../src/core/icons/shapes-all.js";
 import { ensureCategoryLoaded, getLoadedShape, loadIconShape } from "../../src/core/icons/shapes.js";
@@ -84,7 +84,7 @@ describe("icon registry integrity", () => {
       expect(d.viewBox).toBe("0 0 24 24");
       expect(d.a11y.defaultLabel).toBe(d.name);
       expect(d.version).toBe(1);
-      expect(d.keywords.length).toBeGreaterThan(0);
+      expect(iconSearchTerms(d.id)?.keywords.length, d.id).toBeGreaterThan(0);
       expect(d.variants[0]).toBe("outline");
     }
     expect(ICON_LIST.filter((d) => d.source.kind === "original").map((d) => d.name).sort()).toEqual([

@@ -1,4 +1,5 @@
 import { ICON_LIST, type IconDefinition } from "./registry.js";
+import { KEYWORDS } from "./generated/keywords.js";
 import type { IconVariant } from "./render.js";
 
 /**
@@ -89,14 +90,24 @@ interface IndexedIcon {
 
 const tokenize = (s: string) => s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 
-const INDEX: readonly IndexedIcon[] = ICON_LIST.map((def) => ({
-  def,
-  name: tokenize(def.name),
-  slug: def.slug,
-  keywords: [...def.keywords],
-  tags: [...def.tags],
-  category: tokenize(def.categoryName),
-}));
+let index: readonly IndexedIcon[] | null = null;
+/** Built on first search (not at import), so the module stays side-effect free and tree-shakeable. */
+function getIndex(): readonly IndexedIcon[] {
+  return (index ??= ICON_LIST.map((def) => ({
+    def,
+    name: tokenize(def.name),
+    slug: def.slug,
+    keywords: [...(KEYWORDS[def.number - 1]?.[0] ?? [])],
+    tags: [...(KEYWORDS[def.number - 1]?.[1] ?? [])],
+    category: tokenize(def.categoryName),
+  })));
+}
+
+/** Curated keywords and Lucide tags of one icon (for tests and tooling). */
+export function iconSearchTerms(id: string): { keywords: readonly string[]; tags: readonly string[] } | undefined {
+  const entry = getIndex().find((i) => i.def.id === id);
+  return entry && { keywords: entry.keywords, tags: entry.tags };
+}
 
 function withinOneEdit(a: string, b: string): boolean {
   if (Math.abs(a.length - b.length) > 1) return false;
@@ -148,7 +159,7 @@ export function searchIcons(query: string, options: IconSearchOptions = {}): Ico
   const terms = tokenize(query).slice(0, 8);
   const within = options.within ? new Set(options.within) : undefined;
   const scored: { def: IconDefinition; score: number }[] = [];
-  for (const icon of INDEX) {
+  for (const icon of getIndex()) {
     const def = icon.def;
     if (options.category && def.category !== options.category) continue;
     if (options.variant && !def.variants.includes(options.variant)) continue;

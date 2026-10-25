@@ -59,16 +59,34 @@ Requesting an unsupported variant is rejected by the schema (`iconUsageProblem`)
 previews and the Design Studio export. There is no second renderer and no icon font. Geometry only ever comes from
 registry data that passed `iconProblem()`.
 
-## Where each icon lives (performance)
+## Where each icon lives (performance review)
 
-- **Metadata** (names, keywords, flags; ~44 KB) is part of the core bundle because validation needs it.
-- **Geometry** is split into 25 category chunks (~1–3 KB each, 47 KB total raw). The browser downloads a category only
-  when an icon from it is shown or used; the e2e asserts that opening the Icons tab fetches fewer than 25 chunks.
-- **Published sites** inline only the icons the page uses (the all-categories resolver is server-only and never in
-  the browser bundle). A page with one icon stays ~21 KB including the theme CSS.
-- Measured main client bundle (Vite): 597.2 KB → 678.5 KB raw, 169.3 KB → 194.3 KB gzip. The increase covers the
-  metadata, the icon browser, the website icon editor and the Design Studio icon layer. Route-level code splitting
-  of the editor (not done in Phase 1) would recover most of it; it was left out of scope.
+| Piece | Where it loads | Size (gzip) |
+| --- | --- | --- |
+| Registry metadata (id, name, category, source, licence, flags) | main bundle: validation needs it | ~8 KB (31 KB raw) |
+| Search vocabulary (keywords, Lucide tags, intent synonyms) | lazy, with the icon browser | inside the 10.3 KB browser chunk |
+| Icon browser UI + search | lazy (`React.lazy`), first time an icon picker opens | 10.3 KB |
+| SVG export | lazy, first time someone clicks Export SVG | 1.2 KB |
+| Icon geometry | 25 lazy category chunks, fetched only when an icon from that category is shown or used | 0.4–1.0 KB each, 17.0 KB for all 25 |
+| Published sites | inline SVG of the icons the page uses only (server-side resolver; never in the browser bundle) | ~0.3 KB per icon |
+
+Measured on this branch (Vite build): main client bundle 597.2 KB → 649.5 KB raw and 169.3 KB → 184.8 KB gzip
+(+9 %). The first version of this branch was 678.5 KB / 194.3 KB: the review found that the search module was not
+tree-shaken (it built its index at import and was re-exported from the core barrel) and that keywords and tags were
+in the main bundle; the browser UI, search, vocabulary and SVG export now load on demand, saving ~10 KB gzip.
+The remaining growth is the registry metadata plus the editor features themselves (icon properties, design icon
+layer, shared renderer).
+
+Chunk review: 25 chunks average 0.7 KB gzip, so transfer cost is dominated by request overhead, not bytes. A person
+who opens the Icons tab triggers the browser chunk plus the categories of the first 60 icons (the e2e records how
+many; searching or filtering fetches only the categories of the results, and never all 25 unless every category is
+browsed). One combined 17 KB chunk would remove the round trips but cost every user 17 KB they may never need; with
+HTTP/2 multiplexing the per-category split was kept. `npm run check:bundle` (also in CI) enforces: main ≤ 190 KB
+gzip, browser chunk ≤ 14 KB, exactly 25 category chunks of ≤ 4 KB each.
+
+Not measured here: real-network timings on the Replit edge (this sandbox has no access to the deployment); lighthouse
+numbers. Search runs in a few milliseconds over 250 entries (no debounce needed); the grid renders 60 icons at a
+time with "Show more".
 
 ## Website Builder
 

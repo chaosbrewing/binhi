@@ -27,10 +27,6 @@ export interface IconDefinition {
   readonly categoryName: string;
   readonly source: { readonly kind: "lucide" | "original"; readonly name?: string };
   readonly licence: IconLicence;
-  /** Curated BINHI keywords (name words and intents). */
-  readonly keywords: readonly string[];
-  /** Lucide's own tags; searchable but ranked below curated keywords. */
-  readonly tags: readonly string[];
   readonly variants: readonly IconVariant[];
   readonly customization: {
     readonly colour: true;
@@ -81,8 +77,6 @@ function define(entry: CatalogEntry): IconDefinition {
     categoryName,
     source: original ? { kind: "original" } : { kind: "lucide", name: entry.src.slice("lucide:".length) },
     licence: original ? ORIGINAL_LICENCE : entry.l === 2 ? LUCIDE_FEATHER_LICENCE : LUCIDE_LICENCE,
-    keywords: entry.k,
-    tags: entry.t,
     variants,
     customization: { colour: true, gradient: true, opacity: true, strokeWeight: true, rotate: true, flip: true },
     viewBox: ICON_VIEWBOX,
