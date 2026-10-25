@@ -3,6 +3,7 @@ import { useStore, useSel } from "../context.js";
 import { effectiveStyle, getDefinition, type Breakpoint, type Node, type Operation, type StyleSet, type Background, type Shadow, TEXT_STYLE_KEYS, type RichText, type LinkTarget, newId, BREAKPOINT_WIDTHS } from "../../../core/index.js";
 import { ColorInput, Field, Group, LengthInput, NumberInput, SelectInput, SidesInput, Toggle, parseLength } from "./fields.js";
 import { LinkEditor } from "./LinkEditor.js";
+import { IconContentEditor } from "./IconProperties.js";
 import { PageSettings } from "../panels/PagesPanel.js";
 import { MediaPanel } from "../panels/MediaPanel.js";
 import { Modal } from "../../components/Modal.js";
@@ -101,7 +102,7 @@ export function PropertiesPanel() {
         )}
 
         {!multi && has("content") && show("Content") && (
-          <Group title="Content"><ContentEditor node={node} setProps={setProps} /></Group>
+          <Group title="Content"><ContentEditor node={node} setProps={setProps} style={style} setStyle={setStyle} /></Group>
         )}
         {!multi && has("link") && show("Link") && (
           <Group title="Link" defaultOpen={node.type === "button"}>
@@ -215,6 +216,12 @@ export function PropertiesPanel() {
         {!multi && has("accessibility") && show("Accessibility") && (
           <Group title="Accessibility" defaultOpen={false}>
             <Field label="Label" htmlFor="p-a11y" stack><input id="p-a11y" key={node.id} defaultValue={node.a11y?.label ?? ""} placeholder="Describes the element for screen readers" onBlur={(e) => e.target.value !== (node.a11y?.label ?? "") && store.dispatch([{ type: "updateA11y", nodeId: node.id, a11y: { label: e.target.value || undefined } }])} /></Field>
+            {node.type === "icon" && (
+              <>
+                <Toggle checked={node.a11y?.decorative === true} onChange={(decorative) => store.dispatch([{ type: "updateA11y", nodeId: node.id, a11y: { decorative } }])} label="Decorative (hidden from screen readers)" />
+                <p className="help">Leave the label empty for decoration. A linked icon always gets a name, so it stays usable by keyboard and screen reader.</p>
+              </>
+            )}
             {node.type === "section" && <Field label="Landmark"><SelectInput value={node.a11y?.role ?? ""} options={[{ value: "", label: "Section" }, { value: "banner", label: "Header (banner)" }, { value: "contentinfo", label: "Footer" }, { value: "complementary", label: "Aside" }, { value: "navigation", label: "Navigation" }]} onChange={(v) => store.dispatch([{ type: "updateA11y", nodeId: node.id, a11y: { role: (v || undefined) as never } }])} /></Field>}
             <p className="help">Headings and images have their own checks in the Publish dialog.</p>
           </Group>
@@ -658,7 +665,7 @@ function InteractionsEditor({ node }: { node: Node }) {
 
 /* --------------------------------------------------------------- content */
 
-function ContentEditor({ node, setProps }: { node: Node; setProps: (p: Record<string, unknown>) => void }) {
+function ContentEditor({ node, setProps, style, setStyle }: { node: Node; setProps: (p: Record<string, unknown>) => void; style: StyleSet; setStyle: (s: StyleSet, unset?: string[]) => void }) {
   const p = node.props as Record<string, any>;
   switch (node.type) {
     case "heading":
@@ -685,12 +692,7 @@ function ContentEditor({ node, setProps }: { node: Node; setProps: (p: Record<st
         </>
       );
     case "icon":
-      return (
-        <>
-          <Field label="Icon"><SelectInput value={p.name} options={["star", "heart", "check", "arrow-right", "mail", "phone", "pin", "camera", "leaf", "sun", "moon", "sparkle", "quote", "play", "menu", "globe", "clock", "calendar", "user", "tag"].map((n) => ({ value: n, label: n }))} onChange={(name) => setProps({ name })} /></Field>
-          <Field label="Size"><NumberInput value={p.size} min={8} max={400} onChange={(size) => setProps({ size })} unit="px" /></Field>
-        </>
-      );
+      return <IconContentEditor node={node} setProps={setProps} style={style} setStyle={setStyle} />;
     case "shape":
       return <Field label="Shape"><SelectInput value={p.kind} options={["rectangle", "circle", "triangle", "line", "blob"].map((k) => ({ value: k, label: k }))} onChange={(kind) => setProps({ kind })} /></Field>;
     case "divider":

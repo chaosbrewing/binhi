@@ -11,6 +11,10 @@ import {
   MediumText,
 } from "../schema/document.js";
 import { newId } from "../ids.js";
+import { IconAssetId, IconPresentation, IconSizeSpec, iconUsageProblem } from "../icons/spec.js";
+
+/** The 20 icon names the website `icon` component accepted before the icon library; kept so existing documents stay valid. */
+export const LEGACY_ICON_NAMES = ["star", "heart", "check", "arrow-right", "mail", "phone", "pin", "camera", "leaf", "sun", "moon", "sparkle", "quote", "play", "menu", "globe", "clock", "calendar", "user", "tag"] as const;
 
 /**
  * The canonical component registry. Only components defined here can be
@@ -294,14 +298,27 @@ export const REGISTRY = {
     type: "icon",
     label: "Icon",
     category: "Shapes",
-    description: "A simple symbol from the built-in icon set.",
-    keywords: ["symbol", "glyph"],
-    props: z.object({
-      name: z.enum(["star", "heart", "check", "arrow-right", "mail", "phone", "pin", "camera", "leaf", "sun", "moon", "sparkle", "quote", "play", "menu", "globe", "clock", "calendar", "user", "tag"]).default("star"),
-      size: z.number().min(8).max(400).default(32),
-      link: LinkTarget.optional(),
-    }),
-    defaultProps: () => ({ name: "star" as const, size: 32 }),
+    description: "A vector icon from the BINHI icon library (250 icons), recolourable and resizable.",
+    keywords: ["symbol", "glyph", "pictogram"],
+    props: z
+      .object({
+        /** Legacy built-in name (documents written before the icon library). Ignored when `icon` is set. */
+        name: z.enum(LEGACY_ICON_NAMES).default("star"),
+        /** Canonical library asset id, e.g. `binhi.icon.camera`. The only thing that selects geometry. */
+        icon: IconAssetId.optional(),
+        size: IconSizeSpec.default(32),
+        link: LinkTarget.optional(),
+        ...IconPresentation.shape,
+      })
+      .superRefine((p, ctx) => {
+        if (!p.icon) {
+          if (p.variant !== "outline" || p.gradient) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["icon"], message: "Styles other than outline need a library icon" });
+          return;
+        }
+        const problem = iconUsageProblem(p.icon, p.variant);
+        if (problem) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["icon"], message: problem });
+      }),
+    defaultProps: () => ({ name: "star" as const, size: 32, variant: "outline" as const, strokeWidth: 2, rotation: 0, flipX: false, flipY: false }),
     defaultStyle: () => ({ color: "var(--b-primary)" }),
     container: false,
     layoutModes: [],

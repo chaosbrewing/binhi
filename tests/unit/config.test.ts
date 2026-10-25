@@ -69,3 +69,13 @@ describe("Replit host defaults", () => {
       .toThrow("BINHI_SESSION_SECRET");
   });
 });
+
+describe("icon library kill switch", () => {
+  const base = { BINHI_DATABASE_URL: "postgres://example.invalid/binhi", BINHI_SESSION_SECRET: "a-test-secret-a-test-secret-a-test", BINHI_PUBLIC_URL: "https://binhi.test" };
+  it("is on unless explicitly turned off", () => {
+    expect(loadConfig(base).iconLibrary).toBe(true);
+    expect(loadConfig({ ...base, BINHI_ICON_LIBRARY: "true" }).iconLibrary).toBe(true);
+    expect(loadConfig({ ...base, BINHI_ICON_LIBRARY: "false" }).iconLibrary).toBe(false);
+    expect(loadConfig({ ...base, BINHI_ICON_LIBRARY: "0" }).iconLibrary).toBe(false);
+  });
+});

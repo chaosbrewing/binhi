@@ -2,6 +2,8 @@ import { useSyncExternalStore } from "react";
 import {
   applyOperations,
   findNode,
+  newId,
+  newIdSeed,
   OperationError,
   validateForPublish,
   type Breakpoint,
@@ -13,7 +15,7 @@ import {
 import { api, ApiError, type AssetRecord, type PublicationSummary, type SiteDetail } from "../api.js";
 
 export type SaveState = "saved" | "unsaved" | "saving" | "error" | "conflict" | "offline";
-export type LeftTab = "pages" | "elements" | "layers" | "media" | "styles" | "sections" | "navigation";
+export type LeftTab = "pages" | "elements" | "icons" | "layers" | "media" | "styles" | "sections" | "navigation";
 export type DragInsert = { kind: "component"; componentType: Node["type"] } | { kind: "reusable"; reusableId: string } | { kind: "asset"; asset: AssetRecord } | null;
 
 export interface EditorState {
@@ -72,6 +74,8 @@ export class EditorStore {
   private undoStack: SiteDocument[] = [];
   private redoStack: SiteDocument[] = [];
   private pendingOps: Operation[] = [];
+  /** One id seed per queued op (same order): the server replays each op with the seed the editor applied it with. */
+  private pendingSeeds: string[] = [];
   private pendingBatchId: string | null = null;
   private inFlight = false;
   private timer: number | null = null;
@@ -193,17 +197,23 @@ export class EditorStore {
 
   /* -------------------------------------------------------------- editing */
   /** Apply ops locally and queue them for autosave. Returns created ids, or null when rejected. */
-  dispatch(ops: Operation[], opts: { select?: boolean; history?: boolean } = {}): string[] | null {
-    if (!ops.length) return [];
+  dispatch(input: Operation[], opts: { select?: boolean; history?: boolean } = {}): string[] | null {
+    if (!input.length) return [];
+    // Every op carries an id seed, so ids minted by the op (new elements and their children, duplicates, pastes, groups,
+    // pages, reusable sections) are identical when the server replays it. Without that, an edit queued against a new
+    // element before the first autosave is rejected ("Element ... does not exist") and the work is lost.
+    const ops = input;
+    const seeds = ops.map(() => newIdSeed());
     try {
       const before = this.state.document;
-      const result = applyOperations(before, ops);
+      const result = applyOperations(before, ops, seeds);
       if (opts.history !== false) {
         this.undoStack.push(before);
         if (this.undoStack.length > HISTORY_LIMIT) this.undoStack.shift();
         this.redoStack = [];
       }
       this.pendingOps.push(...ops);
+      this.pendingSeeds.push(...seeds);
       const selection = opts.select && result.createdIds.length ? [result.createdIds[0]!] : this.pruneSelection(result.document);
       this.set({
         document: result.document,
@@ -243,6 +253,7 @@ export class EditorStore {
   }
   private replaceDocument(document: SiteDocument, reason: "undo" | "redo" | "restore") {
     this.pendingOps.push({ type: "replaceDocument", document, reason });
+    this.pendingSeeds.push(newIdSeed());
     this.set({
       document,
       selection: this.pruneSelection(document),
@@ -315,15 +326,16 @@ export class EditorStore {
       return;
     }
     const count = this.pendingOps.length;
-    const ops = this.compact(this.pendingOps.slice(0, count));
+    const { ops, seeds } = this.compact(this.pendingOps.slice(0, count), this.pendingSeeds.slice(0, count));
     const batchId = this.pendingBatchId ?? randomBatchId();
     this.pendingBatchId = batchId;
     const baseRevision = this.state.revision;
     this.inFlight = true;
     this.set({ saveState: "saving" });
     try {
-      const res = await api.applyOps(this.state.siteId, { baseRevision, ops, batchId });
+      const res = await api.applyOps(this.state.siteId, { baseRevision, ops, batchId, idSeeds: seeds });
       this.pendingOps = this.pendingOps.slice(count);
+      this.pendingSeeds = this.pendingSeeds.slice(count);
       this.pendingBatchId = null;
       this.set({ revision: res.revision, saveState: "saved", saveError: null, dirtySinceSave: false });
       if (res.replayed && res.document) {
@@ -355,13 +367,15 @@ export class EditorStore {
   }
 
   /** Merge runs of style/placement/prop updates on the same node so autosave batches stay small. */
-  private compact(ops: Operation[]): Operation[] {
+  private compact(ops: Operation[], seeds: string[]): { ops: Operation[]; seeds: string[] } {
     const out: Operation[] = [];
-    for (const op of ops) {
+    const outSeeds: string[] = [];
+    for (const [index, op] of ops.entries()) {
+      const seed = seeds[index]!;
       const last = out[out.length - 1];
       if (last && last.type === "updatePlacement" && op.type === "updatePlacement" && last.nodeId === op.nodeId && last.breakpoint === op.breakpoint) {
         out[out.length - 1] = { ...op, placement: { ...last.placement, ...op.placement } };
-        continue;
+        continue; // merged ops mint no ids, so the surviving op keeps its own seed
       }
       if (last && last.type === "updateStyle" && op.type === "updateStyle" && last.nodeId === op.nodeId && last.breakpoint === op.breakpoint && !last.unset && !op.unset) {
         out[out.length - 1] = { ...op, style: { ...last.style, ...op.style } };
@@ -374,10 +388,12 @@ export class EditorStore {
       if (op.type === "replaceDocument") {
         // Everything before a snapshot is subsumed by it.
         out.length = 0;
+        outSeeds.length = 0;
       }
       out.push(op);
+      outSeeds.push(seed);
     }
-    return out;
+    return { ops: out, seeds: outSeeds };
   }
 
   /** Conflict resolution: take the server's version (discarding local unsaved edits). */
@@ -385,6 +401,7 @@ export class EditorStore {
     const c = this.state.conflict;
     if (!c) return;
     this.pendingOps = [];
+    this.pendingSeeds = [];
     this.pendingBatchId = null;
     this.undoStack = [];
     this.redoStack = [];
@@ -397,6 +414,7 @@ export class EditorStore {
     if (!c) return;
     const document = this.state.document;
     this.pendingOps = [{ type: "replaceDocument", document, reason: "restore" }];
+    this.pendingSeeds = [newIdSeed()];
     this.pendingBatchId = null;
     this.set({ conflict: null, revision: c.serverRevision, saveState: "unsaved" });
     await this.flush();
@@ -405,6 +423,7 @@ export class EditorStore {
   async reloadFromServer() {
     const r = await api.site(this.state.siteId);
     this.pendingOps = [];
+    this.pendingSeeds = [];
     this.pendingBatchId = null;
     this.set({ document: r.site.document, revision: r.site.revision, saveState: "saved", conflict: null, selection: this.pruneSelection(r.site.document), validation: validateForPublish(r.site.document), publication: r.site.publication, liveUrl: r.site.liveUrl, siteName: r.site.name, slug: r.site.slug, dirtySinceSave: false });
   }

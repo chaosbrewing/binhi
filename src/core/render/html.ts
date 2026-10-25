@@ -5,6 +5,7 @@ import { linkAttrs, resolveLink, sanitizeMediaSrc, sanitizeUrl, type LinkContext
 import { DESKTOP_ONLY_QUERY, effectiveStyle, hoverDecls, isLayoutKey, mediaQuery, styleDecls, textStyleDecls, fontStack, withAlpha } from "./css.js";
 import { ICON_PATHS, SOCIAL_PATHS, iconSvg } from "./icons.js";
 import { getDefinition } from "../registry/components.js";
+import { getIcon, hasIcon, renderIconSvg, type IconNode, type IconVariant } from "../icons/index.js";
 
 export type RenderMode = "publish" | "preview" | "editor";
 
@@ -22,6 +23,11 @@ export interface RenderOptions {
   formAction?: (formNodeId: string) => string;
   /** Marker for the success anchor after a form submission. */
   sentFormId?: string;
+  /**
+   * Geometry for a library icon id. The server passes the synchronous all-categories resolver; the editor passes
+   * the lazily loaded cache. Unresolved icons render an empty, correctly sized placeholder (never a guess).
+   */
+  iconShape?: (iconId: string) => readonly IconNode[] | undefined;
 }
 
 interface Ctx {
@@ -32,6 +38,8 @@ interface Ctx {
   css: string[];
   needsRuntime: boolean;
   editor: boolean;
+  /** Set when the page inlines library icon artwork (adds the licence notice comment when publishing). */
+  usesLibraryIcons: boolean;
 }
 
 export const RESERVED_CLASS_PREFIX = "b-";
@@ -61,6 +69,7 @@ export function renderPage(doc: SiteDocument, pageId: string, opts: RenderOption
     link: { doc, baseHref: opts.baseHref, assetUrl: opts.assetUrl },
     css: [],
     needsRuntime: false,
+    usesLibraryIcons: false,
     editor: opts.mode === "editor",
   };
   const header = doc.header ? renderNode(ctx, doc.header, null) : "";
@@ -109,12 +118,13 @@ function documentShell(ctx: Ctx, body: string, css: string): string {
   head.push(`<meta name="generator" content="BINHI">`);
   if (opts.publicationId) head.push(`<meta name="binhi-publication" content="${esc(opts.publicationId)}">`);
   head.push(`<style>${css}</style>`);
+  const iconNotice = ctx.usesLibraryIcons && opts.mode === "publish" ? `<!-- Icon artwork: Lucide (ISC) © Lucide Icons and Contributors; some glyphs from Feather (MIT) © Cole Bemis. Notices: /third-party-notices.txt -->\n` : "";
   const runtime = ctx.needsRuntime && opts.runtimeHref && !ctx.editor ? `<script src="${esc(opts.runtimeHref)}" defer></script>` : "";
   const skip = `<a class="b-skip" href="#b-main">Skip to content</a>`;
   // Web fonts load at the end of the body so a slow font CDN never blanks the
   // page (or the editor canvas); text paints with the fallback first.
   const fonts = fontsLink(doc.theme);
-  return `<!doctype html>\n<html lang="${esc(doc.settings.language)}"${ctx.editor ? ' data-binhi-editor="1"' : ""}>\n<head>\n${head.join("\n")}\n</head>\n<body class="b-body">\n${skip}\n${body}\n${fonts}\n${runtime}\n</body>\n</html>`;
+  return `<!doctype html>\n<html lang="${esc(doc.settings.language)}"${ctx.editor ? ' data-binhi-editor="1"' : ""}>\n<head>\n${head.join("\n")}\n</head>\n<body class="b-body">\n${iconNotice}${skip}\n${body}\n${fonts}\n${runtime}\n</body>\n</html>`;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -328,13 +338,8 @@ export function renderNode(ctx: Ctx, node: Node, parent: Node | null): string {
       return renderImage(ctx, node);
     case "button":
       return renderButton(ctx, node);
-    case "icon": {
-      const path = ICON_PATHS[String(node.props.name)] ?? ICON_PATHS.star!;
-      const svg = iconSvg(path, Number(node.props.size ?? 32), node.a11y?.label);
-      const link = resolveLink(ctx.link, node.props.link as never);
-      if (link) return `<a${commonAttrs(ctx, node, ["b-icon"])}${linkAttrs(link)}>${svg}</a>`;
-      return `<span${commonAttrs(ctx, node, ["b-icon"])}>${svg}</span>`;
-    }
+    case "icon":
+      return renderIcon(ctx, node);
     case "shape":
       return `<div${commonAttrs(ctx, node, ["b-shape", `b-shape-${String(node.props.kind)}`])} aria-hidden="true"></div>`;
     case "divider":
@@ -451,6 +456,43 @@ const BUTTON_ICONS: Record<string, string> = {
   download: ICON_PATHS.download!,
   external: ICON_PATHS.external!,
 };
+
+function renderIcon(ctx: Ctx, node: Node): string {
+  const p = node.props;
+  const link = resolveLink(ctx.link, p.link as never);
+  const size = Number(p.size ?? 32);
+  const iconId = typeof p.icon === "string" && hasIcon(p.icon) ? p.icon : undefined;
+  let svg: string;
+  if (iconId) {
+    const def = getIcon(iconId)!;
+    if (def.source.kind === "lucide") ctx.usesLibraryIcons = true;
+    const shape = ctx.opts.iconShape?.(iconId);
+    if (!shape && ctx.opts.mode === "publish") throw new Error(`Icon ${iconId} could not be resolved for publishing`);
+    // A linked icon must have an accessible name; an explicitly decorative, unlinked icon never does.
+    const decorative = node.a11y?.decorative === true && !link;
+    const label = decorative ? undefined : node.a11y?.label || (link ? def.name : undefined);
+    svg = shape
+      ? renderIconSvg(shape, {
+          variant: (p.variant as IconVariant | undefined) ?? "outline",
+          size,
+          strokeWidth: typeof p.strokeWidth === "number" ? p.strokeWidth : undefined,
+          rotation: typeof p.rotation === "number" ? p.rotation : undefined,
+          flipX: p.flipX === true,
+          flipY: p.flipY === true,
+          gradient: p.gradient as never,
+          label,
+          idPrefix: `i-${node.id}`,
+        })
+      : `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true" data-icon-pending="${esc(iconId)}"></svg>`;
+  } else {
+    const path = ICON_PATHS[String(p.name)] ?? ICON_PATHS.star!;
+    svg = iconSvg(path, size, node.a11y?.label);
+  }
+  const attrs = commonAttrs(ctx, node, ["b-icon"]);
+  const asset = iconId ? ` data-icon="${esc(iconId)}"` : "";
+  if (link) return `<a${attrs}${asset}${linkAttrs(link)}>${svg}</a>`;
+  return `<span${attrs}${asset}>${svg}</span>`;
+}
 
 function renderButton(ctx: Ctx, node: Node): string {
   const p = node.props;

@@ -73,7 +73,7 @@ with `binhi_projects`. Each project kind has its own Zod document in
 
 ```
 PhotoProjectDocument   schemaVersion 1, sourceAssetId (library), source {mimeType,width,height}, recipe (crop, size, rotation, flips, adjustments)
-DesignDocument         schemaVersion 1, width/height (64–4096px, ≤16 MP), background, layers[] (text | rect | ellipse | image; ≤200)
+DesignDocument         schemaVersion 1, width/height (64–4096px, ≤16 MP), background, layers[] (text | rect | ellipse | image | icon; ≤200)
 BrandKitDocument       schemaVersion 1, colors[] (1–12), fonts {heading, body}, logoAssetId?, tagline
 ```
 
@@ -82,3 +82,16 @@ carries `baseRevision`; a mismatch is a 409 with the server copy. Library
 files are private: bytes are served only to their owner through
 `/api/library/:id/file`; a copy enters a website's public media only through
 the explicit copy-to-site action, which runs the existing media checks.
+
+## Icon references
+
+The icon library adds **no tables and no migration**. A library icon is referenced by its canonical id
+(`binhi.icon.<slug>`, see `docs/ICON_LIBRARY.md`) plus typed presentation settings:
+
+- Website `icon` node props: `icon`, `variant`, `strokeWidth`, `rotation`, `flipX`, `flipY`, `gradient` (the legacy
+  `name` prop is unchanged and still valid); size, colour, opacity, spacing and visibility use the shared node fields.
+- Design `icon` layer: `icon`, `variant`, `strokeWidth`, `color`, `gradient`, `flipX`, `flipY`, `label` plus the shared
+  layer fields. Icons are not library assets, so they do not appear in usage tracking or delete protection.
+
+Icon ids are permanent. A retired icon is deprecated (`{since, replacedBy}`) rather than removed, so saved documents
+keep resolving. Documents never contain SVG markup.

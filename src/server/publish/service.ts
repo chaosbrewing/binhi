@@ -3,6 +3,7 @@ import type { Db } from "../db/client.js";
 import { publications, publishedPages, siteRevisions, sites, type PublicationState } from "../db/schema.js";
 import { renderAllPages, validateForPublish, type SiteDocument, type ValidationIssue } from "../../core/index.js";
 import { newId } from "../../core/ids.js";
+import { resolveIconShapeSync } from "../../core/icons/shapes-all.js";
 import { badRequest, conflict, notFound } from "../security/errors.js";
 import type { PublishingAdapter } from "./adapter.js";
 import { audit } from "../audit.js";
@@ -105,6 +106,7 @@ export class PublishService {
         runtimeHref: RUNTIME_PATH,
         publicationId: id,
         formAction: (formId) => `/s/${site.slug}/__form/${formId}`,
+        iconShape: resolveIconShapeSync,
       });
       await setState("deploying", { pageCount: pages.length });
       await this.adapter.deploy(target, pages);

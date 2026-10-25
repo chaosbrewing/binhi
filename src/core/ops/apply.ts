@@ -10,7 +10,7 @@ import {
 } from "../schema/document.js";
 import { cloneDocument, findNode, findPage, siblingsOf, collectIds, isDescendant, type FoundNode } from "../schema/traverse.js";
 import { canContain, getDefinition, makeNode, validateProps } from "../registry/components.js";
-import { newId } from "../ids.js";
+import { newId, withIdSeed } from "../ids.js";
 import { Operation as OperationSchema, type Operation } from "./operations.js";
 
 export class OperationError extends Error {
@@ -133,7 +133,11 @@ function bounds(nodes: { p: Placement }[]) {
   return { left, top, right, bottom, width: right - left, height: bottom - top };
 }
 
-export function applyOperation(input: SiteDocument, rawOp: Operation): ApplyResult {
+export function applyOperation(input: SiteDocument, rawOp: Operation, idSeed?: string): ApplyResult {
+  return withIdSeed(idSeed, () => applyOperationInner(input, rawOp));
+}
+
+function applyOperationInner(input: SiteDocument, rawOp: Operation): ApplyResult {
   // Parse first so defaults (breakpoint, offsets, placement z/rotation) are
   // always present, whether the op came from the network or the editor.
   const parsed = OperationSchema.safeParse(rawOp);
@@ -166,7 +170,12 @@ export function applyOperation(input: SiteDocument, rawOp: Operation): ApplyResu
     case "updateProps": {
       const f = mustFind(doc, op.nodeId);
       assertUnlocked(f);
-      f.node.props = validateProps(f.node.type, { ...f.node.props, ...op.props });
+      const next = validateProps(f.node.type, { ...f.node.props, ...op.props });
+      // Never silently discard content this build does not understand: keys that were already stored on the element
+      // (for example props written by a newer build) survive an edit. Keys arriving in the op itself are still
+      // validated away, so a client cannot use this to store arbitrary data.
+      const preserved = Object.fromEntries(Object.entries(f.node.props).filter(([key]) => !(key in next) && !(key in op.props)));
+      f.node.props = { ...preserved, ...next };
       break;
     }
     case "updateStyle": {
@@ -588,11 +597,11 @@ export function applyOperation(input: SiteDocument, rawOp: Operation): ApplyResu
 }
 
 /** Apply a batch atomically: either every op applies or none do. */
-export function applyOperations(doc: SiteDocument, ops: Operation[]): ApplyResult {
+export function applyOperations(doc: SiteDocument, ops: Operation[], idSeeds?: readonly string[]): ApplyResult {
   let current = doc;
   const created: string[] = [];
-  for (const op of ops) {
-    const r = applyOperation(current, op);
+  for (const [i, op] of ops.entries()) {
+    const r = applyOperation(current, op, idSeeds?.[i]);
     current = r.document;
     created.push(...r.createdIds);
   }

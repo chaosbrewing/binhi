@@ -134,7 +134,7 @@ export class SiteService {
       }
       let result;
       try {
-        result = applyOperations(site.document as SiteDocument, batch.ops as Operation[]);
+        result = applyOperations(site.document as SiteDocument, batch.ops as Operation[], batch.idSeeds);
       } catch (e) {
         if (e instanceof OperationError) throw new HttpError(422, e.code, e.message);
         throw e;

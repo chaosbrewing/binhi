@@ -12,7 +12,7 @@ vi.mock("../../src/client/api.js", () => ({
 }));
 
 import { EditorStore } from "../../src/client/editor/store.js";
-import { createSiteDocument } from "../../src/core/index.js";
+import { applyOperations, createSiteDocument, findNode } from "../../src/core/index.js";
 
 function makeStore() {
   const document = createSiteDocument("blank", "Store Test");
@@ -41,6 +41,23 @@ describe("EditorStore autosave", () => {
     expect(batch.batchId.length).toBeGreaterThanOrEqual(8);
     expect(store.getState().saveState).toBe("saved");
     expect(store.getState().revision).toBe(1);
+  });
+
+  it("sends a just-inserted element's id so edits made before the first save replay on the server", async () => {
+    const store = makeStore();
+    const serverBase = structuredClone(store.getState().document);
+    applyOps.mockResolvedValue({ revision: 1, createdIds: [], replayed: false });
+    const sectionId = store.page.sections[0]!.id;
+    const created = store.dispatch([{ type: "insertComponent", target: { parentId: sectionId }, componentType: "icon", props: { icon: "binhi.icon.camera" } }], { select: true });
+    const id = created![0]!;
+    // edit the new element before the autosave fires (same batch)
+    store.dispatch([{ type: "updateProps", nodeId: id, props: { size: 64 } }]);
+    await vi.advanceTimersByTimeAsync(800);
+    const [, batch] = applyOps.mock.calls[0] as [string, { ops: import("../../src/core/index.js").Operation[]; idSeeds?: string[] }];
+    // Replaying the batch the way the server does must succeed and produce the same element id.
+    const replayed = applyOperations(serverBase, batch.ops, batch.idSeeds);
+    expect(replayed.createdIds).toContain(id);
+    expect(findNode(replayed.document, id)?.node.props.size).toBe(64);
   });
 
   it("rejects invalid edits locally without queuing anything", async () => {

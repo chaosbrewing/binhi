@@ -86,6 +86,24 @@ Screenshots: `e2e/screenshots/studio/01-home.png`, `03-photo-desktop.png`,
 | Replit workspace (development only) | fast-forwarded `b6b07a0 → 6bb1e43`; `db:migrate` applied 0001 to the development DB (`helium`/`heliumdb`, 16 `binhi_*` tables); typecheck, 88 unit tests, `db:compat` (annotated), build and 7/7 smoke checks passed; clean tree. Production database and deployment untouched; nothing published. |
 | Not run in the workspace | database integration tests and both browser journeys (they truncate their database; run in CI and locally on disposable databases) |
 
+### 2c. Production state update (2026-10-25, independent check)
+
+Earlier sections of this file say nothing was published. That is **no longer true**: the Replit deployment record shows a
+successful Autoscale publish (build `3a888f80-dea6-4768-860a-e0cd720e20e7`, 2026-10-25 00:29–00:32 UTC, account
+`porscharyder`) from a workspace state that already contains `migrations/0001_binhi_creative_studio.sql`
+(checkpoint commit `dc47889`, parent `fc35da9`). What this session could and could not verify:
+
+| Fact | Source | Verified here |
+| --- | --- | --- |
+| A publish succeeded and the app is live at https://binhi.replit.app | Replit `get_publish_status` (`success`) and the workspace's deployment history | metadata only; the host is unreachable from this sandbox (proxy 403), so no HTTP health/smoke/remote e2e was run |
+| The published source includes migration 0001 | workspace git (`dc47889` tree = `fc35da9` tree) | file presence only |
+| The production schema now has the four Phase 1 tables | — | **not verified** (production database was not queried) |
+| The Phase 1 production acceptance gate (`RELEASE_CHECKLIST_PHASE1.md` §4: health, smoke, remote e2e, manual studio pass) has been run | — | **no evidence recorded**; treat the gate as still open |
+
+The same workspace holds two commits that were not on GitHub (`fc35da9`, `edf1d66`: extra browser coverage in
+`e2e/run.ts` and `docs/TESTING.md`). They were copied, unchanged and without force, to
+`replit/studio-e2e-2026-10-25` and merged into the icon-library branch.
+
 ## 3. Not done / limits (honest)
 
 - Design text is rendered with the fonts the browser has loaded; Google

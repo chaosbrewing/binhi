@@ -1,11 +1,18 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, type BrandKit, type LibraryAsset } from "../../api.js";
-import { DESIGN_LIMITS, fontStack, type DesignLayer, type TextLayer } from "../../../core/creative/index.js";
+import { DESIGN_LIMITS, designIconIds, fontStack, type DesignLayer, type TextLayer } from "../../../core/creative/index.js";
+import { loadIconShapes } from "../../../core/icons/index.js";
 import { FONT_STACKS } from "../../../core/schema/document.js";
 import type { RasterMime } from "../../../core/media/photo.js";
 import { I } from "../../components/Icons.js";
 import { useToast } from "../../components/Toast.js";
+import { getIcon, ICON_STROKE_MAX, ICON_STROKE_MIN, type IconVariant } from "../../../core/icons/index.js";
+import { Modal } from "../../components/Modal.js";
+import type { IconInsertSettings } from "../../icons/IconBrowser.js";
+import { LazyIconBrowser } from "../../icons/LazyIconBrowser.js";
+import { IconGlyph } from "../../icons/IconGlyph.js";
+import { useAuth } from "../../auth/AuthContext.js";
 import { StudioShell } from "../StudioShell.js";
 import { LibraryPicker } from "../LibraryPicker.js";
 import { bytesLabel } from "../LibraryPage.js";
@@ -22,12 +29,19 @@ function layerStyle(layer: DesignLayer): CSSProperties {
   if (layer.type === "rect") return { ...base, background: layer.fill, borderRadius: layer.radius, border: layer.strokeWidth ? `${layer.strokeWidth}px solid ${layer.stroke}` : undefined };
   if (layer.type === "ellipse") return { ...base, background: layer.fill, borderRadius: "50%", border: layer.strokeWidth ? `${layer.strokeWidth}px solid ${layer.stroke}` : undefined };
   if (layer.type === "text") return { ...base, color: layer.color, fontFamily: fontStack(layer.font), fontSize: layer.fontSize, fontWeight: layer.fontWeight, lineHeight: layer.lineHeight, textAlign: layer.align, whiteSpace: "pre-wrap", overflowWrap: "break-word", overflow: "hidden" };
+  if (layer.type === "icon") return { ...base, display: layer.hidden ? "none" : "grid", placeItems: "center", overflow: "hidden" };
   return { ...base, overflow: "hidden" };
 }
+
+const ICON_VARIANT_LABEL: Record<IconVariant, string> = { outline: "Outline", duotone: "Duotone", filled: "Filled", inverted: "Inverted badge", brand: "Brand colour" };
+const DEFAULT_ICON_COLOUR = "#1f6f4a";
+/** In-memory layer clipboard (copy in one design, paste in another during the same visit). */
+let layerClipboard: DesignLayer | null = null;
 
 function layerLabel(layer: DesignLayer): string {
   if (layer.name) return layer.name;
   if (layer.type === "text") return layer.text.split("\n")[0]?.slice(0, 24) || "Text";
+  if (layer.type === "icon") return getIcon(layer.icon)?.name ?? "Icon";
   return { rect: "Rectangle", ellipse: "Ellipse", image: "Image", text: "Text" }[layer.type];
 }
 
@@ -35,11 +49,14 @@ export function DesignEditor() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+  const { iconLibrary } = useAuth();
   const editor = useDesignEditor(projectId);
   const { project, doc, selectedId, saveState, error, canUndo, canRedo } = editor.state;
   const stageRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.5);
   const [picker, setPicker] = useState<null | "new" | string>(null);
+  const [iconPicker, setIconPicker] = useState<null | "new" | string>(null);
+  const [exportedSvg, setExportedSvg] = useState<{ url: string; size: number } | null>(null);
   const [exportMime, setExportMime] = useState<RasterMime>("image/png");
   const [quality, setQuality] = useState(90);
   const [exporting, setExporting] = useState(false);
@@ -57,6 +74,7 @@ export function DesignEditor() {
     api.library().then((r) => setLibraryNames(Object.fromEntries(r.assets.map((a) => [a.id, a])))).catch(() => undefined);
   }, []);
   useEffect(() => () => { if (exported) URL.revokeObjectURL(exported.url); }, [exported]);
+  useEffect(() => () => { if (exportedSvg) URL.revokeObjectURL(exportedSvg.url); }, [exportedSvg]);
 
   // Fit the artboard to the stage.
   useLayoutEffect(() => {
@@ -80,6 +98,8 @@ export function DesignEditor() {
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); if (e.shiftKey) editor.redo(); else editor.undo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") { e.preventDefault(); editor.redo(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c" && selected) { layerClipboard = selected; return; }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v" && layerClipboard) { e.preventDefault(); editor.pasteLayer(layerClipboard); return; }
       if (!selected || selected.locked) return;
       if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); editor.removeLayer(selected.id); return; }
       const step = e.shiftKey ? 10 : 1;
@@ -150,6 +170,49 @@ export function DesignEditor() {
     }
   };
 
+  const doExportSvg = async () => {
+    if (!doc) return;
+    setExporting(true);
+    try {
+      await editor.saveNow();
+      await loadIconShapes(designIconIds(doc));
+      const ctx = document.createElement("canvas").getContext("2d");
+      if (!ctx) throw new Error("Your browser does not support the required canvas.");
+      const embed = async (assetId: string) => {
+        const res = await fetch(`/api/library/${assetId}/file`, { credentials: "same-origin", headers: { "x-binhi-request": "editor" } });
+        if (!res.ok) throw new Error("An image in this design is no longer in your asset library.");
+        const blob = await res.blob();
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        let binary = "";
+        for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+        return { mime: blob.type || "image/png", base64: btoa(binary) };
+      };
+      const { renderDesignSvg } = await import("./exportSvg.js"); // loaded only when someone exports an SVG
+      const svg = await renderDesignSvg(doc, embed, ctx);
+      const blob = new Blob([svg], { type: "image/svg+xml" });
+      if (exportedSvg) URL.revokeObjectURL(exportedSvg.url);
+      setExportedSvg({ url: URL.createObjectURL(blob), size: blob.size });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "SVG export failed", "error");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const insertIcon = (id: string, s: IconInsertSettings) => {
+    if (!doc) return;
+    const def = getIcon(id);
+    const color = s.color ?? kit?.document.colors[0]?.value ?? DEFAULT_ICON_COLOUR;
+    if (iconPicker && iconPicker !== "new") {
+      editor.updateLayer(iconPicker, { icon: id, variant: s.variant, strokeWidth: s.strokeWidth, color, name: "" } as Partial<DesignLayer>);
+    } else {
+      const edge = Math.min(s.size, Math.min(doc.width, doc.height));
+      editor.addLayer("icon", { icon: id, variant: s.variant, strokeWidth: s.strokeWidth, color, name: def?.name ?? "", width: edge, height: edge, x: Math.round((doc.width - edge) / 2), y: Math.round((doc.height - edge) / 2) });
+    }
+    setIconPicker(null);
+  };
+  const iconPalette = useMemo(() => (kit ? kit.document.colors.map((c) => ({ label: c.name, value: c.value, preview: c.value })) : []), [kit]);
+
   const saveAsTemplate = async () => {
     const name = templateName.trim() || `${project?.name ?? "Design"} template`;
     try {
@@ -164,6 +227,7 @@ export function DesignEditor() {
   const applySwatch = (value: string) => {
     if (!selected) { editor.setBackground(value); return; }
     if (selected.type === "text") editor.updateLayer(selected.id, { color: value });
+    else if (selected.type === "icon") editor.updateLayer(selected.id, { color: value });
     else if (selected.type !== "image") editor.updateLayer(selected.id, { fill: value });
   };
 
@@ -191,6 +255,7 @@ export function DesignEditor() {
             <button className="btn btn-sm" disabled={!doc} onClick={() => editor.addLayer("rect")}>Rectangle</button>
             <button className="btn btn-sm" disabled={!doc} onClick={() => editor.addLayer("ellipse")}>Ellipse</button>
             <button className="btn btn-sm" disabled={!doc} onClick={() => setPicker("new")}><I.image /> Image</button>
+            {iconLibrary && <button className="btn btn-sm" disabled={!doc} onClick={() => setIconPicker("new")}><I.star /> Icon</button>}
           </div>
         </header>
         {error && doc && (
@@ -207,7 +272,7 @@ export function DesignEditor() {
               {doc && [...doc.layers].reverse().map((layer) => (
                 <li key={layer.id} className={`layer-row${layer.id === selectedId ? " selected" : ""}`}>
                   <button type="button" className="layer-name" onClick={() => editor.select(layer.id)} aria-pressed={layer.id === selectedId}>
-                    <span className="layer-type">{layer.type === "text" ? "T" : layer.type === "image" ? "▣" : layer.type === "rect" ? "▭" : "◯"}</span>
+                    <span className="layer-type">{layer.type === "text" ? "T" : layer.type === "image" ? "▣" : layer.type === "rect" ? "▭" : layer.type === "icon" ? "★" : "◯"}</span>
                     {layerLabel(layer)}{layer.locked ? " · locked" : ""}{layer.hidden ? " · hidden" : ""}
                   </button>
                   <button type="button" className="icon-btn" aria-label={`${layer.hidden ? "Show" : "Hide"} ${layerLabel(layer)}`} onClick={() => editor.updateLayer(layer.id, { hidden: !layer.hidden })}>{layer.hidden ? <I.eyeOff /> : <I.eye />}</button>
@@ -243,6 +308,7 @@ export function DesignEditor() {
                   {doc.layers.map((layer) => (
                     <div key={layer.id} className={`design-layer${layer.id === selectedId ? " selected" : ""}${layer.locked ? " locked" : ""}`} style={layerStyle(layer)} onPointerDown={(e) => beginDrag(e, layer, "move")} data-layer-id={layer.id} role="button" tabIndex={0} aria-label={layerLabel(layer)} onKeyDown={(e) => { if (e.key === "Enter") editor.select(layer.id); }}>
                       {layer.type === "text" && layer.text}
+                      {layer.type === "icon" && <IconGlyph id={layer.icon} size={Math.max(1, Math.round(Math.min(layer.width, layer.height)))} variant={layer.variant} strokeWidth={layer.strokeWidth} color={layer.color} gradient={layer.gradient} flipX={layer.flipX} flipY={layer.flipY} label={layer.label || undefined} />}
                       {layer.type === "image" && <img src={`/api/library/${layer.assetId}/file`} alt={layer.alt} draggable={false} style={{ width: "100%", height: "100%", objectFit: layer.fit, display: "block" }} />}
                     </div>
                   ))}
@@ -285,6 +351,8 @@ export function DesignEditor() {
                     <button className="btn btn-sm" onClick={() => editor.moveLayer(selected.id, 1)} title="Bring forward">Forward</button>
                     <button className="btn btn-sm" onClick={() => editor.moveLayer(selected.id, -1)} title="Send backward">Backward</button>
                     <button className="btn btn-sm" onClick={() => editor.duplicateLayer(selected.id)}>Duplicate</button>
+                    <button className="btn btn-sm" onClick={() => { layerClipboard = selected; toast("Layer copied. Paste with Ctrl+V or the Paste button.", "success"); }}>Copy</button>
+                    <button className="btn btn-sm" disabled={!layerClipboard} onClick={() => layerClipboard && editor.pasteLayer(layerClipboard)}>Paste</button>
                     <button className="btn btn-sm btn-danger-text" onClick={() => editor.removeLayer(selected.id)}>Delete</button>
                   </div>
                 </div>
@@ -313,6 +381,31 @@ export function DesignEditor() {
                     </div>
                   </div>
                 )}
+                {selected.type === "icon" && (
+                  <div className="photo-panel-section">
+                    <h3 className="photo-panel-title">Icon</h3>
+                    <p className="small muted"><code>{selected.icon}</code></p>
+                    {iconLibrary && <button className="btn btn-sm" onClick={() => setIconPicker(selected.id)}>Change icon…</button>}
+                    <div className="photo-input-grid" style={{ marginTop: 8 }}>
+                      <label className="photo-field">Style<select value={selected.variant} onChange={(e) => editor.updateLayer(selected.id, { variant: e.target.value as IconVariant })}>{(getIcon(selected.icon)?.variants ?? ["outline"]).map((v) => <option key={v} value={v}>{ICON_VARIANT_LABEL[v]}</option>)}</select></label>
+                      <label className="photo-field">Stroke weight<input type="number" min={ICON_STROKE_MIN} max={ICON_STROKE_MAX} step={0.5} value={selected.strokeWidth} onChange={(e) => editor.updateLayer(selected.id, { strokeWidth: Number(e.target.value) })} /></label>
+                      <label className="photo-field">Colour<input type="color" value={/^#[0-9a-f]{6}$/i.test(selected.color) ? selected.color : DEFAULT_ICON_COLOUR} onChange={(e) => editor.updateLayer(selected.id, { color: e.target.value })} /></label>
+                      <label className="photo-field photo-field-wide">Description (alt text)<input value={selected.label} maxLength={200} placeholder="Leave empty for decoration" onChange={(e) => editor.updateLayer(selected.id, { label: e.target.value })} /></label>
+                    </div>
+                    <div className="photo-actions" style={{ marginTop: 8 }}>
+                      <button className="btn btn-sm" aria-pressed={selected.flipX} onClick={() => editor.updateLayer(selected.id, { flipX: !selected.flipX })}>Flip horizontal</button>
+                      <button className="btn btn-sm" aria-pressed={selected.flipY} onClick={() => editor.updateLayer(selected.id, { flipY: !selected.flipY })}>Flip vertical</button>
+                      <button className="btn btn-sm" aria-pressed={!!selected.gradient} onClick={() => editor.updateLayer(selected.id, { gradient: selected.gradient ? undefined : { from: selected.color, to: kit?.document.colors[1]?.value ?? "#2f80ed", angle: 45 } })}>Gradient</button>
+                    </div>
+                    {selected.gradient && (
+                      <div className="photo-input-grid" style={{ marginTop: 8 }}>
+                        <label className="photo-field">From<input type="color" value={/^#[0-9a-f]{6}$/i.test(selected.gradient.from) ? selected.gradient.from : DEFAULT_ICON_COLOUR} onChange={(e) => editor.updateLayer(selected.id, { gradient: { ...selected.gradient!, from: e.target.value } })} /></label>
+                        <label className="photo-field">To<input type="color" value={/^#[0-9a-f]{6}$/i.test(selected.gradient.to) ? selected.gradient.to : "#2f80ed"} onChange={(e) => editor.updateLayer(selected.id, { gradient: { ...selected.gradient!, to: e.target.value } })} /></label>
+                        <label className="photo-field">Angle°<input type="number" min={0} max={360} value={selected.gradient.angle} onChange={(e) => editor.updateLayer(selected.id, { gradient: { ...selected.gradient!, angle: Number(e.target.value) } })} /></label>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {selected.type === "image" && (
                   <div className="photo-panel-section">
                     <h3 className="photo-panel-title">Image</h3>
@@ -334,8 +427,11 @@ export function DesignEditor() {
               </div>
               <div className="photo-actions" style={{ marginTop: 10 }}>
                 <button className="btn btn-primary" disabled={!doc || exporting} onClick={() => void doExport()}>{exporting ? "Rendering…" : "Export design"}</button>
+                <button className="btn" disabled={!doc || exporting} onClick={() => void doExportSvg()}>Export SVG</button>
+                {exportedSvg && <a className="btn" href={exportedSvg.url} download={`${(project?.name ?? "design").replace(/[^a-z0-9_-]/gi, "-")}.svg`}>Download SVG</a>}
                 {exported && <a className="btn" href={exported.url} download={`${(project?.name ?? "design").replace(/[^a-z0-9_-]/gi, "-")}.${mimeExt[exported.mime]}`}>Download {mimeExt[exported.mime].toUpperCase()}</a>}
               </div>
+              {exportedSvg && <p className="photo-export-result" role="status"><strong>SVG · {bytesLabel(exportedSvg.size)}</strong> Shapes, text and icons stay vector; images are embedded. Fonts are not embedded.</p>}
               {exported && <p className="photo-export-result" role="status"><strong>{bytesLabel(exported.size)} · {doc?.width} × {doc?.height}px</strong> Verified from the encoded bytes. Text is rendered with the fonts available in this browser.</p>}
             </div>
             {!isTemplate && (
@@ -356,6 +452,11 @@ export function DesignEditor() {
           </aside>
         </div>
       </main>
+      {iconPicker && doc && (
+        <Modal title={iconPicker === "new" ? "Insert an icon" : "Change icon"} onClose={() => setIconPicker(null)} wide initialFocus='input[type="search"]'>
+          <LazyIconBrowser autoFocusSearch onInsert={insertIcon} insertLabel={iconPicker === "new" ? "Insert icon" : "Use this icon"} palette={iconPalette} defaults={{ size: Math.round(Math.min(doc.width, doc.height) * 0.18 / 8) * 8 || 128 }} initialId={iconPicker !== "new" ? (doc.layers.find((l) => l.id === iconPicker && l.type === "icon") as { icon?: string } | undefined)?.icon : undefined} />
+        </Modal>
+      )}
       {picker && (
         <LibraryPicker
           title={picker === "new" ? "Add an image" : "Replace image"}

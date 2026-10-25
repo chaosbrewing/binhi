@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Color, FontName, FONT_STACKS } from "../schema/document.js";
 import { ID_PATTERN, newId } from "../ids.js";
+import { IconAssetId, IconPresentation, iconUsageProblem } from "../icons/spec.js";
 
 /**
  * Design Studio document: a fixed-size artboard with absolutely positioned
@@ -60,11 +61,26 @@ export const ImageLayer = LayerBase.extend({
   alt: z.string().max(200).default(""),
 });
 
-export const DesignLayer = z.discriminatedUnion("type", [TextLayer, ShapeLayer, ImageLayer]);
+/**
+ * A library icon as an editable vector element. Only the canonical asset id selects geometry; there is no markup
+ * field. `width`/`height` give the box; the glyph is drawn square, centred in it (`min(width, height)`).
+ * The registry check (known id, supported style) runs in DesignDocument.superRefine below.
+ */
+export const IconLayer = LayerBase.extend({
+  type: z.literal("icon"),
+  icon: IconAssetId,
+  color: Color.default("#1f6f4a"),
+  /** Optional description for exports and assistive tech; empty = decorative. */
+  label: z.string().max(200).default(""),
+  ...IconPresentation.omit({ rotation: true }).shape,
+});
+
+export const DesignLayer = z.discriminatedUnion("type", [TextLayer, ShapeLayer, ImageLayer, IconLayer]);
 export type DesignLayer = z.infer<typeof DesignLayer>;
 export type TextLayer = z.infer<typeof TextLayer>;
 export type ShapeLayer = z.infer<typeof ShapeLayer>;
 export type ImageLayer = z.infer<typeof ImageLayer>;
+export type IconLayer = z.infer<typeof IconLayer>;
 
 export const DesignDocument = z
   .object({
@@ -81,6 +97,10 @@ export const DesignDocument = z
     for (const layer of doc.layers) {
       if (seen.has(layer.id)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Duplicate layer id ${layer.id}` });
       seen.add(layer.id);
+      if (layer.type === "icon") {
+        const problem = iconUsageProblem(layer.icon, layer.variant);
+        if (problem) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem });
+      }
     }
   });
 export type DesignDocument = z.infer<typeof DesignDocument>;
@@ -113,7 +133,9 @@ export function createDesignDocument(width: number, height: number): DesignDocum
   return DesignDocument.parse({ schemaVersion: DESIGN_SCHEMA_VERSION, width, height, background: "#ffffff", layers: [] });
 }
 
-export function makeLayer(type: DesignLayer["type"], doc: { width: number; height: number }, extra: Record<string, unknown> = {}): DesignLayer {
+export function makeLayer(type: DesignLayer["type"], doc: { width: number; height: number }, rawExtra: Record<string, unknown> = {}): DesignLayer {
+  // `{ ...layer, id: undefined }` is how the editor asks for a copy with a fresh id; undefined must not overwrite defaults.
+  const extra = Object.fromEntries(Object.entries(rawExtra).filter(([, v]) => v !== undefined));
   const size = Math.round(Math.min(doc.width, doc.height) * 0.4);
   const base = { id: newId("lyr"), x: Math.round((doc.width - size) / 2), y: Math.round((doc.height - size) / 2), width: size, height: size, rotation: 0, opacity: 1, locked: false, hidden: false, name: "" };
   switch (type) {
@@ -122,6 +144,10 @@ export function makeLayer(type: DesignLayer["type"], doc: { width: number; heigh
     case "rect":
     case "ellipse":
       return DesignLayer.parse({ ...base, type, ...extra });
+    case "icon": {
+      const edge = Math.round(Math.min(doc.width, doc.height) * 0.18);
+      return DesignLayer.parse({ ...base, type, width: edge, height: edge, x: Math.round((doc.width - edge) / 2), y: Math.round((doc.height - edge) / 2), icon: "binhi.icon.star", ...extra });
+    }
     case "image":
       return DesignLayer.parse({ ...base, type, width: Math.round(doc.width * 0.6), height: Math.round(doc.height * 0.6), x: Math.round(doc.width * 0.2), y: Math.round(doc.height * 0.2), ...extra });
   }
@@ -130,6 +156,11 @@ export function makeLayer(type: DesignLayer["type"], doc: { width: number; heigh
 /** Every asset library id the document references (for usage tracking). */
 export function designAssetIds(doc: DesignDocument): string[] {
   return Array.from(new Set(doc.layers.flatMap((l) => (l.type === "image" ? [l.assetId] : []))));
+}
+
+/** Library icon ids a design uses (loaded before export; never stored in the asset library). */
+export function designIconIds(doc: DesignDocument): string[] {
+  return Array.from(new Set(doc.layers.flatMap((l) => (l.type === "icon" ? [l.icon] : []))));
 }
 
 export function fontStack(font: FontName): string {

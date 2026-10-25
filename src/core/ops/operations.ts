@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ID_SEED_PATTERN } from "../ids.js";
 import {
   Accessibility,
   ComponentType,
@@ -96,5 +97,10 @@ export const OperationBatch = z.object({
   ops: z.array(Operation).min(1).max(200),
   /** Idempotency key so a retried autosave never applies twice. */
   batchId: z.string().min(8).max(64),
-});
+  /**
+   * One seed per op (same order). Ops that mint ids draw them from this seed so the server creates exactly the ids
+   * the editor already used. Optional: clients that send none get random ids (older builds).
+   */
+  idSeeds: z.array(z.string().regex(ID_SEED_PATTERN)).max(200).optional(),
+}).refine((b) => !b.idSeeds || b.idSeeds.length === b.ops.length, { message: "idSeeds must have one entry per operation", path: ["idSeeds"] });
 export type OperationBatch = z.infer<typeof OperationBatch>;

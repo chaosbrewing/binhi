@@ -25,6 +25,9 @@ ORIGIN production; no ORIGIN credentials, databases or routes are used.**
 3. No dual writes: integration is by adapters and read-only compatibility
    views, never by copying ORIGIN tables into `binhi_*`.
 4. The standalone path keeps working; ORIGIN adapters are additive.
+5. Library ids (`binhi.icon.*`, and later `binhi.element.*`) are opaque strings in BINHI documents. Adapters may carry
+   them but must not interpret or rewrite them; TALA proposals reference them through the same validated operations
+   (the optional `idSeeds` field is for editors and can be omitted by proposers).
 
 ## Event schema (draft)
 
