@@ -60,7 +60,7 @@ the workspace until the owner reconciles it (see *Open items*).
 | Media-processing safety | Client checks only | **Verified Complete** | Server library upload: magic bytes, header dimensions ≤ 8192 px / 16 MP before decode, animated PNG/WebP and SVG/GIF refused, 8 MiB cap, originals preserved; exports carry no EXIF |
 | Server-side permissions | Sites only | **Verified Complete** | Every project/library/kit route is owner-scoped (404 for strangers); account deletion removes all of it |
 | ORIGIN boundaries | Intact | **Verified Complete (unchanged)** | No ORIGIN code, credentials or database reachable |
-| Production deployment of Phase 1 | — | **Blocked (owner action)** | Publishing and the production schema diff are owner-gated by policy |
+| Production deployment of Phase 1 | — | **Blocked (founder authorization)** | See `docs/RELEASE_CHECKLIST_PHASE1.md` §1–§4: backup, schema-diff approval, publish, remote tests |
 
 ## 2. Evidence (this branch, local container, disposable `binhi_test` database)
 
@@ -74,6 +74,17 @@ the workspace until the owner reconciles it (see *Open items*).
 
 Screenshots: `e2e/screenshots/studio/01-home.png`, `03-photo-desktop.png`,
 `02-photo-mobile.png`, `04-library.png`, `05-design.png` (CI artifact).
+
+### 2b. Integration evidence (2026-10-25)
+
+| Item | Result |
+| --- | --- |
+| Pull request | https://github.com/chaosbrewing/binhi/pull/1 (`claude/binhi-visual-editor-12arge` → `main`) |
+| GitHub CI, run 40146165043 on `63180f1` (runner `ubuntu-24.04`) | **success**: install, typecheck, 126 unit + Postgres integration tests, production build, Chromium install, website journey, creative studio journey, screenshot artifact uploaded. An earlier run (40145680767, head `0524b48`) failed only at "Install Chromium" because `ubuntu-latest` had become Ubuntu 26.04, which Playwright 1.56.1 does not support; fixed by pinning the runner. |
+| Replit branch preserved | `feat/binhi-studio-m1` (head `b6b07a0`, 11 commits ahead of `main`) pushed to GitHub with a plain push, then merged (no force, reset or rebase); `git merge-base --is-ancestor b6b07a0 6bb1e43` is true |
+| Old build vs new schema | `main` @ `b6570ff`: 28/28 integration tests pass against a database that already carries migration 0001 |
+| Replit workspace (development only) | fast-forwarded `b6b07a0 → 6bb1e43`; `db:migrate` applied 0001 to the development DB (`helium`/`heliumdb`, 16 `binhi_*` tables); typecheck, 88 unit tests, `db:compat` (annotated), build and 7/7 smoke checks passed; clean tree. Production database and deployment untouched; nothing published. |
+| Not run in the workspace | database integration tests and both browser journeys (they truncate their database; run in CI and locally on disposable databases) |
 
 ## 3. Not done / limits (honest)
 

@@ -51,7 +51,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Browser end-to-end journey (sign up → edit → publish → visit live site)
         run: npm run test:e2e
-      - name: Creative studio journey (private photo editing, drafts, export and media reuse)
+      - name: Creative studio journey (dashboard, photo projects, library, design, templates, brand kits)
         run: npm run test:e2e:studio
       - name: Upload e2e screenshots
         if: always()
