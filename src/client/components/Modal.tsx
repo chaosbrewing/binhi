@@ -1,11 +1,11 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { I } from "./Icons.js";
 
-export function Modal({ title, onClose, children, wide = false, footer }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean; footer?: ReactNode }) {
+export function Modal({ title, onClose, children, wide = false, footer, initialFocus }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean; footer?: ReactNode; /** CSS selector inside the dialog to focus first (default: the first focusable element). */ initialFocus?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
-    const first = ref.current?.querySelector<HTMLElement>("button, input, select, textarea, [tabindex]:not([tabindex='-1'])");
+    const first = (initialFocus ? ref.current?.querySelector<HTMLElement>(initialFocus) : null) ?? ref.current?.querySelector<HTMLElement>("button, input, select, textarea, [tabindex]:not([tabindex='-1'])");
     first?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {

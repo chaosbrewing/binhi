@@ -1678,3 +1678,14 @@ label {
   margin-bottom: 8px;
   color: var(--text);
 }
+
+/* Icon browser text meets WCAG 1.4.3 (4.5:1): the editor-wide --text-faint token is 2.95:1 on white, so help and
+   secondary text inside icon surfaces use the muted token instead. */
+.icon-browser .help,
+.icon-browser .muted,
+.icon-browser .small.muted,
+.icon-help,
+.icon-current .muted,
+.icon-current .small {
+  color: var(--text-muted);
+}

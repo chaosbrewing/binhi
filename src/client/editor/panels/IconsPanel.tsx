@@ -37,7 +37,7 @@ export function IconsPanel() {
     <>
       <header className="panel-head"><h2>Icons</h2></header>
       <div className="panel-body">
-        <p className="help" style={{ marginBottom: 10 }}>Pick an icon, then insert it into the selected section. Double-click inserts straight away.</p>
+        <p className="help icon-help" style={{ marginBottom: 10 }}>Pick an icon, then insert it into the selected section. Double-click inserts straight away.</p>
         <IconBrowser onInsert={insert} palette={palette} defaults={{ size: 32 }} />
       </div>
     </>

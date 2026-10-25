@@ -144,3 +144,22 @@ Portrait, Landscape, Tabs).
 - Per-browser favourites/recents (`localStorage`) are conveniences and do not follow the account.
 - Icon registry integration with ORIGIN/TALA/AGOS/LIYAB/LIPAD is by contract only: ids are plain strings in BINHI
   documents; BINHI imports nothing from them and they import nothing from BINHI.
+
+## Automated accessibility audit (axe-core 4.14.0, WCAG 2.0/2.1/2.2 A + AA)
+
+`npm run test:e2e:icons` runs axe on five regions and fails on any violation: the website Icons panel, the website
+icon properties group, the Design Studio icon dialog with a selection in light **and** dark themes, and the design icon
+layer properties. Latest run: 0 violations (23, 14, 21, 21 and 18 rules passed respectively; recorded in
+`e2e/screenshots/icons/evidence.json`, uploaded as a CI artifact). Findings fixed by the audit:
+
+| Finding | Severity | Fix |
+| --- | --- | --- |
+| Help/secondary text in the icon surfaces was 2.95:1 (editor-wide `--text-faint` token) | release-blocking (1.4.3) | icon surfaces use the muted token (≥ 4.5:1) |
+| Dialog opened with focus on the Close button | usability | `Modal` gained `initialFocus`; icon dialogs focus the search field |
+
+Keyboard interactions asserted by the journey: arrow/Home/End move between icons; Space/Enter select an icon and
+toggle a favourite; focus stays inside the dialog through 60 Tab and 5 Shift+Tab presses; Escape closes it and focus
+returns to the button that opened it; the result count is announced through a polite live region.
+
+Pre-existing, not changed here: the editor-wide `.help` style uses the 2.95:1 token outside the icon surfaces. It is
+recommended as a separate token fix.

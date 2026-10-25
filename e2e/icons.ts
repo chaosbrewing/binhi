@@ -9,8 +9,9 @@
  */
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { getTestDatabaseUrl } from "../tests/test-database.js";
 import { runMigrations } from "../src/server/db/migrate.js";
@@ -31,6 +32,19 @@ const server = spawn(process.execPath, ["--import", "tsx", "src/server/start.ts"
 let serverLog = "";
 server.stdout.on("data", (d) => { serverLog += String(d); });
 server.stderr.on("data", (d) => { serverLog += String(d); });
+const axeSource = readFileSync(createRequire(import.meta.url).resolve("axe-core/axe.min.js"), "utf8");
+/** Automated WCAG 2.2 A/AA audit (axe-core) of one region; any violation fails the journey. */
+async function audit(p: Page, selector: string, label: string) {
+  await p.evaluate(`${axeSource}`);
+  const result = await p.evaluate(async (sel) => {
+    const axe = (window as unknown as { axe: { run: (ctx: unknown, opts: unknown) => Promise<{ violations: { id: string; impact: string; help: string; nodes: { target: string[]; failureSummary?: string }[] }[]; passes: unknown[] }> } }).axe;
+    const r = await axe.run({ include: [sel] }, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } });
+    return { violations: r.violations.map((v) => ({ id: v.id, impact: v.impact, help: v.help, nodes: v.nodes.map((n) => `${n.target.join(" ")} :: ${(n.failureSummary ?? "").split("\n").slice(0, 2).join(" ")}`) })), passes: r.passes.length };
+  }, selector);
+  audits.push({ label, violations: result.violations.length, rulesPassed: result.passes });
+  assert.deepEqual(result.violations, [], `axe violations in ${label}`);
+}
+const audits: { label: string; violations: number; rulesPassed: number }[] = [];
 const steps: { name: string; [k: string]: unknown }[] = [];
 const record = (name: string, data = {}) => { steps.push({ name, ...data }); console.log(`PASS ${name} ${JSON.stringify(data)}`); };
 const password = randomUUID() + randomUUID();
@@ -135,6 +149,7 @@ try {
   assert.ok((await p.locator("button[data-icon-cell]").count()) === 0 || (await p.locator('button[data-icon-id="binhi.icon.shield"]').count()) === 1);
   await p.getByLabel("Icon style", { exact: true }).selectOption("any");
   await p.getByLabel("Icon category", { exact: true }).selectOption("");
+  await audit(p, ".left-panel", "website Icons panel (light)");
   record("icon browser: lazy category data, keyboard navigation, intent search, categories and style filter", { categoriesLoaded: chunkRequests.size });
 
   /* favourites + recents persist across reloads (per browser) */
@@ -175,6 +190,7 @@ try {
   await p.locator("#p-a11y").fill("Camera icon");
   await p.locator("#p-a11y").blur();
   await frame.locator('[data-icon="binhi.icon.camera"] svg[role="img"][aria-label="Camera icon"]').waitFor();
+  await audit(p, ".prop-group-body:has(.icon-current)", "website icon properties (light)");
   record("customised style, stroke weight, rotation, colour and accessible label from the properties panel");
 
   /* ---------------------------------------------------------- save, reopen, undo/redo */
@@ -353,6 +369,46 @@ try {
   await p.screenshot({ path: `${output}/03-design.png` });
   record("templates created from designs keep valid icon references");
 
+  /* --------------------------------------------- accessibility audit + keyboard interaction of the dialog */
+  await p.getByRole("button", { name: "Icon", exact: true }).focus();
+  await p.keyboard.press("Enter");
+  const kdialog = p.getByRole("dialog", { name: "Insert an icon" });
+  await kdialog.getByLabel("Search icons", { exact: true }).waitFor();
+  assert.equal(await p.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Search icons", "focus lands on the search field");
+  await p.keyboard.type("heart");
+  const status = kdialog.locator('.help[role="status"]');
+  await p.waitForFunction(() => /\d+ icons?/.test(document.querySelector('.modal .help[role="status"]')?.textContent ?? ""));
+  assert.match((await status.innerText()).trim(), /^\d+ icons?$/, "the result count is announced through a live region");
+  const cell = kdialog.locator('button[data-icon-id="binhi.icon.heart"]');
+  await cell.focus();
+  await p.keyboard.press("Space");
+  assert.equal(await cell.getAttribute("aria-pressed"), "true", "Space selects an icon");
+  await kdialog.getByRole("button", { name: "Add Heart to favorites" }).focus();
+  await p.keyboard.press("Enter");
+  assert.equal(await kdialog.getByRole("button", { name: "Remove Heart from favorites" }).getAttribute("aria-pressed"), "true", "favourites toggle by keyboard");
+  await kdialog.getByRole("button", { name: "Remove Heart from favorites" }).press("Enter"); // leave favourites as they were
+  await kdialog.getByLabel("Search icons", { exact: true }).fill("");
+  for (let i = 0; i < 60; i++) {
+    await p.keyboard.press("Tab");
+    assert.ok(await p.evaluate(() => !!document.activeElement?.closest('[role="dialog"]')), `focus stays inside the dialog (tab ${i + 1})`);
+  }
+  for (let i = 0; i < 5; i++) {
+    await p.keyboard.press("Shift+Tab");
+    assert.ok(await p.evaluate(() => !!document.activeElement?.closest('[role="dialog"]')), "Shift+Tab stays inside the dialog");
+  }
+  await kdialog.getByLabel("Search icons", { exact: true }).fill("star");
+  await kdialog.locator('button[data-icon-id="binhi.icon.star"]').click();
+  await audit(p, '[role="dialog"]', "design icon dialog with a selection (light)");
+  await p.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  await audit(p, '[role="dialog"]', "design icon dialog with a selection (dark)");
+  await p.evaluate(() => document.documentElement.removeAttribute("data-theme"));
+  await p.keyboard.press("Escape");
+  await kdialog.waitFor({ state: "detached" });
+  assert.equal(await p.evaluate(() => document.activeElement?.textContent?.trim()), "Icon", "focus returns to the control that opened the dialog");
+  await p.locator(".layer-list .layer-name").first().click();
+  await audit(p, ".design-props", "design icon layer properties (light)");
+  record("accessibility audit (axe, WCAG 2.2 A/AA) and keyboard interaction of the icon browser pass", { audits });
+
   /* ----------------------------------------------------------- phone and tablet widths */
   for (const [width, height] of [[390, 844], [820, 1180]] as const) {
     await p.setViewportSize({ width, height });
@@ -440,7 +496,7 @@ try {
       console.error("The disposable icon test account could not be cleaned up.");
     }
   }
-  writeFileSync(`${output}/evidence.json`, JSON.stringify({ passed: succeeded, steps }, null, 2));
+  writeFileSync(`${output}/evidence.json`, JSON.stringify({ passed: succeeded, steps, accessibilityAudits: audits }, null, 2));
   await browser?.close();
   server.kill("SIGTERM");
 }
