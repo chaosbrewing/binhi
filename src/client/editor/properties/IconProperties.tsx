@@ -80,7 +80,7 @@ export function IconContentEditor({ node, setProps, style, setStyle }: { node: N
       )}
       {picking && (
         <Modal title="Choose an icon" onClose={() => setPicking(false)} wide initialFocus='input[type="search"]'>
-          <LazyIconBrowser onInsert={choose} insertLabel="Use this icon" palette={palette} initialId={def?.id} defaults={{ size, variant: p.variant, strokeWidth: p.strokeWidth }} />
+          <LazyIconBrowser autoFocusSearch onInsert={choose} insertLabel="Use this icon" palette={palette} initialId={def?.id} defaults={{ size, variant: p.variant, strokeWidth: p.strokeWidth }} />
         </Modal>
       )}
     </>

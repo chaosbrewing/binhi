@@ -40,6 +40,8 @@ export interface IconBrowserProps {
   palette?: readonly IconPaletteColor[];
   /** Id of an icon to start on (e.g. the selected element's current icon). */
   initialId?: string;
+  /** Focus the search field when the browser appears (dialogs; the browser loads lazily after the dialog opens). */
+  autoFocusSearch?: boolean;
 }
 
 const PAGE = 60;
@@ -47,7 +49,7 @@ type Scope = "all" | "favorites" | "recent";
 const STYLE_LABEL: Record<IconVariant, string> = { outline: "Outline", duotone: "Duotone", filled: "Filled", inverted: "Inverted badge", brand: "Brand colour" };
 const PREVIEW_SIZES = [16, 24, 32, 48] as const;
 
-export function IconBrowser({ onInsert, insertLabel = "Insert icon", defaults, palette = [], initialId }: IconBrowserProps) {
+export function IconBrowser({ onInsert, insertLabel = "Insert icon", defaults, palette = [], initialId, autoFocusSearch }: IconBrowserProps) {
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<Scope>("all");
   const [category, setCategory] = useState("");
@@ -60,6 +62,10 @@ export function IconBrowser({ onInsert, insertLabel = "Insert icon", defaults, p
   const [favorites, setFavorites] = useState(() => readIconList(FAVORITES_KEY));
   const [recents, setRecents] = useState(() => readIconList(RECENTS_KEY));
   const grid = useRef<HTMLUListElement>(null);
+  const searchField = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (autoFocusSearch) searchField.current?.focus();
+  }, [autoFocusSearch]);
 
   useEffect(() => setShown(PAGE), [query, scope, category, style]);
 
@@ -113,7 +119,7 @@ export function IconBrowser({ onInsert, insertLabel = "Insert icon", defaults, p
       <div className="icon-browser-controls">
         <div className="panel-search">
           <I.search />
-          <input type="search" placeholder="Search 250 icons (try “photo” or “remove”)" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search icons" autoComplete="off" />
+          <input ref={searchField} type="search" placeholder="Search 250 icons (try “photo” or “remove”)" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search icons" autoComplete="off" />
         </div>
         <div className="chip-row" role="group" aria-label="Show">
           {(["all", "favorites", "recent"] as const).map((s) => (

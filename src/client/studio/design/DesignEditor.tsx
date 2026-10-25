@@ -454,7 +454,7 @@ export function DesignEditor() {
       </main>
       {iconPicker && doc && (
         <Modal title={iconPicker === "new" ? "Insert an icon" : "Change icon"} onClose={() => setIconPicker(null)} wide initialFocus='input[type="search"]'>
-          <LazyIconBrowser onInsert={insertIcon} insertLabel={iconPicker === "new" ? "Insert icon" : "Use this icon"} palette={iconPalette} defaults={{ size: Math.round(Math.min(doc.width, doc.height) * 0.18 / 8) * 8 || 128 }} initialId={iconPicker !== "new" ? (doc.layers.find((l) => l.id === iconPicker && l.type === "icon") as { icon?: string } | undefined)?.icon : undefined} />
+          <LazyIconBrowser autoFocusSearch onInsert={insertIcon} insertLabel={iconPicker === "new" ? "Insert icon" : "Use this icon"} palette={iconPalette} defaults={{ size: Math.round(Math.min(doc.width, doc.height) * 0.18 / 8) * 8 || 128 }} initialId={iconPicker !== "new" ? (doc.layers.find((l) => l.id === iconPicker && l.type === "icon") as { icon?: string } | undefined)?.icon : undefined} />
         </Modal>
       )}
       {picker && (
