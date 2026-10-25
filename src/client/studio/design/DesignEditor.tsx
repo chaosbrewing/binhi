@@ -11,6 +11,7 @@ import { getIcon, ICON_STROKE_MAX, ICON_STROKE_MIN, type IconVariant } from "../
 import { Modal } from "../../components/Modal.js";
 import { IconBrowser, type IconInsertSettings } from "../../icons/IconBrowser.js";
 import { IconGlyph } from "../../icons/IconGlyph.js";
+import { useAuth } from "../../auth/AuthContext.js";
 import { StudioShell } from "../StudioShell.js";
 import { LibraryPicker } from "../LibraryPicker.js";
 import { bytesLabel } from "../LibraryPage.js";
@@ -48,6 +49,7 @@ export function DesignEditor() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+  const { iconLibrary } = useAuth();
   const editor = useDesignEditor(projectId);
   const { project, doc, selectedId, saveState, error, canUndo, canRedo } = editor.state;
   const stageRef = useRef<HTMLDivElement>(null);
@@ -252,7 +254,7 @@ export function DesignEditor() {
             <button className="btn btn-sm" disabled={!doc} onClick={() => editor.addLayer("rect")}>Rectangle</button>
             <button className="btn btn-sm" disabled={!doc} onClick={() => editor.addLayer("ellipse")}>Ellipse</button>
             <button className="btn btn-sm" disabled={!doc} onClick={() => setPicker("new")}><I.image /> Image</button>
-            <button className="btn btn-sm" disabled={!doc} onClick={() => setIconPicker("new")}><I.star /> Icon</button>
+            {iconLibrary && <button className="btn btn-sm" disabled={!doc} onClick={() => setIconPicker("new")}><I.star /> Icon</button>}
           </div>
         </header>
         {error && doc && (
@@ -382,7 +384,7 @@ export function DesignEditor() {
                   <div className="photo-panel-section">
                     <h3 className="photo-panel-title">Icon</h3>
                     <p className="small muted"><code>{selected.icon}</code></p>
-                    <button className="btn btn-sm" onClick={() => setIconPicker(selected.id)}>Change icon…</button>
+                    {iconLibrary && <button className="btn btn-sm" onClick={() => setIconPicker(selected.id)}>Change icon…</button>}
                     <div className="photo-input-grid" style={{ marginTop: 8 }}>
                       <label className="photo-field">Style<select value={selected.variant} onChange={(e) => editor.updateLayer(selected.id, { variant: e.target.value as IconVariant })}>{(getIcon(selected.icon)?.variants ?? ["outline"]).map((v) => <option key={v} value={v}>{ICON_VARIANT_LABEL[v]}</option>)}</select></label>
                       <label className="photo-field">Stroke weight<input type="number" min={ICON_STROKE_MIN} max={ICON_STROKE_MAX} step={0.5} value={selected.strokeWidth} onChange={(e) => editor.updateLayer(selected.id, { strokeWidth: Number(e.target.value) })} /></label>

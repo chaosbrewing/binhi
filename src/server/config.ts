@@ -16,6 +16,11 @@ const Env = z.object({
     .string()
     .optional()
     .transform((v) => v === undefined || v === "true" || v === "1"),
+  /** Kill switch for the icon library UI: "false" hides every way to add icons; existing icons keep rendering and saving. */
+  BINHI_ICON_LIBRARY: z
+    .string()
+    .optional()
+    .transform((v) => v === undefined || v === "true" || v === "1"),
   BINHI_MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(8 * 1024 * 1024),
 });
 
@@ -29,6 +34,8 @@ export type Config = {
   mediaStorage: "postgres" | "disk";
   mediaDir?: string;
   allowSignup: boolean;
+  /** Icon library entry points available (existing icon content is always preserved and rendered). */
+  iconLibrary: boolean;
   maxUploadBytes: number;
   /** Internal URL the server uses to verify its own published pages (defaults to publicUrl). */
   verifyBaseUrl: string;
@@ -85,6 +92,7 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): Config {
     mediaStorage: e.BINHI_MEDIA_STORAGE,
     mediaDir: e.BINHI_MEDIA_DIR,
     allowSignup: e.BINHI_ALLOW_SIGNUP,
+    iconLibrary: e.BINHI_ICON_LIBRARY,
     maxUploadBytes: e.BINHI_MAX_UPLOAD_BYTES,
     verifyBaseUrl: (env.BINHI_VERIFY_BASE_URL ?? e.BINHI_PUBLIC_URL).replace(/\/$/, ""),
   };

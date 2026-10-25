@@ -147,7 +147,7 @@ export interface BrandKit {
 }
 
 export const api = {
-  me: () => request<{ user: User | null; signupEnabled: boolean }>("GET", "/api/auth/me"),
+  me: () => request<{ user: User | null; signupEnabled: boolean; features?: { iconLibrary: boolean } }>("GET", "/api/auth/me"),
   signup: (email: string, password: string, displayName: string) => request<{ user: User }>("POST", "/api/auth/signup", { email, password, displayName }),
   login: (email: string, password: string) => request<{ user: User }>("POST", "/api/auth/login", { email, password }),
   logout: () => request<{ ok: true }>("POST", "/api/auth/logout"),

@@ -69,6 +69,30 @@ describe("icon library in the Website Builder (server side)", () => {
   });
 });
 
+describe("icon library kill switch (BINHI_ICON_LIBRARY=false)", () => {
+  it("advertises the switch, while existing icon content keeps rendering, saving and publishing", async () => {
+    const off = await testApp({ BINHI_ICON_LIBRARY: "false" }, { truncate: false });
+    try {
+      expect((await off.app.inject({ method: "GET", url: "/api/auth/me" })).json().features).toEqual({ iconLibrary: false });
+      expect((await b.app.inject({ method: "GET", url: "/api/auth/me" })).json().features).toEqual({ iconLibrary: true });
+      const site = await createSite(b.app, s, "blank", "Switch test");
+      const sec = site.document.pages[0]!.sections[0]!.id;
+      await api(b.app, s).post(`/api/sites/${site.id}/ops`, batch(0, [{ type: "insertComponent", target: { parentId: sec }, componentType: "icon", nodeId: "icon_switch0001", props: { icon: "binhi.icon.leaf", size: 40 } }]));
+      // the same data, served by a deployment with the switch off
+      const edit = await api(off.app, s).post(`/api/sites/${site.id}/ops`, batch(1, [{ type: "updateProps", nodeId: "icon_switch0001", props: { size: 56 } }]));
+      expect(edit.statusCode).toBe(200);
+      const published = await api(off.app, s).post(`/api/sites/${site.id}/publish`);
+      expect(published.json().publication.state).toBe("live");
+      const live = await off.app.inject({ method: "GET", url: `/s/${site.slug}/` });
+      expect(live.body).toContain('data-icon="binhi.icon.leaf"');
+      const saved = (await api(off.app, s).get(`/api/sites/${site.id}`)).json().site.document;
+      expect(JSON.stringify(saved)).toContain('"icon":"binhi.icon.leaf"');
+    } finally {
+      await off.close();
+    }
+  });
+});
+
 describe("icon library in the Design Studio (server side)", () => {
   const withIcon = (extra: Record<string, unknown> = {}) => {
     const doc = createDesignDocument(1080, 1080);

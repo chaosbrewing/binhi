@@ -9,6 +9,7 @@ import { MediaPanel } from "./MediaPanel.js";
 import { StylesPanel } from "./StylesPanel.js";
 import { SectionsPanel } from "./SectionsPanel.js";
 import { NavigationPanel } from "./NavigationPanel.js";
+import { useAuth } from "../../auth/AuthContext.js";
 
 const TABS: { id: LeftTab; label: string; icon: keyof typeof I }[] = [
   { id: "pages", label: "Pages", icon: "pages" },
@@ -25,10 +26,12 @@ export function LeftSidebar() {
   const store = useStore();
   const tab = useSel((s) => s.leftTab);
   const open = useSel((s) => s.leftOpen);
+  const { iconLibrary } = useAuth();
+  const tabs = TABS.filter((t) => t.id !== "icons" || iconLibrary);
   return (
     <div className="left">
       <nav className="left-rail" aria-label="Editor panels">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const Icon = I[t.icon];
           return (
             <button key={t.id} className="rail-btn" aria-pressed={open && tab === t.id} onClick={() => store.setLeftTab(t.id)} title={t.label}>
@@ -39,10 +42,10 @@ export function LeftSidebar() {
         })}
       </nav>
       {open && (
-        <section className="left-panel" aria-label={TABS.find((t) => t.id === tab)?.label}>
+        <section className="left-panel" aria-label={tabs.find((t) => t.id === tab)?.label}>
           {tab === "pages" && <PagesPanel />}
           {tab === "elements" && <ElementsPanel />}
-          {tab === "icons" && <IconsPanel />}
+          {tab === "icons" && iconLibrary && <IconsPanel />}
           {tab === "sections" && <SectionsPanel />}
           {tab === "layers" && <LayersPanel />}
           {tab === "media" && <MediaPanel />}

@@ -290,3 +290,16 @@ describe("generated documentation matches the registry", () => {
     expect([...inventory.matchAll(/^\| \d{3} \|/gm)]).toHaveLength(250);
   });
 });
+
+describe("legacy fallback names for older builds", () => {
+  it("map only to real library icons and real built-in names", async () => {
+    const { LEGACY_FALLBACK_NAMES, legacyFallbackName } = await import("../../src/core/icons/index.js");
+    const { LEGACY_ICON_NAMES } = await import("../../src/core/index.js");
+    for (const [id, legacy] of Object.entries(LEGACY_FALLBACK_NAMES)) {
+      expect(hasIcon(id), id).toBe(true);
+      expect(LEGACY_ICON_NAMES as readonly string[], legacy).toContain(legacy);
+    }
+    expect(legacyFallbackName("binhi.icon.camera")).toBe("camera");
+    expect(legacyFallbackName("binhi.icon.opacity")).toBeUndefined();
+  });
+});

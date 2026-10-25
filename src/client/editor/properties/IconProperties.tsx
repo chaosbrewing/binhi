@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ICON_SIZE_PRESETS, ICON_STROKE_MAX, ICON_STROKE_MIN, getIcon, type IconVariant } from "../../../core/icons/index.js";
+import { ICON_SIZE_PRESETS, ICON_STROKE_MAX, ICON_STROKE_MIN, getIcon, legacyFallbackName, type IconVariant } from "../../../core/icons/index.js";
 import { LEGACY_ICON_NAMES, type Node, type StyleSet } from "../../../core/index.js";
 import { Modal } from "../../components/Modal.js";
 import { IconBrowser, type IconInsertSettings } from "../../icons/IconBrowser.js";
 import { IconGlyph } from "../../icons/IconGlyph.js";
 import { useThemePalette } from "../panels/IconsPanel.js";
+import { useAuth } from "../../auth/AuthContext.js";
 import { ColorInput, Field, NumberInput, SelectInput, Toggle } from "./fields.js";
 
 const VARIANT_LABEL: Record<IconVariant, string> = { outline: "Outline", duotone: "Duotone", filled: "Filled", inverted: "Inverted badge", brand: "Brand colour" };
@@ -13,12 +14,13 @@ const VARIANT_LABEL: Record<IconVariant, string> = { outline: "Outline", duotone
 export function IconContentEditor({ node, setProps, style, setStyle }: { node: Node; setProps: (p: Record<string, unknown>) => void; style: StyleSet; setStyle: (s: StyleSet, unset?: string[]) => void }) {
   const p = node.props as Record<string, any>;
   const palette = useThemePalette();
+  const { iconLibrary } = useAuth();
   const [picking, setPicking] = useState(false);
   const def = typeof p.icon === "string" ? getIcon(p.icon) : undefined;
   const size = Number(p.size ?? 32);
 
   const choose = (id: string, s: IconInsertSettings) => {
-    setProps({ icon: id, variant: s.variant, strokeWidth: s.strokeWidth });
+    setProps({ icon: id, ...(legacyFallbackName(id) ? { name: legacyFallbackName(id) } : {}), variant: s.variant, strokeWidth: s.strokeWidth });
     if (s.color) setStyle({ color: s.color });
     setPicking(false);
   };
@@ -36,7 +38,7 @@ export function IconContentEditor({ node, setProps, style, setStyle }: { node: N
           {def && <div className="small muted"><code>{def.id}</code></div>}
         </div>
       </div>
-      <button type="button" className="btn btn-sm" onClick={() => setPicking(true)}>{def ? "Change icon…" : "Choose from the icon library…"}</button>
+      {iconLibrary && <button type="button" className="btn btn-sm" onClick={() => setPicking(true)}>{def ? "Change icon…" : "Choose from the icon library…"}</button>}
       {!def && (
         <Field label="Built-in icon"><SelectInput value={p.name} options={LEGACY_ICON_NAMES.map((n) => ({ value: n, label: n }))} onChange={(name) => setProps({ name })} /></Field>
       )}

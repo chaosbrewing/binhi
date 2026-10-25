@@ -140,7 +140,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   /* ---------------------------------------------------------------- health */
   app.get("/api/health", async () => {
     await sql`select 1`;
-    return { ok: true, service: "binhi", version: "0.1.0", env: config.env, signupEnabled: config.allowSignup };
+    return { ok: true, service: "binhi", version: "0.1.0", env: config.env, signupEnabled: config.allowSignup, iconLibrary: config.iconLibrary };
   });
 
   /* ------------------------------------------------------------------ auth */
@@ -179,7 +179,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   });
 
   app.get("/api/auth/me", async (req) => {
-    return { user: req.user, signupEnabled: config.allowSignup };
+    return { user: req.user, signupEnabled: config.allowSignup, features: { iconLibrary: config.iconLibrary } };
   });
 
   app.delete("/api/auth/account", async (req, reply) => {

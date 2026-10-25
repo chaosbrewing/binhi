@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { THEME_COLOR_KEYS, type Operation } from "../../../core/index.js";
+import { legacyFallbackName } from "../../../core/icons/index.js";
 import { useSel, useStore } from "../context.js";
 import { insertComponent } from "../actions.js";
 import { IconBrowser, type IconInsertSettings, type IconPaletteColor } from "../../icons/IconBrowser.js";
@@ -24,7 +25,7 @@ export function IconsPanel() {
   const palette = useThemePalette();
 
   const insert = (iconId: string, s: IconInsertSettings) => {
-    const ids = insertComponent(store, "icon", { icon: iconId, size: s.size, variant: s.variant, strokeWidth: s.strokeWidth });
+    const ids = insertComponent(store, "icon", { icon: iconId, ...(legacyFallbackName(iconId) ? { name: legacyFallbackName(iconId) } : {}), size: s.size, variant: s.variant, strokeWidth: s.strokeWidth });
     const nodeId = ids?.[0];
     if (nodeId && s.color) {
       const op: Operation = { type: "updateStyle", nodeId, breakpoint: "desktop", style: { color: s.color } };

@@ -210,3 +210,19 @@ describe("operations", () => {
 function d0(doc: SiteDocument) {
   return doc.pages[0]!.id;
 }
+
+describe("editing never discards props this build does not understand", () => {
+  it("keeps already-stored unknown props across updateProps, but still strips unknown props sent in the op", () => {
+    const doc = createSiteDocument("blank", "x");
+    const section = doc.pages[0]!.sections[0]!;
+    let d = applyOperation(doc, { type: "insertComponent", target: { parentId: section.id }, componentType: "icon", nodeId: "icon_keepme0001", props: { name: "star", size: 32 } }).document;
+    // simulate content written by a newer build
+    const node = d.pages[0]!.sections[0]!.children!.find((n) => n.id === "icon_keepme0001")!;
+    node.props.futureSetting = { mode: "x" };
+    d = applyOperation(d, { type: "updateProps", nodeId: "icon_keepme0001", props: { size: 40, injected: "<script>" } }).document;
+    const after = d.pages[0]!.sections[0]!.children!.find((n) => n.id === "icon_keepme0001")!;
+    expect(after.props.size).toBe(40);
+    expect(after.props.futureSetting).toEqual({ mode: "x" });
+    expect(after.props).not.toHaveProperty("injected");
+  });
+});

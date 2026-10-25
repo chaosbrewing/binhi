@@ -376,6 +376,43 @@ try {
   await p.setViewportSize({ width: 1440, height: 900 });
   record("icon dialog is usable at phone and tablet widths");
 
+  /* ----------------------------------------- kill switch: BINHI_ICON_LIBRARY=false (a second server, same database) */
+  const offPort = 4313;
+  const offBase = `http://127.0.0.1:${offPort}`;
+  const offServer = spawn(process.execPath, ["--import", "tsx", "src/server/start.ts"], {
+    env: { ...process.env, BINHI_DATABASE_URL: database, BINHI_PORT: String(offPort), BINHI_PUBLIC_URL: offBase, BINHI_SESSION_SECRET: "local-disposable-test-secret-only", BINHI_SERVE_BUILT_CLIENT: "true", NODE_ENV: "test", BINHI_ICON_LIBRARY: "false" },
+    stdio: "ignore",
+  });
+  try {
+    const until = Date.now() + 30_000;
+    while (!(await fetch(`${offBase}/api/health`).then((r) => r.ok).catch(() => false))) {
+      if (Date.now() > until) throw new Error("kill-switch server did not start");
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    assert.equal((await fetch(`${offBase}/api/health`).then((r) => r.json())).iconLibrary, false);
+    await p.goto(`${offBase}/sites/${siteId}/edit`);
+    await frame.locator("h1").first().waitFor({ timeout: 30_000 });
+    assert.equal(await p.getByRole("button", { name: "Icons", exact: true }).count(), 0, "the Icons tab is hidden when the switch is off");
+    await frame.locator('[data-icon="binhi.icon.camera"] svg').waitFor();
+    await frame.locator('[data-icon="binhi.icon.camera"]').click();
+    assert.equal(await p.getByRole("button", { name: /Change icon/ }).count(), 0, "no way to pick a library icon");
+    if (!(await p.getByLabel("Search elements", { exact: true }).isVisible())) await p.getByRole("button", { name: "Elements", exact: true }).click();
+    await p.getByLabel("Search elements", { exact: true }).fill("icon");
+    const before = await frame.locator(".b-icon").count();
+    await p.getByRole("button", { name: "Icon", exact: true }).click();
+    await p.waitForFunction((n) => (document.querySelector("iframe")?.contentDocument?.querySelectorAll(".b-icon").length ?? 0) > n, before);
+    assert.equal(await frame.locator('[data-icon="binhi.icon.camera"]').count(), 1, "existing library icon is untouched");
+    await waitDirtyThenSaved(p, ".save-state");
+    await p.goto(`${offBase}/studio/design/${designId}`);
+    await p.locator('.design-layer[data-layer-id] svg').first().waitFor({ state: "attached" });
+    assert.equal(await p.getByRole("button", { name: "Icon", exact: true }).count(), 0, "the design toolbar has no Icon button");
+    assert.equal(await p.locator('.design-layer[data-layer-id] svg').count(), 2, "existing icon layers still render");
+    record("kill switch hides every way to add icons but existing icon content still renders and saves");
+  } finally {
+    offServer.kill("SIGTERM");
+  }
+  await p.goto(`${base}/studio/design`);
+
   /* ------------------------------------------------------------ isolation + errors */
   const other = await browser.newContext();
   await other.request.post(`${base}/api/auth/signup`, { headers: H, data: { email: `icons-b-${randomUUID()}@example.invalid`, password, displayName: "Other" } });

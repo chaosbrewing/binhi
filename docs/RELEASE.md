@@ -15,7 +15,8 @@ Required settings: `BINHI_DATABASE_URL` (or the host's `DATABASE_URL`),
 `BINHI_PUBLIC_URL` is optional where Replit supplies the environment-specific
 domain; set it explicitly in production if `REPLIT_DOMAINS` is unavailable or
 does not identify the canonical host.
-Optional: `BINHI_MEDIA_STORAGE=disk` + `BINHI_MEDIA_DIR` (persistent volume),
+Optional: `BINHI_ICON_LIBRARY=false` (hides every way to add icons; existing icons keep working — see
+`docs/ICON_COMPATIBILITY.md`), `BINHI_MEDIA_STORAGE=disk` + `BINHI_MEDIA_DIR` (persistent volume),
 `BINHI_ALLOW_SIGNUP=false` for a private instance, `BINHI_MAX_UPLOAD_BYTES`,
 `BINHI_VERIFY_BASE_URL` when the server cannot reach its own public URL.
 

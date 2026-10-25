@@ -138,9 +138,9 @@ Portrait, Landscape, Tabs).
 - Chromium only was executed here (Firefox/WebKit are not installed in this environment); the features used (inline SVG,
   `Image.decode`, canvas, `<input type=color>`) are standard.
 - Fonts in design text are not embedded in SVG/PNG exports (unchanged from Phase 1).
-- Rollback note: a previous build cannot open a design that contains icon layers (its strict layer union rejects the
-  new type), and it renders a library icon on a website as the default star; saving that element from the older
-  build would drop the icon id. No database migration is involved.
+- Rollback: older builds cannot open designs that contain icon layers and drop icon settings from a library-icon
+  website element that is edited there. Strategy, evidence and procedure: [`ICON_COMPATIBILITY.md`](ICON_COMPATIBILITY.md)
+  (use `BINHI_ICON_LIBRARY=false` first; run the read-only preflight before any older-build rollback).
 - Per-browser favourites/recents (`localStorage`) are conveniences and do not follow the account.
 - Icon registry integration with ORIGIN/TALA/AGOS/LIYAB/LIPAD is by contract only: ids are plain strings in BINHI
   documents; BINHI imports nothing from them and they import nothing from BINHI.

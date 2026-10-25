@@ -170,7 +170,12 @@ function applyOperationInner(input: SiteDocument, rawOp: Operation): ApplyResult
     case "updateProps": {
       const f = mustFind(doc, op.nodeId);
       assertUnlocked(f);
-      f.node.props = validateProps(f.node.type, { ...f.node.props, ...op.props });
+      const next = validateProps(f.node.type, { ...f.node.props, ...op.props });
+      // Never silently discard content this build does not understand: keys that were already stored on the element
+      // (for example props written by a newer build) survive an edit. Keys arriving in the op itself are still
+      // validated away, so a client cannot use this to store arbitrary data.
+      const preserved = Object.fromEntries(Object.entries(f.node.props).filter(([key]) => !(key in next) && !(key in op.props)));
+      f.node.props = { ...preserved, ...next };
       break;
     }
     case "updateStyle": {

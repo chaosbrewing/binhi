@@ -128,6 +128,37 @@ export const ICON_CATEGORIES: readonly IconCategory[] = CATALOG_CATEGORIES.map((
   icons: [...REGISTRY.values()].filter((d) => d.category === c.slug),
 }));
 
+/**
+ * For builds that predate the library: the built-in icon name (see LEGACY_ICON_NAMES in the component registry) that
+ * means the same thing as a library icon. The editor stores it in the element's legacy `name` prop when a library icon
+ * is chosen, so an older build that cannot read `icon` still shows a sensible glyph instead of the default star.
+ * The library icon always wins in this build. Only icons with a true equivalent are listed.
+ */
+export const LEGACY_FALLBACK_NAMES: Readonly<Record<string, string>> = {
+  "binhi.icon.star": "star",
+  "binhi.icon.heart": "heart",
+  "binhi.icon.forward-arrow": "arrow-right",
+  "binhi.icon.email": "mail",
+  "binhi.icon.phone": "phone",
+  "binhi.icon.location-pin": "pin",
+  "binhi.icon.camera": "camera",
+  "binhi.icon.leaf": "leaf",
+  "binhi.icon.sun": "sun",
+  "binhi.icon.moon": "moon",
+  "binhi.icon.sparkles": "sparkle",
+  "binhi.icon.menu": "menu",
+  "binhi.icon.globe": "globe",
+  "binhi.icon.clock": "clock",
+  "binhi.icon.calendar": "calendar",
+  "binhi.icon.user": "user",
+  "binhi.icon.price-tag": "tag",
+  "binhi.icon.video-element": "play",
+};
+
+export function legacyFallbackName(id: string): string | undefined {
+  return LEGACY_FALLBACK_NAMES[id];
+}
+
 export const ICON_LIST: readonly IconDefinition[] = [...REGISTRY.values()];
 
 export function hasIcon(id: unknown): id is string {
