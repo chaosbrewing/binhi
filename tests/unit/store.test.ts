@@ -53,9 +53,9 @@ describe("EditorStore autosave", () => {
     // edit the new element before the autosave fires (same batch)
     store.dispatch([{ type: "updateProps", nodeId: id, props: { size: 64 } }]);
     await vi.advanceTimersByTimeAsync(800);
-    const [, batch] = applyOps.mock.calls[0] as [string, { ops: import("../../src/core/index.js").Operation[] }];
+    const [, batch] = applyOps.mock.calls[0] as [string, { ops: import("../../src/core/index.js").Operation[]; idSeeds?: string[] }];
     // Replaying the batch the way the server does must succeed and produce the same element id.
-    const replayed = applyOperations(serverBase, batch.ops);
+    const replayed = applyOperations(serverBase, batch.ops, batch.idSeeds);
     expect(replayed.createdIds).toContain(id);
     expect(findNode(replayed.document, id)?.node.props.size).toBe(64);
   });

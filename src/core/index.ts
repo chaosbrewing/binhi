@@ -6,6 +6,6 @@ export * from "./ops/apply.js";
 export * from "./render/index.js";
 export * from "./templates/index.js";
 export * from "./templates/theme.js";
-export { newId, ID_PATTERN } from "./ids.js";
+export { newId, newIdSeed, withIdSeed, ID_PATTERN, ID_SEED_PATTERN } from "./ids.js";
 export * from "./validate.js";
 export * from "./icons/index.js";

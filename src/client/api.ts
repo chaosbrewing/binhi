@@ -158,7 +158,7 @@ export const api = {
   site: (id: string) => request<{ site: SiteDetail }>("GET", `/api/sites/${id}`),
   updateSite: (id: string, patch: { name?: string; slug?: string }) => request<{ site: SiteSummary }>("PATCH", `/api/sites/${id}`, patch),
   deleteSite: (id: string) => request<{ ok: true }>("DELETE", `/api/sites/${id}`),
-  applyOps: (id: string, batch: { baseRevision: number; ops: Operation[]; batchId: string }) =>
+  applyOps: (id: string, batch: { baseRevision: number; ops: Operation[]; batchId: string; idSeeds?: string[] }) =>
     request<{ revision: number; createdIds: string[]; replayed: boolean; document?: SiteDocument }>("POST", `/api/sites/${id}/ops`, batch),
   revisions: (id: string) => request<{ revisions: RevisionSummary[] }>("GET", `/api/sites/${id}/revisions`),
   revision: (id: string, rev: number) => request<{ revision: number; document: SiteDocument }>("GET", `/api/sites/${id}/revisions/${rev}`),

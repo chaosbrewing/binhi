@@ -24,6 +24,20 @@ document. Both sides use the same code.
 
 Batches are limited to 200 operations and 6 MB.
 
+## Identifier determinism (`idSeeds`)
+
+Operations that create elements (components with default children, duplicates, pastes, inserted trees, groups, pages,
+saved/inserted reusable sections) mint ids. The editor applies an op locally and the server applies it again later, so
+both must mint **the same ids**, otherwise an edit queued against a new element before the first autosave would be
+rejected with `422 Element … does not exist` and the work lost.
+
+The editor therefore sends `idSeeds`: one short seed per op, in order. Applying an op with a seed draws every id from
+a PRNG derived from it (`withIdSeed` in `src/core/ids.ts`). `idSeeds` is optional (older editors send none and get
+random ids, as before) and must have exactly one entry per op. Wall-clock fields (for example a reusable section's
+`updatedAt`) are not seeded and may differ by milliseconds; ids and content never do. Regression tests:
+`tests/unit/op-determinism.test.ts` (editor queue replayed through the real wire schema must equal the editor state,
+for each id-minting op) and `tests/integration/ops-determinism.test.ts`.
+
 ## Operations
 
 | Group | Operations |
