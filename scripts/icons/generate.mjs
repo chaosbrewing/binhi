@@ -8,6 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CATEGORIES } from "./catalog.mjs";
 import { ORIGINAL } from "./original.mjs";
+import { CLOSE_PATHS, FILLED } from "./variants.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
@@ -53,6 +54,17 @@ function parseSvg(name) {
   return nodes;
 }
 
+// Mirrors isClosedNode() in src/core/icons/safe.ts (a unit test keeps the two in step).
+function isClosedNode([tag, attrs]) {
+  if (attrs.fill === "currentColor") return false;
+  if (["circle", "rect", "ellipse", "polygon"].includes(tag)) return true;
+  if (tag === "path") {
+    const subs = String(attrs.d).split(/(?=[Mm])/).filter((x) => x.trim());
+    return subs.length > 0 && subs.every((x) => /[zZ]\s*$/.test(x.trim()));
+  }
+  return false;
+}
+
 const slugOf = (name) =>
   name.split(" / ")[0].toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
@@ -70,17 +82,23 @@ for (const cat of CATEGORIES) {
     if (seenSlugs.has(slug)) throw new Error(`duplicate slug ${slug}`);
     seenSlugs.set(slug, n);
     const original = source === "original";
-    const nodes = original ? ORIGINAL[name] : parseSvg(source);
+    let nodes = original ? ORIGINAL[name] : parseSvg(source);
+    if (nodes && CLOSE_PATHS.has(slug)) nodes = nodes.map(([t, a]) => (t === "path" && !/[zZ]\s*$/.test(a.d) ? [t, { ...a, d: `${a.d}Z` }] : [t, a]));
     if (!nodes) throw new Error(`no original geometry for ${name}`);
     const hash = createHash("sha1").update(JSON.stringify(nodes)).digest("hex");
     if (seenGeometry.has(hash)) throw new Error(`#${n} ${name} has the same glyph as #${seenGeometry.get(hash)}`);
     seenGeometry.set(hash, n);
+    // `k`: curated BINHI vocabulary (name words + hand-written intents). `t`: Lucide's own tags, ranked lower in search.
     const words = new Set();
-    const add = (s) => s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1).forEach((w) => words.add(w));
-    add(name.replace(/ \/ /g, " "));
-    add(extra);
-    if (!original) (tags[source] ?? []).slice(0, 6).forEach(add);
-    entries.push({ n, slug, name, cat: cat.slug, src: original ? "original" : `lucide:${source}`, k: [...words] });
+    const tagWords = new Set();
+    const split = (str) => str.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+    split(name.replace(/ \/ /g, " ")).forEach((w) => words.add(w));
+    split(extra).forEach((w) => words.add(w));
+    if (!original) (tags[source] ?? []).slice(0, 6).flatMap(split).filter((w) => !words.has(w)).forEach((w) => tagWords.add(w));
+    const duo = nodes.some(isClosedNode) ? 1 : 0;
+    const filled = FILLED.has(slug) ? 1 : 0;
+    if (filled && !duo) throw new Error(`${slug}: filled variant requires a closed shape`);
+    entries.push({ n, slug, name, cat: cat.slug, src: original ? "original" : `lucide:${source}`, k: [...words], t: [...tagWords], d: duo, f: filled });
     outShapes[cat.slug][slug] = nodes;
   }
 }
@@ -93,7 +111,7 @@ rmSync(join(outDir, "shapes"), { recursive: true, force: true });
 mkdirSync(join(outDir, "shapes"), { recursive: true });
 
 const catLines = CATEGORIES.map((c, i) => `  { slug: ${JSON.stringify(c.slug)}, number: ${i + 1}, name: ${JSON.stringify(c.name)} },`);
-const entLines = entries.map((e) => `  { n: ${e.n}, slug: ${JSON.stringify(e.slug)}, name: ${JSON.stringify(e.name)}, cat: ${JSON.stringify(e.cat)}, src: ${JSON.stringify(e.src)}, k: ${JSON.stringify(e.k)} },`);
+const entLines = entries.map((e) => `  { n: ${e.n}, slug: ${JSON.stringify(e.slug)}, name: ${JSON.stringify(e.name)}, cat: ${JSON.stringify(e.cat)}, src: ${JSON.stringify(e.src)}, k: ${JSON.stringify(e.k)}, t: ${JSON.stringify(e.t)}, d: ${e.d}, f: ${e.f} },`);
 writeFileSync(
   join(outDir, "catalog.ts"),
   `${header("Icon catalog metadata: 25 categories × 10 icons, fixed numbers 001–250.")}
@@ -105,8 +123,14 @@ export interface CatalogEntry {
   readonly cat: string;
   /** "lucide:<name>" or "original". */
   readonly src: string;
-  /** Search keywords (synonyms and intents), lower case. */
+  /** Curated search keywords (name words and BINHI synonyms/intents), lower case. */
   readonly k: readonly string[];
+  /** Lucide's own tags for this glyph (lower-ranked search terms). */
+  readonly t: readonly string[];
+  /** 1 when the duotone variant is supported (the icon has at least one closed shape). */
+  readonly d: 0 | 1;
+  /** 1 when the filled variant is supported (curated; see scripts/icons/variants.mjs). */
+  readonly f: 0 | 1;
 }
 export const LUCIDE_VERSION = ${JSON.stringify(pkg.version)};
 export const CATALOG_CATEGORIES: readonly CatalogCategory[] = [\n${catLines.join("\n")}\n];

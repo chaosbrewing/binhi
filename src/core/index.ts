@@ -8,3 +8,4 @@ export * from "./templates/index.js";
 export * from "./templates/theme.js";
 export { newId, ID_PATTERN } from "./ids.js";
 export * from "./validate.js";
+export * from "./icons/index.js";

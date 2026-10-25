@@ -41,8 +41,8 @@ Source geometry: lucide-static 1.61.0. Totals: 209 × ISC, 36 × ISC + MIT (Feat
 | 022 | `binhi.icon.move-tool` | Move Tool | Lucide `move` | ISC + MIT (Feather) |
 | 023 | `binhi.icon.resize` | Resize | Lucide `maximize-2` | ISC |
 | 024 | `binhi.icon.rotate` | Rotate | Lucide `rotate-cw` | ISC |
-| 025 | `binhi.icon.horizontal-flip` | Horizontal Flip | Lucide `flip-horizontal-2` | ISC |
-| 026 | `binhi.icon.vertical-flip` | Vertical Flip | Lucide `flip-vertical-2` | ISC |
+| 025 | `binhi.icon.horizontal-flip` | Horizontal Flip | Lucide `flip-horizontal` | ISC |
+| 026 | `binhi.icon.vertical-flip` | Vertical Flip | Lucide `flip-vertical` | ISC |
 | 027 | `binhi.icon.crop` | Crop | Lucide `crop` | ISC |
 | 028 | `binhi.icon.free-transform` | Free Transform | Lucide `vector-square` | ISC |
 | 029 | `binhi.icon.aspect-ratio-lock` | Aspect Ratio Lock | Lucide `ratio` | ISC |
@@ -68,8 +68,8 @@ Source geometry: lucide-static 1.61.0. Totals: 209 × ISC, 36 × ISC + MIT (Feat
 | # | ID | Name | Source | Licence |
 | --- | --- | --- | --- | --- |
 | 041 | `binhi.icon.layers` | Layers | Lucide `layers` | ISC |
-| 042 | `binhi.icon.bring-forward` | Bring Forward | Lucide `arrow-up-from-line` | ISC |
-| 043 | `binhi.icon.send-backward` | Send Backward | Lucide `arrow-down-to-line` | ISC |
+| 042 | `binhi.icon.bring-forward` | Bring Forward | Lucide `layers-arrow-up` | ISC |
+| 043 | `binhi.icon.send-backward` | Send Backward | Lucide `layers-arrow-down` | ISC |
 | 044 | `binhi.icon.bring-to-front` | Bring to Front | Lucide `bring-to-front` | ISC |
 | 045 | `binhi.icon.send-to-back` | Send to Back | Lucide `send-to-back` | ISC |
 | 046 | `binhi.icon.group` | Group | Lucide `group` | ISC |

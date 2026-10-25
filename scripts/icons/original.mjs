@@ -17,15 +17,19 @@ export const ORIGINAL = {
     ["circle", { cx: 7, cy: 17, r: 3 }],
     ["circle", { cx: 17, cy: 17, r: 3 }],
   ],
-  // Wide screen with a side button.
+  // Wide screen with a left-right arrow: the preview is landscape.
   "Landscape Orientation": [
     ["rect", { x: 2, y: 6, width: 20, height: 12, rx: 2 }],
-    ["path", { d: "M19 12h.01" }],
+    ["path", { d: "M7 12h10" }],
+    ["path", { d: "m9.5 9.5-2.5 2.5 2.5 2.5" }],
+    ["path", { d: "m14.5 9.5 2.5 2.5-2.5 2.5" }],
   ],
-  // Tall screen with a bottom button.
+  // Tall screen with an up-down arrow: the preview is portrait.
   "Portrait Orientation": [
     ["rect", { x: 6, y: 2, width: 12, height: 20, rx: 2 }],
-    ["path", { d: "M12 19h.01" }],
+    ["path", { d: "M12 7v10" }],
+    ["path", { d: "m9.5 9.5 2.5-2.5 2.5 2.5" }],
+    ["path", { d: "m9.5 14.5 2.5 2.5 2.5-2.5" }],
   ],
   // Panel with two tabs on its top edge.
   Tabs: [
