@@ -11,7 +11,7 @@ can be done from the workspace or this repository without touching production.
 | # | Check | Owner | How to verify |
 | --- | --- | --- | --- |
 | 0.1 | PR #1 CI green on its final head: typecheck, unit + integration, build, website journey, studio journey | engineer | GitHub Actions run on the PR head commit |
-| 0.2 | Replit branch `feat/binhi-studio-m1` is on GitHub and merged into the PR branch (no commits lost) | engineer | `git branch -r --contains <5bf6148>` lists the PR branch |
+| 0.2 | Replit branch `feat/binhi-studio-m1` is on GitHub and merged into the PR branch (no commits lost) | engineer | **Done**: head `b6b07a0` is an ancestor of PR head `6bb1e43` (`git merge-base --is-ancestor`) |
 | 0.3 | Replit workspace is checked out on the approved branch, development DB migrated, `npm run typecheck`, `npm run test:unit`, `npm run build` and `node scripts/smoke.mjs https://$REPLIT_DEV_DOMAIN` pass there | engineer | workspace shell output recorded in `docs/PHASE1_STATUS.md` |
 | 0.4 | PR reviewed and merged to `main` | **FOUNDER** | merge commit SHA |
 
@@ -31,11 +31,14 @@ can be done from the workspace or this repository without touching production.
 - `CREATE INDEX IF NOT EXISTS` × 5
 
 No `DROP`, no `ALTER COLUMN`, no data migration, no change to any existing
-table. Evidence recorded in this branch:
+table. Two things the generic scanner flags are safe by construction: the
+unique index and foreign keys only constrain rows of the *new* tables (or
+cascade from `binhi_users`), which the old build never writes. Evidence:
 
 | Check | Result |
 | --- | --- |
-| Old build (`main` @ b6570ff) integration suite against a database already carrying 0001 | see `docs/PHASE1_STATUS.md` §2 (run on 2026-10-25) |
+| Old build (`main` @ b6570ff, clean `npm ci`) integration suite against a database already carrying 0001 (2 migrations recorded, all 4 new tables present) | **28/28 tests passed** (auth, sites, media, publishing, forms), 2026-10-25 |
+| `npm run db:compat` (scanner merged from the Replit branch) | Flags only the 2 foreign keys / 1 unique index on the new tables; migration carries the reasoned `binhi:compatibility-reviewed` marker; no drop, rename, column change or data removal |
 | New build against a fresh database (0000 + 0001) | 116 tests, both browser journeys |
 | Startup behaviour | development applies migrations at boot; production **refuses** to run them (`assertMigrationsAllowed`, unit-tested) |
 
