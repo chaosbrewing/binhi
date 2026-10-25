@@ -21,7 +21,7 @@ production readiness; see *Deployment status*.
 | Published runtime | **Published and healthy** at `https://binhi.replit.app`; `/api/health` reports `env: production` and successfully queries the database. |
 | Development / production databases | **Separation confirmed read-only on 2026-10-24.** Development is `helium` / `heliumdb`; the production read-only database reports `neondb`. Replit-managed `DATABASE_URL` is present for production, and no `BINHI_DATABASE_URL` override is configured. Both databases contain the 12 expected BINHI tables. |
 | Secrets | Configure distinct workspace and deployment `BINHI_SESSION_SECRET` values; the server refuses to boot in production with the example value. |
-| Production schema handling | **Configured**: development migrations run in non-production; production startup refuses migrations and relies on Replit Publish's schema diff. |
+| Production schema handling | **Configured**: development migrations run in non-production; production startup refuses migrations and relies on Replit Publish's schema diff. Migration compatibility scan and current-baseline assessment are recorded below. |
 | Published-domain configuration | **Verified**: Replit deployment metadata reports `https://binhi.replit.app`; the production health endpoint responds there. |
 | Complete journey against a deployed instance | **Not run against the published domain.** The same journey passes locally in 13 steps, including sign-up, canvas editing, autosave, revision restore, publish, anonymous desktop + mobile access, unpublish and cleanup. |
 
@@ -44,6 +44,21 @@ instead confirmed with the live health endpoint, deployment configuration,
 and read-only production database metadata. No production records were read or
 changed, and no DDL or migrations were run.
 
+### Schema compatibility and rollback limits
+
+The initial migration is additive relative to an empty database, but the
+repository has no recorded incremental migration history from which to prove
+compatibility with a particular previous application build. Do not infer
+backward compatibility from the fact that the current bootstrap is
+idempotent. The applied bootstrap must remain immutable; future schema changes
+must preserve current and immediately
+previous build contracts, with destructive changes delayed until those builds
+are outside the rollback window. Replit Publish's schema diff is not an
+application-code rollback mechanism; database point-in-time recovery, where
+available, must be coordinated separately with matching code and may discard
+later writes. See `docs/RELEASE.md` for the checklist and Replit documentation
+links.
+
 | Check | Command | Result |
 | --- | --- | --- |
 | Typecheck | `npm run typecheck` | **Passed for current Replit configuration and migration guard** |
@@ -54,6 +69,7 @@ changed, and no DDL or migrations were run.
 | Production database metadata | Read-only Replit production query | **Database `neondb`; all 12 expected BINHI tables exist.** No application records were queried. |
 | Published database separation | Deployment configuration + published health + read-only production metadata | **Confirmed**: production resolves Replit-managed `DATABASE_URL` (no `BINHI_DATABASE_URL` override); production database is `neondb`, distinct from workspace `heliumdb`. The published container shell was unavailable, so `npm run db:check` itself was not run there. |
 | Production DDL guard | `tests/unit/migrations.test.ts` and startup condition | **Unit tests verify the migration runner refuses production; app startup skips it**. Replit Publish owns production schema changes. |
+| Migration compatibility | `npm run db:compat` | **Passed; no incremental migrations exist yet.** The existing bootstrap defines a fresh database and is excluded from the rollout scan. For future migrations, the release checklist requires current + previous-build read/write review; the scan flags common breaking SQL but cannot prove application compatibility. |
 | Browser journey | `npm run test:e2e` | **13/13 steps passed**: sign up → template → canvas render → properties edit → inline canvas edit → insert element → autosave (server revision advanced) → undo → revision restore from history (and undo) → mobile breakpoint → publish (verified live) → anonymous visit desktop + mobile (no horizontal overflow, second page) → unpublish (410) → account cleanup (site stays offline) |
 | Compiled artifact + smoke | `node dist/server/start.js` + `node scripts/smoke.mjs` | passed (7/7) with Replit-style environment |
 | Exported standalone tree | `npm install && npm run typecheck && npm test && npm run build && npm run test:e2e` in the split repository | EXPORT_RESULT_PLACEHOLDER |

@@ -26,7 +26,12 @@ try {
   const [{ n }] = await sql`select count(*)::int as n from information_schema.tables where table_name like 'binhi_%'`;
   const migrated = (await sql`select to_regclass('drizzle.binhi_migrations') as r`)[0]?.r;
   console.log(`connected   : yes (${now})`);
-  console.log(`binhi tables: ${n}${migrated ? "" : " — migrations not applied yet (the server applies them at startup)"}`);
+  const schemaHint = migrated
+    ? ""
+    : env.NODE_ENV === "production" || env.REPLIT_DEPLOYMENT
+      ? " — production schema is applied through Replit Publish"
+      : " — development migrations apply when the app starts (or run npm run db:migrate)";
+  console.log(`binhi tables: ${n}${schemaHint}`);
 } finally {
   await sql.end();
 }

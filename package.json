@@ -2,7 +2,7 @@
   "name": "binhi",
   "private": true,
   "version": "0.1.0",
-  "description": "BINHI \u2014 standalone visual website editor and publishing platform (CHAOS ORIGINS). Independently operable; integrates with ORIGIN through contracts only.",
+  "description": "BINHI — standalone visual website editor and publishing platform (CHAOS ORIGINS). Independently operable; integrates with ORIGIN through contracts only.",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -21,6 +21,7 @@
     "test:e2e:studio": "node --import tsx e2e/studio.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",
+    "db:compat": "node scripts/check-migration-compat.mjs",
     "test:e2e:remote": "node --import tsx e2e/run.ts --remote",
     "smoke": "node scripts/smoke.mjs",
     "db:check": "node --import tsx scripts/db-check.ts"

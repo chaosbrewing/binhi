@@ -1,3 +1,10 @@
+-- binhi:compatibility-reviewed: additive only. Creates four new tables
+-- (binhi_projects, binhi_library_assets, binhi_asset_usages, binhi_brand_kits)
+-- with indexes and foreign keys that reference only the new tables or
+-- binhi_users(id) ON DELETE cascade. No existing table, column, default or
+-- constraint changes, so the previous build (main @ b6570ff) reads and writes
+-- unchanged; verified by running its integration suite against a database that
+-- already carried this migration (docs/RELEASE_CHECKLIST_PHASE1.md §2).
 CREATE TABLE IF NOT EXISTS "binhi_asset_usages" (
 	"asset_id" text NOT NULL,
 	"project_id" text NOT NULL,

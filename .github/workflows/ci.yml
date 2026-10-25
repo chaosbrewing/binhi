@@ -15,7 +15,8 @@ permissions:
 jobs:
   check:
     name: Typecheck, test, build, browser journey
-    runs-on: ubuntu-latest
+    # ubuntu-latest moved to 26.04, which Playwright 1.56.1 cannot install Chromium on.
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16
