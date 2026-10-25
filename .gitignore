@@ -1,9 +1,12 @@
 node_modules/
 dist/
+.cache/ms-playwright/
 .env
 .env.*
 !.env.example
 e2e/screenshots/
+playwright-report/
+test-results/
 coverage/
 *.log
 .DS_Store

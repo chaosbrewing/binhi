@@ -10,7 +10,11 @@ loadDotenv({ path: path.resolve(here, "..", "..", ".env") });
 
 async function main() {
   const config = loadConfig();
-  await runMigrations(config.databaseUrl);
+  if (config.env === "production") {
+    console.info("Skipping startup migrations in production; Replit Publish manages the production schema.");
+  } else {
+    await runMigrations(config.databaseUrl);
+  }
   const binhi = await buildApp({ config });
   const address = await binhi.app.listen({ port: config.port, host: "0.0.0.0" });
   binhi.app.log.info(`BINHI listening on ${address} (public URL ${config.publicUrl})`);

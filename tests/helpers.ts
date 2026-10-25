@@ -3,8 +3,9 @@ import { buildApp, type BinhiApp } from "../src/server/app.js";
 import { loadConfig } from "../src/server/config.js";
 import { runMigrations } from "../src/server/db/migrate.js";
 import { createDb } from "../src/server/db/client.js";
+import { getTestDatabaseUrl } from "./test-database.js";
 
-export const TEST_DATABASE_URL = process.env.BINHI_TEST_DATABASE_URL ?? "postgres://binhi:binhi_dev_pw@127.0.0.1:5432/binhi_test";
+export const TEST_DATABASE_URL = getTestDatabaseUrl();
 
 /** Build a fresh app against the test database with every BINHI table emptied. */
 export interface TestAppOptions {
@@ -17,7 +18,7 @@ export interface TestAppOptions {
 export async function testApp(overrides: Record<string, string> = {}, options: TestAppOptions = {}): Promise<BinhiApp> {
   await runMigrations(TEST_DATABASE_URL);
   const { db, sql } = createDb(TEST_DATABASE_URL);
-  if (options.truncate !== false) await sql`truncate binhi_users, binhi_sessions, binhi_sites, binhi_site_revisions, binhi_op_batches, binhi_assets, binhi_asset_blobs, binhi_publications, binhi_published_pages, binhi_form_submissions, binhi_audit_log cascade`;
+  if (options.truncate !== false) await sql`truncate binhi_users, binhi_sessions, binhi_sites, binhi_site_revisions, binhi_op_batches, binhi_assets, binhi_asset_blobs, binhi_publications, binhi_published_pages, binhi_form_submissions, binhi_audit_log, binhi_projects, binhi_library_assets, binhi_asset_usages, binhi_brand_kits cascade`;
   const config = loadConfig({
     BINHI_DATABASE_URL: TEST_DATABASE_URL,
     BINHI_SESSION_SECRET: "test-secret-test-secret-test-secret",

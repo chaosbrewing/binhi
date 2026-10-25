@@ -186,3 +186,76 @@ export const auditLog = pgTable(
   },
   (t) => ({ siteIdx: index("binhi_audit_site_idx").on(t.siteId) }),
 );
+
+/* ------------------------------------------------------------------ Phase 1: creative studio */
+
+/** Account-level, private media library shared by the photo editor, design studio and brand kits. */
+export const libraryAssets = pgTable(
+  "binhi_library_assets",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    filename: text("filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    alt: text("alt").notNull().default(""),
+    tags: text("tags").notNull().default(""),
+    /** Why the file exists: "upload" (chosen by the owner) or "photo-original" (saved with a photo project). */
+    origin: text("origin").notNull().default("upload"),
+    storage: text("storage").notNull(),
+    storageKey: text("storage_key").notNull(),
+    sha256: text("sha256").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({ ownerIdx: index("binhi_library_assets_owner_idx").on(t.ownerId) }),
+);
+
+export const PROJECT_KINDS_DB = ["photo", "design", "design-template"] as const;
+
+/** Creative projects with a per-kind document. Website projects remain in binhi_sites. */
+export const projects = pgTable(
+  "binhi_projects",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull().$type<(typeof PROJECT_KINDS_DB)[number]>(),
+    name: text("name").notNull(),
+    document: jsonb("document").notNull(),
+    schemaVersion: integer("schema_version").notNull().default(1),
+    /** Optimistic concurrency: clients send the revision they loaded; a mismatch is a 409. */
+    revision: integer("revision").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({ ownerIdx: index("binhi_projects_owner_idx").on(t.ownerId) }),
+);
+
+/** Which projects reference which library assets; recomputed on every project save. */
+export const assetUsages = pgTable(
+  "binhi_asset_usages",
+  {
+    assetId: text("asset_id").notNull().references(() => libraryAssets.id, { onDelete: "cascade" }),
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({ pk: uniqueIndex("binhi_asset_usages_pk").on(t.assetId, t.projectId), projectIdx: index("binhi_asset_usages_project_idx").on(t.projectId) }),
+);
+
+export const brandKits = pgTable(
+  "binhi_brand_kits",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    document: jsonb("document").notNull(),
+    schemaVersion: integer("schema_version").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({ ownerIdx: index("binhi_brand_kits_owner_idx").on(t.ownerId) }),
+);

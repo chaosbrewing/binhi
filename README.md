@@ -8,11 +8,14 @@ It is built to run on its own today and to become the website sector of
 ORIGIN tomorrow, integrating through contracts rather than shared tables
 (see [`docs/ORIGIN_INTEGRATION.md`](docs/ORIGIN_INTEGRATION.md)).
 
-> Status: **v0.1 — functional standalone editor.** Standalone accounts,
-> real persistence, canvas editing with structured and freeform layouts,
-> media library, templates, revisions, and verified path-based publishing
-> under `/s/<site>/`. Custom domains, TALA assistance and ORIGIN identity
-> are deliberately not part of v0.1.
+> Status: **v0.1 website builder + Phase 1 creative studio (in review).**
+> Standalone accounts, real persistence, canvas editing with structured and
+> freeform layouts, media library, templates, revisions, and verified
+> path-based publishing under `/s/<site>/`. Phase 1 adds a unified studio
+> dashboard, a non-destructive photo editor and image compressor, a
+> fixed-size design studio with PNG/JPEG export, editable design templates,
+> brand kits and a private asset library. Custom domains, TALA assistance
+> and ORIGIN identity are deliberately not part of it.
 
 ## What it does
 
@@ -26,8 +29,23 @@ ORIGIN tomorrow, integrating through contracts rather than shared tables
   versioned JSON document; HTML/CSS is always derived from it.
 - **Publishing** — snapshot → render → deploy → verify → live. Unpublish,
   rollback, form submissions, and honest failure states.
+- **Creative studio (Phase 1)** — one dashboard that says plainly which
+  tools work today; a photo editor and image compressor that never modify the
+  original; a design studio for social, print and web sizes with text, shapes
+  and your own images; design templates; brand kits that apply to designs or
+  push a website theme as a reviewable revision; and a private asset library
+  that tracks where every file is used. File Converter and Form Builder are
+  planned destinations with scoped roadmaps, not working tools.
 
 ## Run it locally
+
+### Replit workspace
+
+Click **Run**, then open Preview and select **Create an account**.
+The configured workflow builds and serves the entire app on port 5000,
+using the workspace PostgreSQL database and existing `SESSION_SECRET`.
+See [replit.md](replit.md) for configuration, verification, and publishing
+considerations. This repository is standalone; commands run from its root.
 
 Requirements: Node 22, PostgreSQL 14+.
 
@@ -35,44 +53,46 @@ Requirements: Node 22, PostgreSQL 14+.
 # from the repository root
 npm install
 createdb binhi_dev            # or any Postgres you control
-cp apps/binhi/.env.example apps/binhi/.env   # set BINHI_DATABASE_URL + BINHI_SESSION_SECRET
+cp .env.example .env   # set BINHI_DATABASE_URL + BINHI_SESSION_SECRET
 
-npm run dev --workspace apps/binhi            # API + published sites on :4100 (runs migrations first)
-npm run dev:client --workspace apps/binhi     # editor UI on :4173 (proxies /api, /s, /media to :4100)
+npm run dev            # API + published sites on :4100 (runs migrations first)
+npm run dev:client     # editor UI on :4173 (proxies /api, /s, /media to :4100)
 ```
 
 Open http://localhost:4173, create an account, start a website.
 
-Production: `npm run build --workspace apps/binhi` then
-`NODE_ENV=production npm start --workspace apps/binhi` serves the editor,
-the API, media and published sites from one process on `BINHI_PORT`.
+Production: apply development migrations first, then run `npm run build` and
+`NODE_ENV=production npm start`. Production startup does not run migrations;
+Replit Publish applies managed production schema changes.
 See [`docs/RELEASE.md`](docs/RELEASE.md) for Replit.
 
 ## Tests
 
 ```bash
-npm run typecheck --workspace apps/binhi   # client + server
-npm test --workspace apps/binhi            # unit (no DB) + integration (needs BINHI_TEST_DATABASE_URL or binhi_test on localhost)
-npm run build --workspace apps/binhi
-npm run test:e2e --workspace apps/binhi    # real Chromium: sign up → edit → publish → visit live site
-BINHI_E2E_BASE=https://<deployed-host> npm run test:e2e:remote --workspace apps/binhi   # same journey against a deployment
-node apps/binhi/scripts/smoke.mjs https://<deployed-host>                              # browser-less smoke test
+npm run typecheck   # client + server
+npm test            # unit + integration (uses disposable BINHI_TEST_DATABASE_URL or local binhi_test)
+npm run build
+npm run test:e2e    # real Chromium: sign up → edit → publish → visit live site
+npm run test:e2e:studio   # real Chromium: dashboard → photo → library → design → templates → brand kits
+BINHI_E2E_BASE=https://<deployed-host> npm run test:e2e:remote   # same journey against a deployment
+node scripts/smoke.mjs https://<deployed-host>                 # browser-less smoke test
 ```
 
-CI runs all four on every change under `apps/binhi/`
-(`.github/workflows/binhi-ci.yml`).
+CI runs these checks from the repository root (`.github/workflows/ci.yml`).
+Integration tests and the local browser journey truncate their target
+database, so use a separate disposable `BINHI_TEST_DATABASE_URL`—never the
+workspace or production database.
 
 ## Layout
 
 ```
-apps/binhi/
-  src/core/        canonical model, registry, operations, renderer, templates, validation (isomorphic)
-  src/server/      Fastify API: auth, sites, revisions, media, publishing, public site serving
-  src/client/      React editor: dashboard, canvas, panels, properties, dialogs
-  migrations/      Drizzle SQL migrations (tables prefixed binhi_)
-  tests/           vitest unit + Postgres integration tests
-  e2e/             Playwright journey
-  docs/            product charter, architecture, data model, operations, layout, publishing, ORIGIN integration, testing, release
+src/core/        canonical model, registry, operations, renderer, templates, validation (isomorphic)
+src/server/      Fastify API: auth, sites, revisions, media, publishing, public site serving
+src/client/      React editor: dashboard, canvas, panels, properties, dialogs
+migrations/      Drizzle SQL migrations (tables prefixed binhi_)
+tests/           vitest unit + Postgres integration tests
+e2e/             Playwright journey
+docs/            product charter, architecture, data model, operations, layout, publishing, ORIGIN integration, testing, release
 ```
 
 ## Documentation
@@ -88,3 +108,5 @@ apps/binhi/
 - [Release, hosting and rollback](docs/RELEASE.md)
 - [Relocating to its own repository](docs/RELOCATION.md)
 - [Release readiness report](docs/RELEASE_READINESS.md)
+- [Creative studio architecture and gates](docs/CREATIVE_STUDIO.md)
+- [Phase 1 status and gap assessment](docs/PHASE1_STATUS.md)

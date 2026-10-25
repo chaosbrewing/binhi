@@ -1,13 +1,10 @@
-# BINHI on Replit — standalone host configuration.
-# Workspace ("Run") uses the Replit development PostgreSQL; the deployment
-# uses a separate production database. BINHI_SESSION_SECRET must be set as a
-# Secret in both. See docs/RELEASE.md.
-modules = ["nodejs-22", "postgresql-16"]
+modules = ["web", "nodejs-22", "python-base-3.13", "postgresql-16"]
 
 [nix]
 channel = "stable-25_05"
 
-run = "npm run dev"
+run = "npm run build && npm start"
+packages = ["glib", "nspr", "nss", "dbus", "atk", "at-spi2-atk", "cups", "xorg.libxcb", "libxkbcommon", "at-spi2-core", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "mesa", "cairo", "pango", "alsa-lib"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -15,8 +12,37 @@ build = ["sh", "-c", "npm ci && npm run build"]
 run = ["sh", "-c", "NODE_ENV=production node dist/server/start.js"]
 
 [[ports]]
-localPort = 4100
+localPort = 5000
 externalPort = 80
 
 [env]
-BINHI_PORT = "4100"
+BINHI_PORT = "5000"
+BINHI_SERVE_BUILT_CLIENT = "true"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build && npm start"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000

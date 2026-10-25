@@ -27,7 +27,7 @@ export function AccountPage() {
     <div className="shell">
       <header className="shell-header">
         <Link to="/" className="plain-link"><Logo /></Link>
-        <Link to="/" className="btn btn-ghost">Back to your websites</Link>
+        <Link to="/" className="btn btn-ghost">Back to studio</Link>
       </header>
       <main className="shell-main narrow">
         <h1>Your account</h1>
@@ -37,7 +37,7 @@ export function AccountPage() {
         </dl>
         <section className="danger-zone">
           <h2>Delete account</h2>
-          <p className="muted">Deleting your account removes every website, image, revision and published page. Published sites go offline immediately.</p>
+          <p className="muted">Deleting your account removes every website, image, revision and published page, plus your photo projects, designs, templates, brand kits and asset library. Published sites go offline immediately.</p>
           {!confirming ? (
             <button className="btn btn-danger" onClick={() => setConfirming(true)}>Delete my account…</button>
           ) : (

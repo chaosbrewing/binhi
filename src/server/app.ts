@@ -23,6 +23,10 @@ import { PublishService } from "./publish/service.js";
 import { LocalPublishingAdapter } from "./publish/localAdapter.js";
 import { registerPublicRoutes } from "./publish/public.js";
 import { registerPublishRoutes } from "./publish/routes.js";
+import { LibraryService } from "./creative/library.js";
+import { ProjectService } from "./creative/projects.js";
+import { BrandKitService } from "./creative/brandKits.js";
+import { registerCreativeRoutes } from "./creative/routes.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -44,7 +48,7 @@ export interface BinhiApp {
   app: FastifyInstance;
   db: Db;
   sql: Sql;
-  services: { sites: SiteService; assets: AssetService; sessions: SessionService; publish: PublishService };
+  services: { sites: SiteService; assets: AssetService; sessions: SessionService; publish: PublishService; library: LibraryService; projects: ProjectService; brandKits: BrandKitService };
   close(): Promise<void>;
 }
 
@@ -61,6 +65,9 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   const siteSvc = new SiteService(db);
   const assetSvc = new AssetService(db, storage, config.maxUploadBytes);
   const publishSvc = new PublishService(db, new LocalPublishingAdapter(db), { publicUrl: config.publicUrl, verifyBaseUrl: config.verifyBaseUrl, fetchImpl: deps.fetchImpl ?? fetch });
+  const librarySvc = new LibraryService(db, storage, config.maxUploadBytes);
+  const projectSvc = new ProjectService(db, librarySvc);
+  const brandKitSvc = new BrandKitService(db, librarySvc);
 
   const app = Fastify({ logger: config.env !== "test", bodyLimit: 6 * 1024 * 1024, trustProxy: true, disableRequestLogging: true });
   await app.register(cookie);
@@ -184,6 +191,9 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
       await publishSvc.unpublish(user.id, s.id, req.ip).catch(() => undefined);
       await siteSvc.softDelete(user.id, s.id, req.ip);
     }
+    for (const p of await projectSvc.list(user.id)) await projectSvc.softDelete(user.id, p.id, req.ip);
+    for (const k of await brandKitSvc.list(user.id)) await brandKitSvc.softDelete(user.id, k.id, req.ip);
+    for (const a of await librarySvc.list(user.id)) await librarySvc.delete(user.id, a.id, { force: true }, req.ip);
     await db.update(users).set({ deletedAt: new Date(), email: `deleted-${user.id}@deleted.invalid`, passwordHash: "deleted" }).where(eq(users.id, user.id));
     await sessionsSvc.revokeAllForUser(user.id);
     reply.clearCookie(SESSION_COOKIE, { path: "/" });
@@ -343,10 +353,13 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   registerPublishRoutes(app, { requireUser, sites: siteSvc, publish: publishSvc, db });
   registerPublicRoutes(app, { publish: publishSvc, db, publicUrl: config.publicUrl, runtimePath: path.join(here, "..", "..", "public", "binhi-runtime.js") });
 
+  /* ------------------------------------------------- creative studio (Phase 1) */
+  registerCreativeRoutes(app, { requireUser, sites: siteSvc, assets: assetSvc, library: librarySvc, projects: projectSvc, brandKits: brandKitSvc });
+
   /* ------------------------------------------------------------- client SPA */
   // Built client: dist/client next to dist/server, or (when running from source) ../../dist/client.
   const clientDir = [path.resolve(here, "..", "client"), path.resolve(here, "..", "..", "dist", "client")].find((d) => existsSync(path.join(d, "index.html")));
-  if (config.env === "production" && clientDir) {
+  if (config.serveBuiltClient && clientDir) {
     await app.register(fastifyStatic, { root: clientDir, prefix: "/", wildcard: false, index: false, decorateReply: true });
     app.setNotFoundHandler(async (req, reply) => {
       if (req.url.startsWith("/api/") || req.url.startsWith("/s/") || req.url.startsWith("/media/")) {
@@ -361,7 +374,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
     app,
     db,
     sql,
-    services: { sites: siteSvc, assets: assetSvc, sessions: sessionsSvc, publish: publishSvc },
+    services: { sites: siteSvc, assets: assetSvc, sessions: sessionsSvc, publish: publishSvc, library: librarySvc, projects: projectSvc, brandKits: brandKitSvc },
     async close() {
       await app.close();
       if (created) await created.sql.end();
