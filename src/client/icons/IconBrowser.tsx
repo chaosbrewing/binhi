@@ -234,7 +234,7 @@ export function IconBrowser({ onInsert, insertLabel = "Insert icon", defaults, p
 
       <details className="icon-about">
         <summary>About these icons</summary>
-        <p className="help">{ICON_LIST.length} icons in 25 categories. Geometry from Lucide (ISC licence, some derived from Feather, MIT) plus BINHI originals. No icon fonts or remote services. Full notices: docs/ICON_LICENSES.md.</p>
+        <p className="help">{ICON_LIST.length} icons in 25 categories. Geometry from Lucide (ISC licence, some derived from Feather, MIT) plus BINHI originals. No icon fonts or remote services. Licence notices: <a href="/third-party-notices.txt" target="_blank" rel="noopener noreferrer">third-party notices</a>.</p>
       </details>
     </div>
   );

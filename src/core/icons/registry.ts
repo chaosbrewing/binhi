@@ -51,6 +51,11 @@ const LUCIDE_LICENCE: IconLicence = {
   holder: "Lucide Icons and Contributors",
   note: `lucide-static ${LUCIDE_VERSION}; some icons derive from Feather (MIT, Cole Bemis) — see docs/ICON_LICENSES.md`,
 };
+const LUCIDE_FEATHER_LICENCE: IconLicence = {
+  spdx: "ISC AND MIT",
+  holder: "Lucide Icons and Contributors; Cole Bemis (Feather)",
+  note: `lucide-static ${LUCIDE_VERSION}; this glyph is identical to a Feather icon — both notices apply (public/third-party-notices.txt)`,
+};
 const ORIGINAL_LICENCE: IconLicence = {
   spdx: "LicenseRef-BINHI",
   holder: "CHAOS ORIGINS",
@@ -75,7 +80,7 @@ function define(entry: CatalogEntry): IconDefinition {
     category: entry.cat,
     categoryName,
     source: original ? { kind: "original" } : { kind: "lucide", name: entry.src.slice("lucide:".length) },
-    licence: original ? ORIGINAL_LICENCE : LUCIDE_LICENCE,
+    licence: original ? ORIGINAL_LICENCE : entry.l === 2 ? LUCIDE_FEATHER_LICENCE : LUCIDE_LICENCE,
     keywords: entry.k,
     tags: entry.t,
     variants,

@@ -38,6 +38,8 @@ interface Ctx {
   css: string[];
   needsRuntime: boolean;
   editor: boolean;
+  /** Set when the page inlines library icon artwork (adds the licence notice comment when publishing). */
+  usesLibraryIcons: boolean;
 }
 
 export const RESERVED_CLASS_PREFIX = "b-";
@@ -67,6 +69,7 @@ export function renderPage(doc: SiteDocument, pageId: string, opts: RenderOption
     link: { doc, baseHref: opts.baseHref, assetUrl: opts.assetUrl },
     css: [],
     needsRuntime: false,
+    usesLibraryIcons: false,
     editor: opts.mode === "editor",
   };
   const header = doc.header ? renderNode(ctx, doc.header, null) : "";
@@ -115,12 +118,13 @@ function documentShell(ctx: Ctx, body: string, css: string): string {
   head.push(`<meta name="generator" content="BINHI">`);
   if (opts.publicationId) head.push(`<meta name="binhi-publication" content="${esc(opts.publicationId)}">`);
   head.push(`<style>${css}</style>`);
+  const iconNotice = ctx.usesLibraryIcons && opts.mode === "publish" ? `<!-- Icon artwork: Lucide (ISC) © Lucide Icons and Contributors; some glyphs from Feather (MIT) © Cole Bemis. Notices: /third-party-notices.txt -->\n` : "";
   const runtime = ctx.needsRuntime && opts.runtimeHref && !ctx.editor ? `<script src="${esc(opts.runtimeHref)}" defer></script>` : "";
   const skip = `<a class="b-skip" href="#b-main">Skip to content</a>`;
   // Web fonts load at the end of the body so a slow font CDN never blanks the
   // page (or the editor canvas); text paints with the fallback first.
   const fonts = fontsLink(doc.theme);
-  return `<!doctype html>\n<html lang="${esc(doc.settings.language)}"${ctx.editor ? ' data-binhi-editor="1"' : ""}>\n<head>\n${head.join("\n")}\n</head>\n<body class="b-body">\n${skip}\n${body}\n${fonts}\n${runtime}\n</body>\n</html>`;
+  return `<!doctype html>\n<html lang="${esc(doc.settings.language)}"${ctx.editor ? ' data-binhi-editor="1"' : ""}>\n<head>\n${head.join("\n")}\n</head>\n<body class="b-body">\n${iconNotice}${skip}\n${body}\n${fonts}\n${runtime}\n</body>\n</html>`;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -461,6 +465,7 @@ function renderIcon(ctx: Ctx, node: Node): string {
   let svg: string;
   if (iconId) {
     const def = getIcon(iconId)!;
+    if (def.source.kind === "lucide") ctx.usesLibraryIcons = true;
     const shape = ctx.opts.iconShape?.(iconId);
     if (!shape && ctx.opts.mode === "publish") throw new Error(`Icon ${iconId} could not be resolved for publishing`);
     // A linked icon must have an accessible name; an explicitly decorative, unlinked icon never does.

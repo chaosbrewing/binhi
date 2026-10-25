@@ -94,7 +94,7 @@ describe("icon registry integrity", () => {
       "Portrait Orientation",
       "Tabs",
     ]);
-    expect(ICON_LIST.filter((d) => d.source.kind === "lucide").every((d) => d.licence.spdx === "ISC")).toBe(true);
+    expect(ICON_LIST.filter((d) => d.source.kind === "lucide").every((d) => d.licence.spdx === "ISC" || d.licence.spdx === "ISC AND MIT")).toBe(true);
   });
 
   it("rejects duplicate ids, numbering gaps and wrong totals", () => {
