@@ -1519,8 +1519,14 @@ label {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+.icon-browser-row.single {
+  grid-template-columns: 1fr;
+}
 .icon-browser-row .field {
   min-width: 0;
+}
+.icon-browser-row input[type="range"] {
+  width: 100%;
 }
 .icon-colour {
   display: flex;
@@ -1588,10 +1594,10 @@ label {
 }
 .icon-fav {
   position: absolute;
-  top: 1px;
-  right: 1px;
-  width: 22px;
-  height: 22px;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
   border: 0;
@@ -1600,7 +1606,12 @@ label {
   color: var(--text-faint);
   cursor: pointer;
   padding: 0;
-  opacity: 0;
+}
+/* Touch devices have no hover: keep the star visible there; on pointer devices reveal it on hover or focus. */
+@media (hover: hover) {
+  .icon-fav {
+    opacity: 0;
+  }
 }
 .icon-cell:hover .icon-fav,
 .icon-cell:focus-within .icon-fav,

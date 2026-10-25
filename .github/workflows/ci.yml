@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -53,6 +54,8 @@ jobs:
         run: npm run test:e2e
       - name: Creative studio journey (dashboard, photo projects, library, design, templates, brand kits)
         run: npm run test:e2e:studio
+      - name: Icon library journey (browser, website icon, design icon, PNG/JPEG/SVG export)
+        run: npm run test:e2e:icons
       - name: Upload e2e screenshots
         if: always()
         uses: actions/upload-artifact@v4

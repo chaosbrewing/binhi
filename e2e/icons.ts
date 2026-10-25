@@ -353,6 +353,29 @@ try {
   await p.screenshot({ path: `${output}/03-design.png` });
   record("templates created from designs keep valid icon references");
 
+  /* ----------------------------------------------------------- phone and tablet widths */
+  for (const [width, height] of [[390, 844], [820, 1180]] as const) {
+    await p.setViewportSize({ width, height });
+    await p.waitForTimeout(200);
+    // The Phase 1 design editor itself may already be wider than a tablet; the icon dialog must not add overflow.
+    const baseline = await p.evaluate(() => document.documentElement.scrollWidth);
+    await p.getByRole("button", { name: "Icon", exact: true }).click();
+    const sheet = p.getByRole("dialog", { name: "Insert an icon" });
+    await sheet.getByLabel("Search icons", { exact: true }).waitFor();
+    const modalBox = await sheet.boundingBox();
+    assert.ok(modalBox && modalBox.x >= 0 && modalBox.x + modalBox.width <= width + 1, `icon dialog fits a ${width}px viewport`);
+    const after = await p.evaluate(() => document.documentElement.scrollWidth);
+    assert.ok(after <= Math.max(width, baseline), `the icon dialog adds no horizontal scroll at ${width}px (page ${baseline}px before, ${after}px after)`);
+    if (width === 390) assert.ok(after <= width, "no horizontal scroll at phone width");
+    const cell = await sheet.locator("button[data-icon-cell]").first().boundingBox();
+    assert.ok(cell && cell.width >= 44 && cell.height >= 44, "icon buttons keep a 44px touch target");
+    await p.screenshot({ path: `${output}/04-icon-dialog-${width}.png` });
+    await p.keyboard.press("Escape");
+    await sheet.waitFor({ state: "detached" });
+  }
+  await p.setViewportSize({ width: 1440, height: 900 });
+  record("icon dialog is usable at phone and tablet widths");
+
   /* ------------------------------------------------------------ isolation + errors */
   const other = await browser.newContext();
   await other.request.post(`${base}/api/auth/signup`, { headers: H, data: { email: `icons-b-${randomUUID()}@example.invalid`, password, displayName: "Other" } });

@@ -36,6 +36,10 @@ ORIGIN tomorrow, integrating through contracts rather than shared tables
   push a website theme as a reviewable revision; and a private asset library
   that tracks where every file is used. File Converter and Form Builder are
   planned destinations with scoped roadmaps, not working tools.
+- **Universal Icon Library** — 250 original-or-licensed vector icons (25
+  categories × 10) with search, favourites, style variants and size/colour
+  controls; insert them into websites and designs and export with the result
+  ([`docs/ICON_LIBRARY.md`](docs/ICON_LIBRARY.md)).
 
 ## Run it locally
 
@@ -74,6 +78,7 @@ npm test            # unit + integration (uses disposable BINHI_TEST_DATABASE_UR
 npm run build
 npm run test:e2e    # real Chromium: sign up → edit → publish → visit live site
 npm run test:e2e:studio   # real Chromium: dashboard → photo → library → design → templates → brand kits
+npm run test:e2e:icons    # real Chromium: icon browser → website icon (save/reopen/publish) → design icon (export PNG/JPEG/SVG)
 BINHI_E2E_BASE=https://<deployed-host> npm run test:e2e:remote   # same journey against a deployment
 node scripts/smoke.mjs https://<deployed-host>                 # browser-less smoke test
 ```
@@ -104,6 +109,7 @@ docs/            product charter, architecture, data model, operations, layout, 
 - [Layout and positioning model](docs/LAYOUT_MODEL.md)
 - [Publishing contract](docs/PUBLISHING.md)
 - [ORIGIN integration plan](docs/ORIGIN_INTEGRATION.md)
+- [Icon library](docs/ICON_LIBRARY.md), [sources and licences](docs/ICON_LICENSES.md), [inventory](docs/ICON_INVENTORY.md)
 - [Testing](docs/TESTING.md)
 - [Release, hosting and rollback](docs/RELEASE.md)
 - [Relocating to its own repository](docs/RELOCATION.md)

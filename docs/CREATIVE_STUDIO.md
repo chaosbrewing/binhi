@@ -209,3 +209,10 @@ What changed relative to the milestone 1 plan above:
 - **Still planned, still labelled planned:** File Converter and Form Builder.
 - **No new paid services.** Processing stays in the browser; storage uses the
   existing Postgres blob adapter.
+
+## 9. Icon library (added after Phase 1)
+
+The Design Studio gained an `icon` layer, an **Icon** toolbar action, copy/paste of layers and **Export SVG**; see
+[`ICON_LIBRARY.md`](ICON_LIBRARY.md). Two pre-existing defects were found and fixed on the way: *Duplicate* failed for
+every layer type (`makeLayer` was handed `id: undefined`), and website elements edited before their first autosave
+were rejected by the server (the inserted element's id was not sent). Both have regression tests.

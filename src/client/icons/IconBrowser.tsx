@@ -157,9 +157,9 @@ export function IconBrowser({ onInsert, insertLabel = "Insert icon", defaults, p
             <input type="number" min={8} max={400} value={size} onChange={(e) => setSize(Math.max(8, Math.min(400, Number(e.target.value) || 24)))} aria-label="Custom icon size in pixels" />
           </label>
         </div>
-        <div className="icon-browser-row">
+        <div className="icon-browser-row single">
           <label className="field">
-            <span className="field-label">Stroke {strokeWidth}</span>
+            <span className="field-label">Stroke weight · {strokeWidth}</span>
             <input type="range" min={ICON_STROKE_MIN} max={ICON_STROKE_MAX} step={0.5} value={strokeWidth} onChange={(e) => setStrokeWidth(Number(e.target.value))} aria-label="Stroke weight" />
           </label>
           <div className="field">
