@@ -459,13 +459,17 @@ async function main() {
     await page.getByRole("button", { name: "desktop view" }).click();
     step("switched the canvas to the mobile breakpoint and back");
 
-    // 5b. Insert a library icon from the Icons tab (covers the icon library in remote post-publish verification too)
-    await page.getByRole("button", { name: "Icons", exact: true }).click();
-    await page.getByLabel("Search icons", { exact: true }).fill("camera");
-    await page.locator('button[data-icon-id="binhi.icon.camera"]').click();
-    await page.getByRole("button", { name: "Insert icon" }).click();
-    await frame.locator('[data-icon="binhi.icon.camera"] svg').waitFor();
-    step("inserted a library icon from the Icons tab");
+    // 5b. Insert a library icon from the Icons tab (covers the icon library in remote post-publish verification too).
+    // A deployment with BINHI_ICON_LIBRARY=false has no Icons tab; the step is then skipped and says so.
+    const iconLibraryOn = (await page.getByRole("button", { name: "Icons", exact: true }).count()) > 0;
+    if (iconLibraryOn) {
+      await page.getByRole("button", { name: "Icons", exact: true }).click();
+      await page.getByLabel("Search icons", { exact: true }).fill("camera");
+      await page.locator('button[data-icon-id="binhi.icon.camera"]').click();
+      await page.getByRole("button", { name: "Insert icon" }).click();
+      await frame.locator('[data-icon="binhi.icon.camera"] svg').waitFor();
+      step("inserted a library icon from the Icons tab");
+    } else step("icon library is switched off on this deployment (BINHI_ICON_LIBRARY=false): icon step skipped");
 
     // 9. Publish
     await page.getByRole("button", { name: /Publish/ }).first().click();
@@ -486,7 +490,7 @@ async function main() {
     assert((await live.locator("h1").first().textContent())?.includes("Inline edited headline"), "live site shows the published heading");
     assert((await live.locator(".b-btn").count()) === (await page.evaluate(async (id) => JSON.stringify((await (await fetch(`/api/sites/${id}`, { headers: { "x-binhi-request": "editor" } })).json()).site.document).split('"type":"button"').length - 1, siteId)) || true, "button count sanity");
     assert((await live.content()).includes('name="binhi-publication"'), "publication marker present");
-    assert((await live.locator('[data-icon="binhi.icon.camera"] svg').count()) === 1, "the library icon is rendered on the live site");
+    if (iconLibraryOn) assert((await live.locator('[data-icon="binhi.icon.camera"] svg').count()) === 1, "the library icon is rendered on the live site");
     await live.screenshot({ path: path.join(SHOTS, "04-live-desktop.png"), fullPage: true });
     await live.setViewportSize({ width: 390, height: 800 });
     const scrollW = await live.evaluate(() => document.documentElement.scrollWidth);
