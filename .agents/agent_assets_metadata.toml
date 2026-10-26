@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "u0TbBYJ18EzN7kuXGKPUI"
+uri = "file://.local/worktrees/binhi-icon-v1/generated-artifacts/icon-v1-review/all-250-review.html"
+type = "html"
+title = "BINHI Essential 250 — artwork review pack"
+description = "All 250 real canonical glyphs, source classes, native-size samples and unchanged/proposed optical comparisons. Founder visual and AI-assisted authorship approval pending; no production change."
+logical_id = "9cdb79d5-e3f3-49f4-8151-6c09029ffd27"
+content_hash = "sha256:9298d91f6f36027645443954eeb33f64bfb84eb8f7c67bac1c4f9dec0fc17102"
+size = 666629
+mtime_ms = 1793030015168
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:1449194b-e648-42cc-970e-7f4e86fc7cb4/9cdb79d5-e3f3-49f4-8151-6c09029ffd27/43b60d66-4d08-4222-a867-e43fe0590ea5"
+storage_version_token = "1793030348611871"
+content_type = "text/html"
