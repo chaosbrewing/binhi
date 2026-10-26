@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { loadOAuthConfig, type OAuthConfig } from "./auth/oidc.js";
 
 const Env = z.object({
   BINHI_DATABASE_URL: z.string().min(1, "BINHI_DATABASE_URL (or DATABASE_URL) is required"),
@@ -20,6 +21,7 @@ const Env = z.object({
 });
 
 export type Config = {
+  oauth: OAuthConfig;
   databaseUrl: string;
   sessionSecret: string;
   publicUrl: string;
@@ -76,6 +78,7 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): Config {
     throw new Error("BINHI_MEDIA_DIR is required when BINHI_MEDIA_STORAGE=disk");
   }
   return {
+    oauth: loadOAuthConfig(env, e.BINHI_PUBLIC_URL, e.NODE_ENV),
     databaseUrl: e.BINHI_DATABASE_URL,
     sessionSecret: e.BINHI_SESSION_SECRET,
     publicUrl: e.BINHI_PUBLIC_URL.replace(/\/$/, ""),

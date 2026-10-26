@@ -53,6 +53,8 @@ jobs:
         run: npm run test:e2e
       - name: Creative studio journey (dashboard, photo projects, library, design, templates, brand kits)
         run: npm run test:e2e:studio
+      - name: Synthetic Google and Apple browser journey (HTTPS cookies, linking, reauth, deletion)
+        run: npm run test:e2e:auth
       - name: Upload e2e screenshots
         if: always()
         uses: actions/upload-artifact@v4

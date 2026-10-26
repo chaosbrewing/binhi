@@ -1,5 +1,6 @@
 import type { SiteDocument, Operation, ValidationReport } from "../core/index.js";
 import type { BrandKitDocument, DesignDocument, PhotoProjectDocument, ProjectKind } from "../core/creative/index.js";
+import type { AuthMethods, OAuthIntent, ProviderStatus, SocialProvider } from "../core/auth.js";
 
 export class ApiError extends Error {
   constructor(
@@ -148,10 +149,16 @@ export interface BrandKit {
 
 export const api = {
   me: () => request<{ user: User | null; signupEnabled: boolean }>("GET", "/api/auth/me"),
+  authProviders: () => request<{ providers: ProviderStatus[] }>("GET", "/api/auth/providers"),
+  authMethods: () => request<AuthMethods>("GET", "/api/auth/methods"),
+  startOAuth: (provider: SocialProvider, intent: OAuthIntent) =>
+    request<{ redirectUrl: string }>("POST", `/api/auth/${provider}/start`, { intent }),
+  reauthenticate: (password: string) => request<{ ok: true }>("POST", "/api/auth/reauth", { password }),
+  unlinkIdentity: (id: string) => request<{ ok: true }>("DELETE", `/api/auth/identities/${encodeURIComponent(id)}`),
   signup: (email: string, password: string, displayName: string) => request<{ user: User }>("POST", "/api/auth/signup", { email, password, displayName }),
   login: (email: string, password: string) => request<{ user: User }>("POST", "/api/auth/login", { email, password }),
   logout: () => request<{ ok: true }>("POST", "/api/auth/logout"),
-  deleteAccount: (password: string) => request<{ ok: true }>("DELETE", "/api/auth/account", { password }),
+  deleteAccount: (password?: string) => request<{ ok: true }>("DELETE", "/api/auth/account", password ? { password } : undefined),
   templates: () => request<{ templates: TemplateSummary[] }>("GET", "/api/templates"),
   sites: () => request<{ sites: SiteSummary[] }>("GET", "/api/sites"),
   createSite: (name: string, templateId: string) => request<{ site: SiteDetail }>("POST", "/api/sites", { name, templateId }),

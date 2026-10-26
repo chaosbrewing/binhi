@@ -19,6 +19,7 @@
     "test:unit": "vitest run tests/unit",
     "test:e2e": "node --import tsx e2e/run.ts",
     "test:e2e:studio": "node --import tsx e2e/studio.ts",
+    "test:e2e:auth": "node --import tsx e2e/social-auth.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",
     "db:compat": "node scripts/check-migration-compat.mjs",
