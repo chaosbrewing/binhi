@@ -1,6 +1,15 @@
 BINHI icon library — third-party notices
 ========================================
 
+Canonical v1.0 reconciliation (review branch; founder approval pending):
+144 canonical glyphs use Lucide geometry (124 ISC; 20 ISC AND MIT).
+One canonical glyph reuses existing BINHI original geometry.
+105 additional canonical glyphs (80 compositions, 25 drawings) are AI-assisted
+original geometry without third-party parts. Artwork/authorship clearance
+remains pending; this notice does not assert legal clearance for those assets.
+All 250 earlier sources remain available for saved-document compatibility.
+Per-item lineage, geometry hashes and review state: docs/ICON_V1_MANIFEST.json.
+
 The BINHI icon library contains artwork derived from Lucide (lucide-static 1.61.0),
 including glyphs that Lucide itself derives from Feather. The licence text below is
 reproduced verbatim from the Lucide package, as the licences require.

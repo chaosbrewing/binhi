@@ -1,3 +1,22 @@
+# Canonical v1.0 reconciliation addendum
+
+The v1 reconciliation uses the same Essential library, not a parallel one. `binhi.icon.<slug>` remains the stored
+identity; `ICN-NNN` is a permanent input/search alias normalized before persistence. Seventy-five explicitly
+same-concept S rows retain their old ids. All other canonical concepts receive new ids; legacy slugs are never
+reassigned to a new meaning. The matrix records all decisions, including nine distinct alternate glyph choices
+and the conventional `@` geometry shared by two **distinct** meanings (Unread Mention and legacy Email Input).
+
+All 250 prior geometry sources, variant support and default 2px presentation remain intact. Default browsing
+shows the canonical 250; explicit searches, favorites and recents can still resolve the old assets without duplicate
+ids in results. There are 425 unique resolvable ids, **not 425 canonical icons**.
+
+No normalized/scaled geometry is applied to saved documents. The 20×20/1.5px proposal is a review-only contact
+sheet profile. New C/O paths still require founder visual and authorship approval. Old builds do not know the
+175 new ids: reverting an icon-bearing document to such a build is not safe. The preflight/kill-switch rules below
+still apply; this is forward compatibility for older documents, **not a promise of backward support by old builds**.
+
+---
+
 # Icon library — compatibility with older builds and rollback
 
 Goal: no document content may be silently discarded or overwritten when an older build meets documents written by

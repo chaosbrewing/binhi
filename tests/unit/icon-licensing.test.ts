@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ICON_LIST } from "../../src/core/icons/index.js";
+import { ICON_LIST, getIcon } from "../../src/core/icons/index.js";
 import { applyOperation, createSiteDocument, renderPage, type RenderOptions } from "../../src/core/index.js";
 import { resolveIconShapeSync } from "../../src/core/icons/shapes-all.js";
 
@@ -37,12 +37,12 @@ describe("icon licensing obligations", () => {
     const original = ICON_LIST.filter((d) => d.source.kind === "original");
     const feather = ICON_LIST.filter((d) => d.licence.spdx === "ISC AND MIT");
     const isc = ICON_LIST.filter((d) => d.licence.spdx === "ISC");
-    expect([isc.length, feather.length, original.length]).toEqual([204, 41, 5]);
+    expect([isc.length, feather.length, original.length]).toEqual([124, 20, 106]);
     expect(original.every((d) => d.licence.spdx === "LicenseRef-BINHI")).toBe(true);
-    expect(inventory).toContain("204 × ISC, 41 × ISC + MIT (Feather), 5 × BINHI original");
+    expect(inventory).toContain("S=75, L=70, C=80, O=25");
     // renamed Lucide glyphs that equal a Feather icon are still marked (detected by geometry, not by name)
     for (const slug of ["more-options", "error", "warning-triangle", "help-circle"]) {
-      expect(ICON_LIST.find((d) => d.slug === slug)?.licence.spdx, slug).toBe("ISC AND MIT");
+      expect(getIcon(`binhi.icon.${slug}`)?.licence.spdx, slug).toBe("ISC AND MIT");
     }
   });
 

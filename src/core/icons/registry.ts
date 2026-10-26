@@ -1,8 +1,9 @@
 import { CATALOG_CATEGORIES, CATALOG_ENTRIES, LUCIDE_VERSION, type CatalogEntry } from "./generated/catalog.js";
+import { V1_CATEGORIES, V1_ENTRIES } from "./canonical/catalog.js";
 import type { IconVariant } from "./render.js";
 
 /** Version of the registry contract; bump when ids change meaning, never for added keywords. */
-export const ICON_REGISTRY_VERSION = "1.0.0";
+export const ICON_REGISTRY_VERSION = "1.1.0";
 export const ICON_ID_PREFIX = "binhi.icon.";
 export const ICON_ID_PATTERN = /^binhi\.icon\.[a-z0-9]+(-[a-z0-9]+)*$/;
 export const ICON_VIEWBOX = "0 0 24 24";
@@ -40,6 +41,11 @@ export interface IconDefinition {
   readonly a11y: { readonly defaultLabel: string; readonly decorativeByDefault: true };
   readonly version: number;
   readonly deprecated?: { readonly since: string; readonly replacedBy?: string };
+  /** Permanent public catalog aliases. Never stored instead of the persistent asset id. */
+  readonly aliases?: readonly string[];
+  readonly classification?: "S" | "L" | "C" | "O";
+  readonly provenance?: string;
+  readonly artworkReview?: "pending";
 }
 
 const LUCIDE_LICENCE: IconLicence = {
@@ -60,8 +66,8 @@ const ORIGINAL_LICENCE: IconLicence = {
 
 export class IconRegistryError extends Error {}
 
-function define(entry: CatalogEntry): IconDefinition {
-  const categoryName = CATALOG_CATEGORIES.find((c) => c.slug === entry.cat)?.name;
+function define(entry: CatalogEntry, categories: readonly { slug: string; name: string }[] = CATALOG_CATEGORIES): IconDefinition {
+  const categoryName = categories.find((c) => c.slug === entry.cat)?.name;
   if (!categoryName) throw new IconRegistryError(`icon ${entry.slug} has unknown category ${entry.cat}`);
   const variants: IconVariant[] = ["outline"];
   if (entry.d) variants.push("duotone");
@@ -107,7 +113,41 @@ export function buildRegistry(entries: readonly CatalogEntry[] = CATALOG_ENTRIES
   return map;
 }
 
-const REGISTRY = buildRegistry();
+/** Retained for old documents and account-local favorites; never offered as a second library. */
+const LEGACY_REGISTRY = buildRegistry();
+export const LEGACY_ICON_LIST: readonly IconDefinition[] = [...LEGACY_REGISTRY.values()];
+
+type CanonicalEntry = CatalogEntry & {
+  readonly alias: string;
+  readonly classification: "S" | "L" | "C" | "O";
+};
+export function buildCanonicalRegistry(entries: readonly CanonicalEntry[] = V1_ENTRIES): ReadonlyMap<string, IconDefinition> {
+  if (entries.length !== ICON_COUNT) throw new IconRegistryError(`expected ${ICON_COUNT} canonical icons`);
+  const map = new Map<string, IconDefinition>();
+  const aliases = new Set<string>();
+  entries.forEach((entry, i) => {
+    if (entry.n !== i + 1) throw new IconRegistryError("canonical numbering gap");
+    if (entry.alias !== `ICN-${String(i + 1).padStart(3, "0")}` || aliases.has(entry.alias)) throw new IconRegistryError("invalid or duplicate catalog alias");
+    aliases.add(entry.alias);
+    const definition = define(entry, V1_CATEGORIES);
+    if (!ICON_ID_PATTERN.test(definition.id) || map.has(definition.id)) throw new IconRegistryError("invalid or duplicate persistent id");
+    if (LEGACY_REGISTRY.has(definition.id) && entry.classification !== "S") throw new IconRegistryError("new meaning would overwrite legacy id");
+    map.set(definition.id, Object.freeze({
+      ...definition, aliases: Object.freeze([entry.alias]), classification: entry.classification,
+      provenance: `docs/ICON_V1_MANIFEST.json#${entry.alias}`, artworkReview: "pending",
+      ...(entry.classification === "C" || entry.classification === "O" ? {
+        licence: { spdx: "LicenseRef-BINHI", holder: "BINHI — authorship review pending",
+          note: "AI-assisted original geometry; no third-party source. Founder artwork and authorship clearance required before release." },
+      } : {}),
+    }));
+  });
+  for (const c of V1_CATEGORIES) {
+    if (entries.filter(e => e.cat === c.slug).length !== ICONS_PER_CATEGORY) throw new IconRegistryError(`canonical category ${c.slug} must have ten icons`);
+  }
+  return map;
+}
+const REGISTRY = buildCanonicalRegistry();
+const ALIASES = new Map([...REGISTRY.values()].flatMap(d => (d.aliases ?? []).map(a => [a, d.id] as const)));
 const BY_NUMBER = new Map([...REGISTRY.values()].map((d) => [d.number, d]));
 
 export interface IconCategory {
@@ -117,7 +157,7 @@ export interface IconCategory {
   readonly icons: readonly IconDefinition[];
 }
 
-export const ICON_CATEGORIES: readonly IconCategory[] = CATALOG_CATEGORIES.map((c) => ({
+export const ICON_CATEGORIES: readonly IconCategory[] = V1_CATEGORIES.map((c) => ({
   ...c,
   icons: [...REGISTRY.values()].filter((d) => d.category === c.slug),
 }));
@@ -156,11 +196,12 @@ export function legacyFallbackName(id: string): string | undefined {
 export const ICON_LIST: readonly IconDefinition[] = [...REGISTRY.values()];
 
 export function hasIcon(id: unknown): id is string {
-  return typeof id === "string" && REGISTRY.has(id);
+  return typeof id === "string" && getIcon(id) !== undefined;
 }
 
 export function getIcon(id: string): IconDefinition | undefined {
-  return REGISTRY.get(id);
+  const persistent = ALIASES.get(id) ?? id;
+  return REGISTRY.get(persistent) ?? LEGACY_REGISTRY.get(persistent);
 }
 
 export function getIconByNumber(n: number): IconDefinition | undefined {
@@ -168,5 +209,5 @@ export function getIconByNumber(n: number): IconDefinition | undefined {
 }
 
 export function iconSupportsVariant(id: string, variant: IconVariant): boolean {
-  return REGISTRY.get(id)?.variants.includes(variant) ?? false;
+  return getIcon(id)?.variants.includes(variant) ?? false;
 }

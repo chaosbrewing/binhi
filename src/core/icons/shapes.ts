@@ -9,6 +9,31 @@ type ShapeModule = { shapes: Readonly<Record<string, readonly IconNode[]>> };
  * (Literal import() paths so the bundler can split them. The server uses `shapes-all.ts` instead.)
  */
 const LOADERS: Readonly<Record<string, () => Promise<ShapeModule>>> = {
+  c01: () => import("./canonical/shapes/c01.js"),
+  c02: () => import("./canonical/shapes/c02.js"),
+  c03: () => import("./canonical/shapes/c03.js"),
+  c04: () => import("./canonical/shapes/c04.js"),
+  c05: () => import("./canonical/shapes/c05.js"),
+  c06: () => import("./canonical/shapes/c06.js"),
+  c07: () => import("./canonical/shapes/c07.js"),
+  c08: () => import("./canonical/shapes/c08.js"),
+  c09: () => import("./canonical/shapes/c09.js"),
+  c10: () => import("./canonical/shapes/c10.js"),
+  c11: () => import("./canonical/shapes/c11.js"),
+  c12: () => import("./canonical/shapes/c12.js"),
+  c13: () => import("./canonical/shapes/c13.js"),
+  c14: () => import("./canonical/shapes/c14.js"),
+  c15: () => import("./canonical/shapes/c15.js"),
+  c16: () => import("./canonical/shapes/c16.js"),
+  c17: () => import("./canonical/shapes/c17.js"),
+  c18: () => import("./canonical/shapes/c18.js"),
+  c19: () => import("./canonical/shapes/c19.js"),
+  c20: () => import("./canonical/shapes/c20.js"),
+  c21: () => import("./canonical/shapes/c21.js"),
+  c22: () => import("./canonical/shapes/c22.js"),
+  c23: () => import("./canonical/shapes/c23.js"),
+  c24: () => import("./canonical/shapes/c24.js"),
+  c25: () => import("./canonical/shapes/c25.js"),
   navigation: () => import("./generated/shapes/navigation.js"),
   editing: () => import("./generated/shapes/editing.js"),
   selection: () => import("./generated/shapes/selection.js"),
@@ -44,7 +69,7 @@ const listeners = new Set<() => void>();
 
 /** Synchronous lookup of an already-loaded icon (undefined until its category chunk has loaded). */
 export function getLoadedShape(id: string): readonly IconNode[] | undefined {
-  return cache.get(id);
+  return cache.get(getIcon(id)?.id ?? id);
 }
 
 /** Subscribe to "a category finished loading" (used to re-render icons that were waiting). */
@@ -81,8 +106,8 @@ export function ensureCategoryLoaded(category: string): Promise<void> {
 export async function loadIconShape(id: string): Promise<readonly IconNode[] | undefined> {
   const def = getIcon(id);
   if (!def) return undefined;
-  if (!cache.has(id)) await ensureCategoryLoaded(def.category);
-  return cache.get(id);
+  if (!cache.has(def.id)) await ensureCategoryLoaded(def.category);
+  return cache.get(def.id);
 }
 
 /** Loads every category an icon list needs. */
