@@ -182,6 +182,7 @@ export function IconBrowser({ onInsert, insertLabel = "Insert icon", defaults, p
       </div>
 
       <p className="help" role="status" aria-live="polite">{results.length} icon{results.length === 1 ? "" : "s"}</p>
+      <p className="help">Canonical v1.0: 250 icons. Searches and saved favorites also include preserved legacy assets.</p>
       {results.length === 0 ? (
         <p className="muted">{emptyText}</p>
       ) : (
@@ -213,7 +214,7 @@ export function IconBrowser({ onInsert, insertLabel = "Insert icon", defaults, p
               <div>
                 <strong>{current.name}</strong>
                 <div className="small muted"><code>{current.id}</code></div>
-                <div className="small muted">{String(current.number).padStart(3, "0")} · {current.categoryName}</div>
+                <div className="small muted">{current.aliases?.[0] ?? "Legacy compatibility asset"} · {current.categoryName}</div>
               </div>
             </div>
             <div className="icon-sizes" aria-label="Preview at common sizes">

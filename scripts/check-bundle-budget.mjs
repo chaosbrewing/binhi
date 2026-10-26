@@ -2,7 +2,7 @@
 // Fails when the client bundle grows past agreed budgets. Run after `npm run build`.
 //   main bundle (gzip)        ≤ 190 KB   (Phase 1 baseline 169.3 KB; icon library + editor features 184.8 KB at introduction)
 //   icon browser chunk (gzip) ≤  14 KB
-//   each icon category chunk  ≤   4 KB gzip, and exactly 25 of them
+//   each icon category chunk  ≤   4 KB gzip: 25 canonical + 25 legacy compatibility chunks
 import { readdirSync, readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
@@ -10,7 +10,8 @@ import { join } from "node:path";
 const dir = join(process.cwd(), "dist/client/assets");
 const files = readdirSync(dir).filter((f) => f.endsWith(".js"));
 const gz = (f) => gzipSync(readFileSync(join(dir, f)), { level: 9 }).length;
-const CATEGORIES = ["navigation", "editing", "selection", "alignment", "layers", "typography", "adjustments", "effects", "colors", "shapes", "structure", "elements", "media", "conversion", "devices", "publishing", "forms", "communication", "commerce", "people", "time", "places", "creative", "nature", "status"];
+const CATEGORIES = ["navigation", "editing", "selection", "alignment", "layers", "typography", "adjustments", "effects", "colors", "shapes", "structure", "elements", "media", "conversion", "devices", "publishing", "forms", "communication", "commerce", "people", "time", "places", "creative", "nature", "status",
+  ...Array.from({ length: 25 }, (_, i) => `c${String(i + 1).padStart(2, "0")}`)];
 const problems = [];
 const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
 
@@ -30,7 +31,7 @@ for (const c of CATEGORIES) {
   categoryTotal += size;
   if (size > 4 * 1024) problems.push(`icon category chunk ${f} is ${kb(size)} gzip (limit 4 KB)`);
 }
-if (found !== 25) problems.push(`expected 25 lazy icon category chunks, found ${found}`);
+if (found !== 50) problems.push(`expected 25 canonical + 25 legacy lazy category chunks, found ${found}`);
 console.log(`main ${kb(mainGz)} gzip · icon browser ${browser ? kb(gz(browser)) : "n/a"} · ${found} category chunks ${kb(categoryTotal)} gzip total`);
 if (problems.length) {
   console.error(problems.join("\n"));

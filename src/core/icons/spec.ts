@@ -7,7 +7,9 @@ import { ICON_MAX_SIZE, ICON_MIN_SIZE, ICON_STROKE_DEFAULT, ICON_STROKE_MAX, ICO
  * Presentation settings shared by the Website Builder `icon` component and the Design Studio `icon` layer.
  * The canonical asset id is the only thing that selects geometry; nothing here can carry markup.
  */
-export const IconAssetId = z.string().max(80).regex(ICON_ID_PATTERN, "invalid icon id");
+export const IconAssetId = z.string().max(80)
+  .refine(id => ICON_ID_PATTERN.test(id) || /^ICN-(00[1-9]|0[1-9]\d|1\d\d|2[0-4]\d|250)$/.test(id), "invalid icon id")
+  .transform(id => getIcon(id)?.id ?? id);
 
 export const IconGradientSpec = z.object({
   from: Color,

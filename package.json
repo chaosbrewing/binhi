@@ -20,6 +20,7 @@
     "test:e2e": "node --import tsx e2e/run.ts",
     "test:e2e:studio": "node --import tsx e2e/studio.ts",
     "test:e2e:icons": "node --import tsx e2e/icons.ts",
+    "test:e2e:icons:v1": "node --import tsx e2e/icons-v1.ts",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",

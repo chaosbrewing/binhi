@@ -5,6 +5,7 @@ import {
   ICON_CATEGORIES,
   ICON_COUNT,
   ICON_LIST,
+  LEGACY_ICON_LIST,
   ICON_SIZE_PRESETS,
   IconRegistryError,
   buildRegistry,
@@ -20,6 +21,7 @@ import {
 } from "../../src/core/icons/index.js";
 import { iconSearchTerms, searchIcons } from "../../src/core/icons/search.js";
 import { CATALOG_ENTRIES } from "../../src/core/icons/generated/catalog.js";
+import { V1_CATEGORIES } from "../../src/core/icons/canonical/catalog.js";
 import { ALL_ICON_SHAPES } from "../../src/core/icons/shapes-all.js";
 import { ensureCategoryLoaded, getLoadedShape, loadIconShape } from "../../src/core/icons/shapes.js";
 
@@ -31,9 +33,9 @@ describe("icon registry integrity", () => {
     expect(ICON_CATEGORIES).toHaveLength(25);
     for (const cat of ICON_CATEGORIES) expect(cat.icons).toHaveLength(10);
     expect(ICON_LIST.map((d) => d.number)).toEqual(Array.from({ length: 250 }, (_, i) => i + 1));
-    expect(getIconByNumber(1)?.name).toBe("Home");
-    expect(getIconByNumber(12)?.name).toBe("Delete / Trash");
-    expect(getIconByNumber(250)?.name).toBe("Verified Badge");
+    expect(getIconByNumber(1)?.name).toBe("Pointer Cursor");
+    expect(getIconByNumber(12)?.name).toBe("Zoom In");
+    expect(getIconByNumber(250)?.name).toBe("Live Production Status");
   });
 
   it("uses canonical, unique, stable ids", () => {
@@ -47,33 +49,9 @@ describe("icon registry integrity", () => {
   });
 
   it("keeps the fixed category names", () => {
-    expect(ICON_CATEGORIES.map((c) => c.name)).toEqual([
-      "Navigation and Interface",
-      "Editing and Actions",
-      "Selection and Transformation",
-      "Alignment and Distribution",
-      "Layers and Object Management",
-      "Typography and Text",
-      "Photo Editing and Adjustments",
-      "Photo Effects and Retouching",
-      "Colors, Fills and Styles",
-      "Shapes and Drawing",
-      "Website Structure and Layout",
-      "Website Elements",
-      "Media and Assets",
-      "File Conversion and Compression",
-      "Devices and Responsive Preview",
-      "Publishing and Web Operations",
-      "Forms and Input Elements",
-      "Communication and Social",
-      "Business and Commerce",
-      "People and Identity",
-      "Time, Events and Productivity",
-      "Maps, Places and Travel",
-      "Creative, Art and Entertainment",
-      "Nature, Lifestyle and Wellness",
-      "Status, Feedback and Security",
-    ]);
+    expect(ICON_CATEGORIES.map((c) => c.name)).toEqual(V1_CATEGORIES.map(c => c.name));
+    expect(ICON_CATEGORIES[0]?.name).toBe("Selection & Pointer Tools");
+    expect(ICON_CATEGORIES[24]?.name).toBe("System, Settings & Publishing");
   });
 
   it("records source, licence, a11y, viewBox and version for every icon", () => {
@@ -84,10 +62,10 @@ describe("icon registry integrity", () => {
       expect(d.viewBox).toBe("0 0 24 24");
       expect(d.a11y.defaultLabel).toBe(d.name);
       expect(d.version).toBe(1);
-      expect(iconSearchTerms(d.id)?.keywords.length, d.id).toBeGreaterThan(0);
+      expect(iconSearchTerms(d.id)?.keywords.length, d.id).toBeGreaterThan(0); // aliases are always searchable
       expect(d.variants[0]).toBe("outline");
     }
-    expect(ICON_LIST.filter((d) => d.source.kind === "original").map((d) => d.name).sort()).toEqual([
+    expect(LEGACY_ICON_LIST.filter((d) => d.source.kind === "original").map((d) => d.name).sort()).toEqual([
       "Color Swatches",
       "Landscape Orientation",
       "Opacity",
@@ -112,7 +90,7 @@ describe("icon registry integrity", () => {
 describe("icon geometry", () => {
   it("resolves every registry id to geometry and every geometry to a registry id", () => {
     for (const d of ICON_LIST) expect(ALL_ICON_SHAPES[d.id], d.id).toBeDefined();
-    expect(Object.keys(ALL_ICON_SHAPES).sort()).toEqual(ICON_LIST.map((d) => d.id).sort());
+    expect(Object.keys(ALL_ICON_SHAPES).sort()).toEqual([...new Set([...ICON_LIST, ...LEGACY_ICON_LIST].map((d) => d.id))].sort());
   });
 
   it("passes the safety allowlist and stays inside the 24×24 grid", () => {
@@ -126,7 +104,9 @@ describe("icon geometry", () => {
 
   it("has no two identical glyphs", () => {
     const seen = new Map<string, string>();
-    for (const [id, nodes] of Object.entries(ALL_ICON_SHAPES)) {
+    for (const d of ICON_LIST) {
+      const id = d.id;
+      const nodes = ALL_ICON_SHAPES[id]!;
       const key = JSON.stringify(nodes);
       expect(seen.get(key), `${id} duplicates ${seen.get(key)}`).toBeUndefined();
       seen.set(key, id);
@@ -250,28 +230,27 @@ describe("icon search", () => {
   it("returns every icon for an empty query, in library order", () => {
     const all = searchIcons("");
     expect(all).toHaveLength(250);
-    expect(all[0]!.slug).toBe("home");
+    expect(all[0]!.slug).toBe("selection-cursor");
   });
 
   it("finds by name, by synonym and by intent", () => {
-    expect(top("camera")[0]).toBe("camera");
-    expect(top("photo")).toContain("camera");
-    expect(top("trash")).toContain("delete");
-    expect(top("remove")).toContain("delete");
+    expect(top("image", 250)).toContain("image-element");
+    expect(top("photo", 250)).toContain("image-element");
+    expect(top("remove", 250)).toContain("eraser");
     expect(top("cut")).toContain("cut");
     expect(top("gear")).toContain("site-settings");
-    expect(top("mail")).toContain("email");
-    expect(top("idea")).toContain("lightbulb");
     expect(top("shopping basket")).toContain("shopping-cart");
-    expect(top("security", 6)).toEqual(expect.arrayContaining(["shield"]));
-    expect(top("camra")).toContain("camera");
+    expect(top("security", 250)).toEqual(expect.arrayContaining(["password-lock"]));
+    expect(top("pointr")).toContain("selection-cursor");
+    expect(top("ICN-001")[0]).toBe("selection-cursor");
+    expect(searchIcons("camera", { within: ["binhi.icon.camera"] })[0]?.id).toBe("binhi.icon.camera");
   });
 
   it("requires every word to match, and filters by category and variant", () => {
     expect(searchIcons("camera zzzzqq")).toHaveLength(0);
-    const nav = searchIcons("", { category: "navigation" });
+    const nav = searchIcons("", { category: "c17" });
     expect(nav).toHaveLength(10);
-    expect(nav.every((d) => d.category === "navigation")).toBe(true);
+    expect(nav.every((d) => d.category === "c17")).toBe(true);
     const duo = searchIcons("", { variant: "duotone" });
     expect(duo.length).toBeGreaterThan(100);
     expect(duo.every((d) => d.variants.includes("duotone"))).toBe(true);

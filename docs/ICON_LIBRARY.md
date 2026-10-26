@@ -1,5 +1,11 @@
 # BINHI Universal Icon Library
 
+> **Canonical v1.0 review increment:** this branch reconciles the catalog to the approved ICN-001–250 inventory.
+> See [`ICON_V1_RECONCILIATION.md`](ICON_V1_RECONCILIATION.md) for current gates and evidence. Exactly 250 canonical
+> entries are browsable; explicit searches/favorites also reach retained legacy assets, labeled as compatibility
+> assets. All previous ids and geometry still resolve. The historical introduction and measurements below describe
+> the earlier PR #2 baseline, not approval of the reconciled artwork. Nothing here authorizes merge or deployment.
+
 250 production-ready vector icons (25 categories × 10, numbers 001–250) that people can insert into websites and
 graphic designs, restyle, save, reopen and export. Status: implemented on branch `claude/binhi-icon-library`,
 **not merged and not published** (see [`RELEASE_CHECKLIST_ICONS.md`](RELEASE_CHECKLIST_ICONS.md)).

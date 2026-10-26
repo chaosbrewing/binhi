@@ -58,6 +58,8 @@ jobs:
         run: npm run test:e2e:studio
       - name: Icon library journey (browser, website icon, design icon, PNG/JPEG/SVG export)
         run: npm run test:e2e:icons
+      - name: Canonical v1 S/L/C/O insertion, compatibility aliases and pixel exports
+        run: npm run test:e2e:icons:v1
       - name: Upload e2e screenshots
         if: always()
         uses: actions/upload-artifact@v4

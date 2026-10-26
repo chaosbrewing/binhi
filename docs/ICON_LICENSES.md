@@ -1,8 +1,17 @@
 # Icon library — sources and licences
 
-The BINHI Universal Icon Library ships exactly **250** icons (25 categories × 10, numbers 001–250).
-Every icon is either derived from **Lucide** (ISC) or **authored by BINHI**. Nothing is copied from Canva, Wix,
-Adobe or any other commercial pack, and no icon font or remote icon service is used at runtime.
+The review branch implements exactly **250 canonical v1.0 icons** (25 categories × 10), plus compatibility
+resolution of all 250 prior sources. Only 75 ids overlap; compatibility assets do not constitute a second library.
+Canonical source classes: S=75, L=70, C=80, O=25. All artwork awaits founder visual approval.
+The 105 C/O vectors are **AI-assisted original geometry**, not commissioned human drawings or Lucide modifications.
+They contain no third-party parts. Authorship and release terms require founder/legal review; `LicenseRef-BINHI`
+is a tracking designation, **not a representation of completed legal clearance**.
+
+Canonical geometry includes 144 Lucide glyphs (124 ISC, 20 ISC AND MIT) and 106 original-source glyphs
+(one preserved original plus 105 newly authored C/O vectors). No remote icon service or icon font is used.
+Per-item lineage and hashes: [`ICON_V1_MANIFEST.json`](ICON_V1_MANIFEST.json).
+
+## Preserved compatibility sources (historical inventory, unchanged)
 
 | Source | Count | Licence | Where it lives |
 | --- | --- | --- | --- |
@@ -13,15 +22,20 @@ Per-icon source and licence: [`docs/ICON_INVENTORY.md`](ICON_INVENTORY.md) (gene
 
 ## How the data gets into the repository
 
-`scripts/icons/generate.mjs` reads `scripts/icons/catalog.mjs` (the authoritative 250-entry mapping) and an extracted
+The legacy generator `scripts/icons/generate.mjs` reads `scripts/icons/catalog.mjs` (the preserved old mapping) and an extracted
 `lucide-static@1.61.0` package, and writes the committed geometry. Lucide is **not** a dependency of the app: only the
 vector node lists (path / circle / rect / line / polyline / polygon / ellipse) are committed. The generator refuses
 unknown elements and attributes, duplicate glyphs and duplicate slugs.
 
 ```sh
 npm pack lucide-static@1.61.0 && mkdir /tmp/lucide && tar -xzf lucide-static-1.61.0.tgz -C /tmp/lucide
-node scripts/icons/generate.mjs /tmp/lucide/package
+node --import tsx scripts/icons/v1-catalog/build.ts /tmp/lucide/package
 ```
+
+The canonical generator consumes the approved TSVs and the pinned Lucide package, validates all geometry and
+canonical duplicates, and emits the collision matrix, manifest, catalog, vocabulary and category chunks.
+It never edits `src/core/icons/generated/**` or the old catalog/original/variant source modules.
+Its repeated output was hash-identical. The ISC and MIT texts below and in the public notice remain verbatim.
 
 ## Attribution notices (reproduced as the licences require)
 

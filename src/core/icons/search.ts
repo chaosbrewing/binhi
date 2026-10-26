@@ -1,5 +1,6 @@
-import { ICON_LIST, type IconDefinition } from "./registry.js";
-import { KEYWORDS } from "./generated/keywords.js";
+import { ICON_LIST, LEGACY_ICON_LIST, getIcon, type IconDefinition } from "./registry.js";
+import { KEYWORDS as LEGACY_KEYWORDS } from "./generated/keywords.js";
+import { V1_KEYWORDS } from "./canonical/keywords.js";
 import type { IconVariant } from "./render.js";
 
 /**
@@ -93,12 +94,13 @@ const tokenize = (s: string) => s.toLowerCase().split(/[^a-z0-9]+/).filter(Boole
 let index: readonly IndexedIcon[] | null = null;
 /** Built on first search (not at import), so the module stays side-effect free and tree-shakeable. */
 function getIndex(): readonly IndexedIcon[] {
-  return (index ??= ICON_LIST.map((def) => ({
+  return (index ??= [...ICON_LIST, ...LEGACY_ICON_LIST.filter(d => !ICON_LIST.some(c => c.id === d.id))].map((def) => ({
     def,
     name: tokenize(def.name),
     slug: def.slug,
-    keywords: [...(KEYWORDS[def.number - 1]?.[0] ?? [])],
-    tags: [...(KEYWORDS[def.number - 1]?.[1] ?? [])],
+    keywords: [...(def.aliases ? V1_KEYWORDS[def.number - 1]?.[0] ?? [] : LEGACY_KEYWORDS[def.number - 1]?.[0] ?? []),
+      ...(def.aliases ?? []).flatMap(tokenize)],
+    tags: [...(def.aliases ? V1_KEYWORDS[def.number - 1]?.[1] ?? [] : LEGACY_KEYWORDS[def.number - 1]?.[1] ?? [])],
     category: tokenize(def.categoryName),
   })));
 }
@@ -157,10 +159,13 @@ export interface IconSearchOptions {
 /** Ranked search over names, categories, keywords and intent synonyms; every typed word must match something. */
 export function searchIcons(query: string, options: IconSearchOptions = {}): IconDefinition[] {
   const terms = tokenize(query).slice(0, 8);
-  const within = options.within ? new Set(options.within) : undefined;
+  const within = options.within ? new Set(options.within.map(id => getIcon(id)?.id ?? id)) : undefined;
   const scored: { def: IconDefinition; score: number }[] = [];
   for (const icon of getIndex()) {
     const def = icon.def;
+    // Default browsing is exactly the canonical 250. An explicit search or saved favorites may still reach
+    // a legacy asset: removing Camera/Heart/etc. from the canonical inventory must not hide existing work.
+    if (!within && !terms.length && !def.aliases) continue;
     if (options.category && def.category !== options.category) continue;
     if (options.variant && !def.variants.includes(options.variant)) continue;
     if (within && !within.has(def.id)) continue;

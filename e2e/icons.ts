@@ -101,7 +101,7 @@ try {
   p.on("response", async (r) => { if (r.status() >= 400 && r.url().includes("/api/")) console.error(`[api ${r.status()}] ${r.request().method()} ${r.url()} -> ${(await r.text().catch(() => "")).slice(0, 400)} | req ${(r.request().postData() ?? "").slice(0, 700)}`); });
   const chunkRequests = new Set<string>();
   p.on("request", (r) => {
-    const m = /\/assets\/(navigation|editing|selection|alignment|layers|typography|adjustments|effects|colors|shapes|structure|elements|media|conversion|devices|publishing|forms|communication|commerce|people|time|places|creative|nature|status)-[\w-]+\.js$/.exec(r.url());
+    const m = /\/assets\/(c\d{2}|navigation|editing|selection|alignment|layers|typography|adjustments|effects|colors|shapes|structure|elements|media|conversion|devices|publishing|forms|communication|commerce|people|time|places|creative|nature|status)-[\w-]+\.js$/.exec(r.url());
     if (m) chunkRequests.add(m[1]!);
   });
 
@@ -132,7 +132,7 @@ try {
   // keyboard: arrows move between icons
   await p.locator("button[data-icon-cell]").first().focus();
   await p.keyboard.press("ArrowRight");
-  assert.equal(await p.evaluate(() => (document.activeElement as HTMLElement).getAttribute("data-icon-id")), "binhi.icon.menu");
+  assert.equal(await p.evaluate(() => (document.activeElement as HTMLElement).getAttribute("data-icon-id")), "binhi.icon.cursor-direct");
   await p.keyboard.press("End");
   assert.ok((await p.evaluate(() => (document.activeElement as HTMLElement).getAttribute("data-icon-id")))!.startsWith("binhi.icon."));
   // intent search + categories + variant filter
@@ -143,7 +143,7 @@ try {
   await search.fill("zzzzqq");
   await p.getByText(/No icons match/).waitFor();
   await search.fill("");
-  await p.getByLabel("Icon category", { exact: true }).selectOption("status");
+  await p.getByLabel("Icon category", { exact: true }).selectOption("c25");
   assert.equal(await p.locator("button[data-icon-cell]").count(), 10);
   await p.getByLabel("Icon style", { exact: true }).selectOption("filled");
   assert.ok((await p.locator("button[data-icon-cell]").count()) === 0 || (await p.locator('button[data-icon-id="binhi.icon.shield"]').count()) === 1);
