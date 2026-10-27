@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api, ApiError, type LibraryAsset, type SiteSummary } from "../api.js";
 import { ConfirmDialog, Modal } from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
@@ -7,11 +7,7 @@ import { I } from "../components/Icons.js";
 import { inspectRaster, PHOTO_LIMITS } from "../../core/media/photo.js";
 import { StudioShell } from "./StudioShell.js";
 import { PROJECT_KIND_LABEL } from "./destinations.js";
-import {
-  filterAndSortLibraryAssets,
-  type LibrarySort,
-  type LibraryUsageFilter,
-} from "./libraryList.js";
+import { applyLibraryViewState, parseLibraryViewState, type LibraryViewState } from "./viewState.js";
 import { clampVisibleCount, LIST_PAGE_SIZE, nextVisibleCount, visibleSlice } from "./listPagination.js";
 
 export const bytesLabel = (bytes: number) => (bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KiB` : `${(bytes / (1024 * 1024)).toFixed(2)} MiB`);
@@ -24,6 +20,8 @@ export async function checkLibraryFile(file: File): Promise<void> {
 
 export function LibraryPage() {
   const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewState = parseLibraryViewState(searchParams);
   const input = useRef<HTMLInputElement>(null);
   const [assets, setAssets] = useState<LibraryAsset[] | null>(null);
   const [sites, setSites] = useState<SiteSummary[]>([]);
@@ -34,9 +32,6 @@ export function LibraryPage() {
   const [alt, setAlt] = useState("");
   const [tags, setTags] = useState("");
   const [siteId, setSiteId] = useState("");
-  const [query, setQuery] = useState("");
-  const [usage, setUsage] = useState<LibraryUsageFilter>("all");
-  const [sort, setSort] = useState<LibrarySort>("newest");
   const [visibleCount, setVisibleCount] = useState(LIST_PAGE_SIZE);
 
   const load = async () => {
@@ -116,10 +111,50 @@ export function LibraryPage() {
   };
 
   const total = assets?.reduce((sum, a) => sum + a.byteSize, 0) ?? 0;
-  const filteredAssets = assets ? filterAndSortLibraryAssets(assets, { query, usage, sort }) : [];
+  const updateViewState = (patch: Partial<LibraryViewState>, replace = false) => {
+    const next = applyLibraryViewState(searchParams, { ...viewState, ...patch });
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace });
+  };
+  const byName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true });
+  const searchNeedle = viewState.search.toLowerCase();
+  const filteredAssets = (assets ?? [])
+    .filter((a) => {
+      switch (viewState.filter) {
+        case "used":
+          return a.usedBy.length > 0;
+        case "unused":
+          return a.usedBy.length === 0;
+        case "photo-original":
+          return a.origin === "photo-original";
+        case "upload":
+          return a.origin !== "photo-original";
+        default:
+          return true;
+      }
+    })
+    .filter((a) => {
+      if (!searchNeedle) return true;
+      return `${a.filename} ${a.alt} ${a.tags}`.toLowerCase().includes(searchNeedle);
+    })
+    .sort((a, b) => {
+      switch (viewState.sort) {
+        case "oldest":
+          return a.createdAt.localeCompare(b.createdAt);
+        case "name-asc":
+          return byName(a.filename, b.filename);
+        case "name-desc":
+          return byName(b.filename, a.filename);
+        case "largest":
+          return b.byteSize - a.byteSize;
+        case "smallest":
+          return a.byteSize - b.byteSize;
+        default:
+          return b.createdAt.localeCompare(a.createdAt);
+      }
+    });
   const visibleAssets = visibleSlice(filteredAssets, visibleCount);
   const canLoadMore = visibleAssets.length < filteredAssets.length;
-  const hasQuery = query.trim().length > 0;
 
   useEffect(() => {
     setVisibleCount((current) => clampVisibleCount(current, filteredAssets.length));
@@ -139,61 +174,55 @@ export function LibraryPage() {
             <input ref={input} id="library-file" className="photo-file-input" type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(e) => void upload(e)} aria-label="Add PNG, JPEG or static WebP images to your library" />
           </div>
         </div>
-        <p className="small muted">{assets ? `${assets.length} file${assets.length === 1 ? "" : "s"} · ${bytesLabel(total)} of 300 MiB` : ""} · PNG, JPEG and static WebP up to 8 MiB and 16 megapixels each.</p>
-        {assets && assets.length > 0 && (
-          <>
-            <div className="studio-list-controls" aria-label="Asset search and sorting">
-              <label className="field-block">
-                Find an image
-                <input
-                  type="search"
-                  placeholder="Search by filename, tags, alt text or project name"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </label>
-              <label className="field-block sort">
-                Usage
-                <select value={usage} onChange={(event) => setUsage(event.target.value as LibraryUsageFilter)}>
-                  <option value="all">All files</option>
-                  <option value="used">Used in projects</option>
-                  <option value="unused">Not used yet</option>
-                </select>
-              </label>
-              <label className="field-block sort">
-                Sort by
-                <select value={sort} onChange={(event) => setSort(event.target.value as LibrarySort)}>
-                  <option value="newest">Recently added</option>
-                  <option value="oldest">Oldest first</option>
-                  <option value="name-asc">Filename (A to Z)</option>
-                  <option value="name-desc">Filename (Z to A)</option>
-                  <option value="size-desc">Largest file size</option>
-                  <option value="size-asc">Smallest file size</option>
-                </select>
-              </label>
-            </div>
-            <p className="small muted studio-list-summary" role="status">
-              Showing {filteredAssets.length} matching image{filteredAssets.length === 1 ? "" : "s"} of {assets.length}.
-            </p>
-          </>
-        )}
+        <div className="studio-controls" aria-label="Library view controls">
+          <label className="field-block grow" htmlFor="library-search">
+            Search
+            <input
+              id="library-search"
+              type="search"
+              value={viewState.search}
+              placeholder="Filename, alt text or tag"
+              onChange={(e) => updateViewState({ search: e.target.value }, true)}
+            />
+          </label>
+          <label className="field-block" htmlFor="library-filter">
+            Filter
+            <select id="library-filter" value={viewState.filter} onChange={(e) => updateViewState({ filter: e.target.value as LibraryViewState["filter"] })}>
+              <option value="all">All files</option>
+              <option value="used">Used in projects</option>
+              <option value="unused">Unused</option>
+              <option value="photo-original">Photo originals</option>
+              <option value="upload">Uploads only</option>
+            </select>
+          </label>
+          <label className="field-block" htmlFor="library-sort">
+            Sort
+            <select id="library-sort" value={viewState.sort} onChange={(e) => updateViewState({ sort: e.target.value as LibraryViewState["sort"] })}>
+              <option value="recent">Recently added</option>
+              <option value="oldest">Oldest first</option>
+              <option value="name-asc">Filename A–Z</option>
+              <option value="name-desc">Filename Z–A</option>
+              <option value="largest">Largest first</option>
+              <option value="smallest">Smallest first</option>
+            </select>
+          </label>
+        </div>
+        <p className="small muted">
+          {assets ? `${assets.length} file${assets.length === 1 ? "" : "s"} · ${bytesLabel(total)} of 300 MiB` : ""}
+          {assets && filteredAssets.length !== assets.length ? ` · ${filteredAssets.length} matching` : ""}
+          {" · PNG, JPEG and static WebP up to 8 MiB and 16 megapixels each."}
+        </p>
         {error && <p className="form-error" role="alert">{error}</p>}
         {busy && <p className="muted" role="status">Uploading…</p>}
         {assets === null && !error && <p className="muted" role="status">Loading your library…</p>}
-        {assets && assets.length === 0 && (
+        {assets && filteredAssets.length === 0 && (
           <div className="empty-state">
-            <h2>No images yet</h2>
-            <p className="muted">Add photos, logos and graphics here once and reuse them in every tool.</p>
-            <button className="btn btn-primary" onClick={() => input.current?.click()}>Add your first image</button>
+            <h2>{assets.length === 0 ? "No images yet" : viewState.search ? `No matches for "${viewState.search}"` : "No files match this view"}</h2>
+            <p className="muted">{assets.length === 0 ? "Add photos, logos and graphics here once and reuse them in every tool." : "Try changing the search text, filter or sort options."}</p>
+            {assets.length === 0 && <button className="btn btn-primary" onClick={() => input.current?.click()}>Add your first image</button>}
           </div>
         )}
-        {assets && assets.length > 0 && filteredAssets.length === 0 && (
-          <div className="empty-state">
-            <h2>{hasQuery || usage !== "all" ? "No matching images" : "No images yet"}</h2>
-            <p className="muted">Try another search term or usage filter.</p>
-          </div>
-        )}
-        {visibleAssets.length > 0 && (
+        {assets && visibleAssets.length > 0 && (
           <>
             <ul className="library-grid" aria-label="Library files">
               {visibleAssets.map((a) => (
