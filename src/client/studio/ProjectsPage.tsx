@@ -7,6 +7,7 @@ import { useToast } from "../components/Toast.js";
 import { I } from "../components/Icons.js";
 import { StudioShell } from "./StudioShell.js";
 import { PROJECT_KIND_LABEL } from "./destinations.js";
+import { initialVisibleCount, LIST_PAGE_SIZE, nextVisibleCount, visibleSlice } from "./listPagination.js";
 
 export function projectHref(p: ProjectSummary): string {
   if (p.kind === "photo") return `/studio/photo/${p.id}`;
@@ -22,6 +23,7 @@ export function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [confirm, setConfirm] = useState<ProjectSummary | null>(null);
+  const [visibleCount, setVisibleCount] = useState(LIST_PAGE_SIZE);
 
   const load = async () => {
     try {
@@ -57,6 +59,13 @@ export function ProjectsPage() {
         .filter((r) => filter === "all" || r.kind === filter)
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const counts = { all: (sites?.length ?? 0) + (projects?.length ?? 0), website: sites?.length ?? 0, photo: projects?.filter((p) => p.kind === "photo").length ?? 0, design: projects?.filter((p) => p.kind === "design").length ?? 0, "design-template": projects?.filter((p) => p.kind === "design-template").length ?? 0 };
+  const visibleRows = visibleSlice(rows, visibleCount);
+  const canLoadMore = visibleRows.length < rows.length;
+  const rowLabel = filter === "all" ? "items" : `${(PROJECT_KIND_LABEL[filter] ?? filter).toLowerCase()}s`;
+
+  useEffect(() => {
+    setVisibleCount(initialVisibleCount(rows.length));
+  }, [filter, rows.length]);
 
   return (
     <StudioShell>
@@ -88,9 +97,10 @@ export function ProjectsPage() {
             <p className="muted">Start a website, open a photo or create a design. Saved work appears here.</p>
           </div>
         )}
-        {rows.length > 0 && (
-          <ul className="site-grid" aria-label="Projects">
-            {rows.map((r) =>
+        {visibleRows.length > 0 && (
+          <>
+            <ul className="site-grid" aria-label="Projects">
+              {visibleRows.map((r) =>
               r.site ? (
                 <li key={`site-${r.site.id}`} className="site-card">
                   <div className="site-card-body">
@@ -123,7 +133,16 @@ export function ProjectsPage() {
                 </li>
               ),
             )}
-          </ul>
+            </ul>
+            <div className="list-pagination" aria-live="polite">
+              <p className="small muted">Showing {visibleRows.length} of {rows.length} {rowLabel}</p>
+              {canLoadMore && (
+                <button className="btn" onClick={() => setVisibleCount((current) => nextVisibleCount(current, rows.length))}>
+                  <I.plus /> Load {Math.min(LIST_PAGE_SIZE, rows.length - visibleRows.length)} more
+                </button>
+              )}
+            </div>
+          </>
         )}
       </main>
       {confirm && (

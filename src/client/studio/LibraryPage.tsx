@@ -7,6 +7,7 @@ import { I } from "../components/Icons.js";
 import { inspectRaster, PHOTO_LIMITS } from "../../core/media/photo.js";
 import { StudioShell } from "./StudioShell.js";
 import { PROJECT_KIND_LABEL } from "./destinations.js";
+import { clampVisibleCount, LIST_PAGE_SIZE, nextVisibleCount, visibleSlice } from "./listPagination.js";
 
 export const bytesLabel = (bytes: number) => (bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KiB` : `${(bytes / (1024 * 1024)).toFixed(2)} MiB`);
 
@@ -28,6 +29,7 @@ export function LibraryPage() {
   const [alt, setAlt] = useState("");
   const [tags, setTags] = useState("");
   const [siteId, setSiteId] = useState("");
+  const [visibleCount, setVisibleCount] = useState(LIST_PAGE_SIZE);
 
   const load = async () => {
     try {
@@ -106,6 +108,13 @@ export function LibraryPage() {
   };
 
   const total = assets?.reduce((sum, a) => sum + a.byteSize, 0) ?? 0;
+  const visibleAssets = visibleSlice(assets ?? [], visibleCount);
+  const canLoadMore = visibleAssets.length < (assets?.length ?? 0);
+
+  useEffect(() => {
+    if (assets === null) return;
+    setVisibleCount((current) => clampVisibleCount(current, assets.length));
+  }, [assets?.length]);
 
   return (
     <StudioShell>
@@ -132,21 +141,31 @@ export function LibraryPage() {
             <button className="btn btn-primary" onClick={() => input.current?.click()}>Add your first image</button>
           </div>
         )}
-        {assets && assets.length > 0 && (
-          <ul className="library-grid" aria-label="Library files">
-            {assets.map((a) => (
-              <li key={a.id}>
-                <button type="button" className="library-card" onClick={() => open(a)} aria-label={`${a.filename}, ${a.width} by ${a.height}, ${a.usedBy.length} use${a.usedBy.length === 1 ? "" : "s"}`}>
-                  <span className="library-thumb"><img src={a.url} alt={a.alt} loading="lazy" /></span>
-                  <span className="library-meta">
-                    <strong>{a.filename}</strong>
-                    <span className="small muted">{a.width} × {a.height} · {bytesLabel(a.byteSize)}</span>
-                    <span className="small muted">{a.usedBy.length ? `Used in ${a.usedBy.length} project${a.usedBy.length === 1 ? "" : "s"}` : "Not used yet"}{a.origin === "photo-original" ? " · photo original" : ""}</span>
-                  </span>
+        {visibleAssets.length > 0 && (
+          <>
+            <ul className="library-grid" aria-label="Library files">
+              {visibleAssets.map((a) => (
+                <li key={a.id}>
+                  <button type="button" className="library-card" onClick={() => open(a)} aria-label={`${a.filename}, ${a.width} by ${a.height}, ${a.usedBy.length} use${a.usedBy.length === 1 ? "" : "s"}`}>
+                    <span className="library-thumb"><img src={a.url} alt={a.alt} loading="lazy" /></span>
+                    <span className="library-meta">
+                      <strong>{a.filename}</strong>
+                      <span className="small muted">{a.width} × {a.height} · {bytesLabel(a.byteSize)}</span>
+                      <span className="small muted">{a.usedBy.length ? `Used in ${a.usedBy.length} project${a.usedBy.length === 1 ? "" : "s"}` : "Not used yet"}{a.origin === "photo-original" ? " · photo original" : ""}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="list-pagination" aria-live="polite">
+              <p className="small muted">Showing {visibleAssets.length} of {assets?.length ?? 0} files</p>
+              {canLoadMore && (
+                <button className="btn" onClick={() => setVisibleCount((current) => nextVisibleCount(current, assets!.length))}>
+                  <I.plus /> Load {Math.min(LIST_PAGE_SIZE, (assets?.length ?? 0) - visibleAssets.length)} more
                 </button>
-              </li>
-            ))}
-          </ul>
+              )}
+            </div>
+          </>
         )}
       </main>
       {selected && (

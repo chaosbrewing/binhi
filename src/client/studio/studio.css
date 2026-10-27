@@ -259,6 +259,8 @@
 .studio-empty p { margin: 4px 0 0; font-size: 13px; }
 .studio-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 18px; }
 .studio-main .page-head { margin-bottom: 14px; }
+.list-pagination { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.list-pagination p { margin: 0; }
 .plain-list { margin: 0; padding: 0; list-style: none; }
 .library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 14px 0 0; padding: 0; list-style: none; }
 .library-card { display: flex; flex-direction: column; width: 100%; padding: 0; overflow: hidden; border: 1px solid var(--panel-border); border-radius: 11px; background: var(--bg-elevated); color: inherit; text-align: left; cursor: pointer; font: inherit; transition: border-color .16s, transform .16s; }
