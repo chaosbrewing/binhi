@@ -71,6 +71,30 @@ describe("private asset library", () => {
     expect(siteAsset.url).toMatch(/^\/media\/ast_/);
     expect((await b.app.inject({ method: "GET", url: siteAsset.url })).statusCode).toBe(200);
   });
+
+  it("supports multi-delete with used-asset safeguards and force mode", async () => {
+    const free = (await uploadLibrary(s, TINY_PNG, "image/png", "bulk-free.png")).json().asset;
+    const used = (await uploadLibrary(s, TINY_PNG, "image/png", "bulk-used.png")).json().asset;
+    const doc = createDesignDocument(800, 600);
+    await api(b.app, s).post("/api/projects", { kind: "design", name: "Bulk in-use", document: { ...doc, layers: [makeLayer("image", doc, { assetId: used.id })] } });
+
+    const batch = await api(b.app, s).post("/api/library/batch", { action: "delete", assetIds: [free.id, used.id, free.id] });
+    expect(batch.statusCode).toBe(200);
+    const first = batch.json().result;
+    expect(first.deletedIds).toHaveLength(1);
+    expect(first.deletedIds).toContain(free.id);
+    expect(first.skippedUsed).toEqual([{ id: used.id, filename: used.filename, usedBy: 1 }]);
+    expect((await api(b.app, s).get(free.url)).statusCode).toBe(404);
+    expect((await api(b.app, s).get(used.url)).statusCode).toBe(200);
+
+    const forced = await api(b.app, s).post("/api/library/batch", { action: "delete", assetIds: [used.id, "lib_missing"], force: true });
+    expect(forced.statusCode).toBe(200);
+    const second = forced.json().result;
+    expect(second.deletedIds).toEqual([used.id]);
+    expect(second.skippedUsed).toEqual([]);
+    expect(second.missingIds).toEqual(["lib_missing"]);
+    expect((await api(b.app, s).get(used.url)).statusCode).toBe(404);
+  });
 });
 
 describe("creative projects", () => {
