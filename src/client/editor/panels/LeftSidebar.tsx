@@ -1,13 +1,15 @@
+import { Suspense, lazy } from "react";
 import { useStore, useSel } from "../context.js";
 import { I } from "../../components/Icons.js";
 import type { LeftTab } from "../store.js";
 import { PagesPanel } from "./PagesPanel.js";
 import { ElementsPanel } from "./ElementsPanel.js";
-import { LayersPanel } from "./LayersPanel.js";
 import { MediaPanel } from "./MediaPanel.js";
-import { StylesPanel } from "./StylesPanel.js";
-import { SectionsPanel } from "./SectionsPanel.js";
-import { NavigationPanel } from "./NavigationPanel.js";
+
+const LayersPanel = lazy(() => import("./LayersPanel.js").then((m) => ({ default: m.LayersPanel })));
+const StylesPanel = lazy(() => import("./StylesPanel.js").then((m) => ({ default: m.StylesPanel })));
+const SectionsPanel = lazy(() => import("./SectionsPanel.js").then((m) => ({ default: m.SectionsPanel })));
+const NavigationPanel = lazy(() => import("./NavigationPanel.js").then((m) => ({ default: m.NavigationPanel })));
 
 const TABS: { id: LeftTab; label: string; icon: keyof typeof I }[] = [
   { id: "pages", label: "Pages", icon: "pages" },
@@ -23,6 +25,7 @@ export function LeftSidebar() {
   const store = useStore();
   const tab = useSel((s) => s.leftTab);
   const open = useSel((s) => s.leftOpen);
+  const lazyPanelFallback = <p className="help" role="status">Loading panel…</p>;
   return (
     <div className="left">
       <nav className="left-rail" aria-label="Editor panels">
@@ -40,11 +43,11 @@ export function LeftSidebar() {
         <section className="left-panel" aria-label={TABS.find((t) => t.id === tab)?.label}>
           {tab === "pages" && <PagesPanel />}
           {tab === "elements" && <ElementsPanel />}
-          {tab === "sections" && <SectionsPanel />}
-          {tab === "layers" && <LayersPanel />}
+          {tab === "sections" && <Suspense fallback={lazyPanelFallback}><SectionsPanel /></Suspense>}
+          {tab === "layers" && <Suspense fallback={lazyPanelFallback}><LayersPanel /></Suspense>}
           {tab === "media" && <MediaPanel />}
-          {tab === "styles" && <StylesPanel />}
-          {tab === "navigation" && <NavigationPanel />}
+          {tab === "styles" && <Suspense fallback={lazyPanelFallback}><StylesPanel /></Suspense>}
+          {tab === "navigation" && <Suspense fallback={lazyPanelFallback}><NavigationPanel /></Suspense>}
         </section>
       )}
     </div>

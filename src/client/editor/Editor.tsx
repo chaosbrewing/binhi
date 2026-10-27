@@ -1,20 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { useStore, useSel } from "./context.js";
 import { Toolbar } from "./Toolbar.js";
 import { StatusBar } from "./StatusBar.js";
 import { LeftSidebar } from "./panels/LeftSidebar.js";
 import { Canvas } from "./canvas/Canvas.js";
 import { PropertiesPanel } from "./properties/PropertiesPanel.js";
-import { RevisionsDialog } from "./dialogs/RevisionsDialog.js";
-import { PublishDialog } from "./dialogs/PublishDialog.js";
-import { SettingsDialog } from "./dialogs/SettingsDialog.js";
-import { SubmissionsDialog } from "./dialogs/SubmissionsDialog.js";
-import { ShortcutsDialog } from "./dialogs/ShortcutsDialog.js";
 import { useToast } from "../components/Toast.js";
 import { align, group, nudge, reorder, toggleHidden, toggleLock, ungroup } from "./actions.js";
 import { api } from "../api.js";
 
 export type DialogName = "revisions" | "publish" | "settings" | "submissions" | "shortcuts" | null;
+
+const RevisionsDialog = lazy(() => import("./dialogs/RevisionsDialog.js").then((m) => ({ default: m.RevisionsDialog })));
+const PublishDialog = lazy(() => import("./dialogs/PublishDialog.js").then((m) => ({ default: m.PublishDialog })));
+const SettingsDialog = lazy(() => import("./dialogs/SettingsDialog.js").then((m) => ({ default: m.SettingsDialog })));
+const SubmissionsDialog = lazy(() => import("./dialogs/SubmissionsDialog.js").then((m) => ({ default: m.SubmissionsDialog })));
+const ShortcutsDialog = lazy(() => import("./dialogs/ShortcutsDialog.js").then((m) => ({ default: m.ShortcutsDialog })));
 
 function isTypingTarget(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false;
@@ -182,11 +183,15 @@ export function Editor() {
         <PropertiesPanel />
       </aside>
       <StatusBar onOpen={setDialog} />
-      {dialog === "revisions" && <RevisionsDialog onClose={() => setDialog(null)} />}
-      {dialog === "publish" && <PublishDialog onClose={() => setDialog(null)} />}
-      {dialog === "settings" && <SettingsDialog onClose={() => setDialog(null)} />}
-      {dialog === "submissions" && <SubmissionsDialog onClose={() => setDialog(null)} />}
-      {dialog === "shortcuts" && <ShortcutsDialog onClose={() => setDialog(null)} />}
+      {dialog && (
+        <Suspense fallback={<div className="page-loading" role="status">Loading…</div>}>
+          {dialog === "revisions" && <RevisionsDialog onClose={() => setDialog(null)} />}
+          {dialog === "publish" && <PublishDialog onClose={() => setDialog(null)} />}
+          {dialog === "settings" && <SettingsDialog onClose={() => setDialog(null)} />}
+          {dialog === "submissions" && <SubmissionsDialog onClose={() => setDialog(null)} />}
+          {dialog === "shortcuts" && <ShortcutsDialog onClose={() => setDialog(null)} />}
+        </Suspense>
+      )}
     </div>
   );
 }

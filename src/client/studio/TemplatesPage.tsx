@@ -4,7 +4,7 @@ import { api, ApiError, type ProjectSummary, type TemplateSummary } from "../api
 import { ConfirmDialog } from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { I } from "../components/Icons.js";
-import { relative } from "../dashboard/Dashboard.js";
+import { relative } from "../utils/relativeTime.js";
 import { StudioShell } from "./StudioShell.js";
 
 /**

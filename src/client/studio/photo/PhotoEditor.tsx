@@ -4,7 +4,7 @@ import { PhotoRecipe, type RasterMime } from "../../../core/media/photo.js";
 import { I } from "../../components/Icons.js";
 import { usePhotoStudio } from "./usePhotoStudio.js";
 import { StudioShell } from "../StudioShell.js";
-import { relative } from "../../dashboard/Dashboard.js";
+import { relative } from "../../utils/relativeTime.js";
 
 type PhotoEditorProps = { mode?: "photo" | "compress" };
 const MAX_OUTPUT = 4096;

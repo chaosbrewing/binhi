@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, type ProjectSummary, type SiteSummary } from "../api.js";
-import { relative } from "../dashboard/Dashboard.js";
+import { relative } from "../utils/relativeTime.js";
 import { StudioShell } from "./StudioShell.js";
 import { DESTINATIONS, PROJECT_KIND_LABEL } from "./destinations.js";
-import { projectHref } from "./ProjectsPage.js";
+import { projectHref } from "./projectHref.js";
 
 type Recent = { id: string; name: string; kind: string; updatedAt: string; href: string };
 

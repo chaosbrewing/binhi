@@ -3,7 +3,7 @@ import { Modal } from "../../components/Modal.js";
 import { api, ApiError, type RevisionSummary } from "../../api.js";
 import { useStore, useSel } from "../context.js";
 import { useToast } from "../../components/Toast.js";
-import { relative } from "../../dashboard/Dashboard.js";
+import { relative } from "../../utils/relativeTime.js";
 
 const KIND_LABEL: Record<string, string> = { autosave: "Edit", restore: "Restored", publish: "Published", template: "Created", undo: "Undo", redo: "Redo" };
 
