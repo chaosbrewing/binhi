@@ -1,19 +1,16 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api, ApiError, type ProjectSummary, type SiteSummary } from "../api.js";
-import { PublicationBadge, relative } from "../dashboard/Dashboard.js";
+import { PublicationBadge } from "../dashboard/PublicationBadge.js";
 import { ConfirmDialog } from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { I } from "../components/Icons.js";
+import { relative } from "../utils/relativeTime.js";
 import { StudioShell } from "./StudioShell.js";
 import { PROJECT_KIND_LABEL } from "./destinations.js";
 import { applyProjectsViewState, parseProjectsViewState, PROJECT_FILTERS, type ProjectFilter, type ProjectsViewState } from "./viewState.js";
 import { initialVisibleCount, LIST_PAGE_SIZE, nextVisibleCount, visibleSlice } from "./listPagination.js";
-
-export function projectHref(p: ProjectSummary): string {
-  if (p.kind === "photo") return `/studio/photo/${p.id}`;
-  return `/studio/design/${p.id}`;
-}
+import { projectHref } from "./projectHref.js";
 
 const PROJECT_RESULTS_PANEL_ID = "projects-results-panel";
 

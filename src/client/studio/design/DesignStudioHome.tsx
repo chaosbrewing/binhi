@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError, type ProjectSummary } from "../../api.js";
 import { createDesignDocument, DESIGN_LIMITS, DESIGN_PRESETS } from "../../../core/creative/index.js";
-import { relative } from "../../dashboard/Dashboard.js";
+import { relative } from "../../utils/relativeTime.js";
 import { useToast } from "../../components/Toast.js";
 import { I } from "../../components/Icons.js";
 import { StudioShell } from "../StudioShell.js";
