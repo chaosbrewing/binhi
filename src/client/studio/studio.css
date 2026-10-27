@@ -257,6 +257,8 @@
 .studio-recent-card .badge { align-self: flex-start; }
 .studio-empty { padding: 18px; border: 1px dashed var(--panel-border); border-radius: 11px; color: var(--text-muted); }
 .studio-empty p { margin: 4px 0 0; font-size: 13px; }
+.studio-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin: 4px 0 10px; }
+.studio-controls .field-block { margin-bottom: 0; min-width: 170px; }
 .studio-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 18px; }
 .studio-main .page-head { margin-bottom: 14px; }
 .plain-list { margin: 0; padding: 0; list-style: none; }
