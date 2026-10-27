@@ -12,6 +12,7 @@ import {
   type LibrarySort,
   type LibraryUsageFilter,
 } from "./libraryList.js";
+import { clampVisibleCount, LIST_PAGE_SIZE, nextVisibleCount, visibleSlice } from "./listPagination.js";
 
 export const bytesLabel = (bytes: number) => (bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KiB` : `${(bytes / (1024 * 1024)).toFixed(2)} MiB`);
 
@@ -36,6 +37,7 @@ export function LibraryPage() {
   const [query, setQuery] = useState("");
   const [usage, setUsage] = useState<LibraryUsageFilter>("all");
   const [sort, setSort] = useState<LibrarySort>("newest");
+  const [visibleCount, setVisibleCount] = useState(LIST_PAGE_SIZE);
 
   const load = async () => {
     try {
@@ -114,8 +116,14 @@ export function LibraryPage() {
   };
 
   const total = assets?.reduce((sum, a) => sum + a.byteSize, 0) ?? 0;
-  const visibleAssets = assets ? filterAndSortLibraryAssets(assets, { query, usage, sort }) : [];
+  const filteredAssets = assets ? filterAndSortLibraryAssets(assets, { query, usage, sort }) : [];
+  const visibleAssets = visibleSlice(filteredAssets, visibleCount);
+  const canLoadMore = visibleAssets.length < filteredAssets.length;
   const hasQuery = query.trim().length > 0;
+
+  useEffect(() => {
+    setVisibleCount((current) => clampVisibleCount(current, filteredAssets.length));
+  }, [filteredAssets.length]);
 
   return (
     <StudioShell>
@@ -165,7 +173,7 @@ export function LibraryPage() {
               </label>
             </div>
             <p className="small muted studio-list-summary" role="status">
-              Showing {visibleAssets.length} of {assets.length} image{assets.length === 1 ? "" : "s"}.
+              Showing {filteredAssets.length} matching image{filteredAssets.length === 1 ? "" : "s"} of {assets.length}.
             </p>
           </>
         )}
@@ -179,27 +187,37 @@ export function LibraryPage() {
             <button className="btn btn-primary" onClick={() => input.current?.click()}>Add your first image</button>
           </div>
         )}
-        {assets && assets.length > 0 && visibleAssets.length === 0 && (
+        {assets && assets.length > 0 && filteredAssets.length === 0 && (
           <div className="empty-state">
             <h2>{hasQuery || usage !== "all" ? "No matching images" : "No images yet"}</h2>
             <p className="muted">Try another search term or usage filter.</p>
           </div>
         )}
-        {assets && visibleAssets.length > 0 && (
-          <ul className="library-grid" aria-label="Library files">
-            {visibleAssets.map((a) => (
-              <li key={a.id}>
-                <button type="button" className="library-card" onClick={() => open(a)} aria-label={`${a.filename}, ${a.width} by ${a.height}, ${a.usedBy.length} use${a.usedBy.length === 1 ? "" : "s"}`}>
-                  <span className="library-thumb"><img src={a.url} alt={a.alt} loading="lazy" /></span>
-                  <span className="library-meta">
-                    <strong>{a.filename}</strong>
-                    <span className="small muted">{a.width} × {a.height} · {bytesLabel(a.byteSize)}</span>
-                    <span className="small muted">{a.usedBy.length ? `Used in ${a.usedBy.length} project${a.usedBy.length === 1 ? "" : "s"}` : "Not used yet"}{a.origin === "photo-original" ? " · photo original" : ""}</span>
-                  </span>
+        {visibleAssets.length > 0 && (
+          <>
+            <ul className="library-grid" aria-label="Library files">
+              {visibleAssets.map((a) => (
+                <li key={a.id}>
+                  <button type="button" className="library-card" onClick={() => open(a)} aria-label={`${a.filename}, ${a.width} by ${a.height}, ${a.usedBy.length} use${a.usedBy.length === 1 ? "" : "s"}`}>
+                    <span className="library-thumb"><img src={a.url} alt={a.alt} loading="lazy" /></span>
+                    <span className="library-meta">
+                      <strong>{a.filename}</strong>
+                      <span className="small muted">{a.width} × {a.height} · {bytesLabel(a.byteSize)}</span>
+                      <span className="small muted">{a.usedBy.length ? `Used in ${a.usedBy.length} project${a.usedBy.length === 1 ? "" : "s"}` : "Not used yet"}{a.origin === "photo-original" ? " · photo original" : ""}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="list-pagination" aria-live="polite">
+              <p className="small muted">Showing {visibleAssets.length} of {filteredAssets.length} matching files</p>
+              {canLoadMore && (
+                <button className="btn" onClick={() => setVisibleCount((current) => nextVisibleCount(current, filteredAssets.length))}>
+                  <I.plus /> Load {Math.min(LIST_PAGE_SIZE, filteredAssets.length - visibleAssets.length)} more
                 </button>
-              </li>
-            ))}
-          </ul>
+              )}
+            </div>
+          </>
         )}
       </main>
       {selected && (
