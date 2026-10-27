@@ -125,6 +125,11 @@ export interface LibraryAsset {
   createdAt: string;
   usedBy: { id: string; name: string; kind: string }[];
 }
+export interface LibraryBulkDeleteResult {
+  deletedIds: string[];
+  skippedUsed: { id: string; filename: string; usedBy: number }[];
+  missingIds: string[];
+}
 export interface ProjectSummary {
   id: string;
   kind: ProjectKind;
@@ -193,6 +198,8 @@ export const api = {
     }),
   updateLibraryAsset: (assetId: string, patch: { alt?: string; tags?: string; filename?: string }) => request<{ asset: LibraryAsset }>("PATCH", `/api/library/${assetId}`, patch),
   deleteLibraryAsset: (assetId: string, force = false) => request<{ ok: true }>("DELETE", `/api/library/${assetId}${force ? "?force=true" : ""}`),
+  bulkDeleteLibraryAssets: (assetIds: string[], force = false) =>
+    request<{ result: LibraryBulkDeleteResult }>("POST", "/api/library/batch", { action: "delete", assetIds, force }),
   copyLibraryAssetToSite: (assetId: string, siteId: string) => request<{ asset: AssetRecord }>("POST", `/api/library/${assetId}/copy-to-site`, { siteId }),
   projects: (kind?: ProjectKind) => request<{ projects: ProjectSummary[] }>("GET", `/api/projects${kind ? `?kind=${kind}` : ""}`),
   project: <D = DesignDocument | PhotoProjectDocument>(projectId: string) => request<{ project: ProjectDetail<D> }>("GET", `/api/projects/${projectId}`),
