@@ -7,20 +7,27 @@ import { useToast } from "../components/Toast.js";
 import { I } from "../components/Icons.js";
 import { StudioShell } from "./StudioShell.js";
 import { PROJECT_KIND_LABEL } from "./destinations.js";
+import {
+  buildProjectRows,
+  filterAndSortProjectRows,
+  projectCounts,
+  type ProjectFilter,
+  type ProjectSort,
+} from "./projectList.js";
 
 export function projectHref(p: ProjectSummary): string {
   if (p.kind === "photo") return `/studio/photo/${p.id}`;
   return `/studio/design/${p.id}`;
 }
 
-type Filter = "all" | "website" | "photo" | "design" | "design-template";
-
 export function ProjectsPage() {
   const toast = useToast();
   const [sites, setSites] = useState<SiteSummary[] | null>(null);
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<ProjectFilter>("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<ProjectSort>("updated-desc");
   const [confirm, setConfirm] = useState<ProjectSummary | null>(null);
 
   const load = async () => {
@@ -50,13 +57,9 @@ export function ProjectsPage() {
   const loading = sites === null || projects === null;
   const rows = loading
     ? []
-    : [
-        ...sites.map((s) => ({ kind: "website" as const, site: s, project: null as ProjectSummary | null, updatedAt: s.updatedAt })),
-        ...projects.map((p) => ({ kind: p.kind, site: null as SiteSummary | null, project: p, updatedAt: p.updatedAt })),
-      ]
-        .filter((r) => filter === "all" || r.kind === filter)
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const counts = { all: (sites?.length ?? 0) + (projects?.length ?? 0), website: sites?.length ?? 0, photo: projects?.filter((p) => p.kind === "photo").length ?? 0, design: projects?.filter((p) => p.kind === "design").length ?? 0, "design-template": projects?.filter((p) => p.kind === "design-template").length ?? 0 };
+    : filterAndSortProjectRows(buildProjectRows(sites, projects), { filter, query, sort });
+  const counts = projectCounts(sites ?? [], projects ?? []);
+  const hasQuery = query.trim().length > 0;
 
   return (
     <StudioShell>
@@ -74,18 +77,43 @@ export function ProjectsPage() {
           </div>
         </div>
         <div className="studio-filter" role="tablist" aria-label="Filter projects">
-          {(["all", "website", "photo", "design", "design-template"] as Filter[]).map((f) => (
+          {(["all", "website", "photo", "design", "design-template"] as ProjectFilter[]).map((f) => (
             <button key={f} role="tab" aria-selected={filter === f} className={`btn btn-sm${filter === f ? " btn-primary" : ""}`} onClick={() => setFilter(f)}>
               {f === "all" ? "All" : PROJECT_KIND_LABEL[f]}s · {counts[f]}
             </button>
           ))}
         </div>
+        <div className="studio-list-controls" aria-label="Project search and sorting">
+          <label className="field-block">
+            Find a project
+            <input
+              type="search"
+              placeholder="Search by name or site slug"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+          <label className="field-block sort">
+            Sort by
+            <select value={sort} onChange={(event) => setSort(event.target.value as ProjectSort)}>
+              <option value="updated-desc">Recently updated</option>
+              <option value="updated-asc">Oldest updates first</option>
+              <option value="name-asc">Name (A to Z)</option>
+              <option value="name-desc">Name (Z to A)</option>
+            </select>
+          </label>
+        </div>
+        {!loading && rows.length > 0 && (
+          <p className="small muted studio-list-summary" role="status">
+            Showing {rows.length} project{rows.length === 1 ? "" : "s"}.
+          </p>
+        )}
         {error && <p className="form-error" role="alert">{error}</p>}
         {loading && !error && <p className="muted" role="status">Loading your projects…</p>}
         {!loading && rows.length === 0 && (
           <div className="empty-state">
-            <h2>{filter === "all" ? "Nothing planted yet" : `No ${PROJECT_KIND_LABEL[filter]?.toLowerCase()}s yet`}</h2>
-            <p className="muted">Start a website, open a photo or create a design. Saved work appears here.</p>
+            <h2>{hasQuery ? "No matching projects" : filter === "all" ? "Nothing planted yet" : `No ${PROJECT_KIND_LABEL[filter]?.toLowerCase()}s yet`}</h2>
+            <p className="muted">{hasQuery ? "Try another search term or clear filters." : "Start a website, open a photo or create a design. Saved work appears here."}</p>
           </div>
         )}
         {rows.length > 0 && (
