@@ -207,6 +207,7 @@
 .photo-limit-note { padding: 10px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-size: 11px; line-height: 1.5; }
 .photo-drop-label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 .photo-file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); border: 0; padding: 0; }
 .photo-save-row { display: flex; gap: 7px; }
 .photo-save-row input { min-width: 0; }
 .photo-website-select { margin: 9px 0; }

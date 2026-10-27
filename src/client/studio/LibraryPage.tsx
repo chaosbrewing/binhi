@@ -16,6 +16,14 @@ export async function checkLibraryFile(file: File): Promise<void> {
   inspectRaster(new Uint8Array(await file.arrayBuffer()));
 }
 
+export function libraryResultsLiveMessage({ assets, error, busy }: { assets: LibraryAsset[] | null; error: string | null; busy: boolean }): string {
+  if (error) return "Could not load your asset library.";
+  if (busy) return "Uploading images to your asset library.";
+  if (assets === null) return "Loading your asset library.";
+  if (assets.length === 0) return "No images in your asset library yet.";
+  return `${assets.length} image${assets.length === 1 ? "" : "s"} in your asset library.`;
+}
+
 export function LibraryPage() {
   const toast = useToast();
   const input = useRef<HTMLInputElement>(null);
@@ -118,10 +126,11 @@ export function LibraryPage() {
           </div>
           <div className="photo-actions">
             <label className="btn btn-primary photo-drop-label" htmlFor="library-file"><I.plus /> Add images</label>
-            <input ref={input} id="library-file" className="photo-file-input" type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(e) => void upload(e)} aria-label="Add PNG, JPEG or static WebP images to your library" />
+            <input ref={input} id="library-file" className="photo-file-input" type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(e) => void upload(e)} aria-label="Add PNG, JPEG or static WebP images to your library" aria-describedby="library-summary library-live-status" />
           </div>
         </div>
-        <p className="small muted">{assets ? `${assets.length} file${assets.length === 1 ? "" : "s"} · ${bytesLabel(total)} of 300 MiB` : ""} · PNG, JPEG and static WebP up to 8 MiB and 16 megapixels each.</p>
+        <p id="library-summary" className="small muted">{assets ? `${assets.length} file${assets.length === 1 ? "" : "s"} · ${bytesLabel(total)} of 300 MiB` : ""} · PNG, JPEG and static WebP up to 8 MiB and 16 megapixels each.</p>
+        <p id="library-live-status" className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{libraryResultsLiveMessage({ assets, error, busy })}</p>
         {error && <p className="form-error" role="alert">{error}</p>}
         {busy && <p className="muted" role="status">Uploading…</p>}
         {assets === null && !error && <p className="muted" role="status">Loading your library…</p>}
@@ -129,7 +138,7 @@ export function LibraryPage() {
           <div className="empty-state">
             <h2>No images yet</h2>
             <p className="muted">Add photos, logos and graphics here once and reuse them in every tool.</p>
-            <button className="btn btn-primary" onClick={() => input.current?.click()}>Add your first image</button>
+            <button type="button" className="btn btn-primary" onClick={() => input.current?.click()}>Add your first image</button>
           </div>
         )}
         {assets && assets.length > 0 && (
@@ -151,8 +160,8 @@ export function LibraryPage() {
       </main>
       {selected && (
         <Modal title={selected.filename} onClose={() => setSelected(null)} wide footer={<>
-          <button className="btn btn-danger-text btn-ghost" onClick={() => setConfirm(selected)}><I.trash /> Delete</button>
-          <button className="btn btn-primary" onClick={() => void saveMeta()}>Save details</button>
+          <button type="button" className="btn btn-danger-text btn-ghost" onClick={() => setConfirm(selected)}><I.trash /> Delete</button>
+          <button type="button" className="btn btn-primary" onClick={() => void saveMeta()}>Save details</button>
         </>}>
           <div className="library-detail">
             <div className="library-detail-preview"><img src={selected.url} alt={selected.alt || selected.filename} /></div>
@@ -173,7 +182,7 @@ export function LibraryPage() {
                       <option value="">Choose a website…</option>
                       {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
-                    <button className="btn" disabled={!siteId} onClick={() => void copyToSite()}>Copy</button>
+                    <button type="button" className="btn" disabled={!siteId} onClick={() => void copyToSite()}>Copy</button>
                   </div>
                 </div>
               )}

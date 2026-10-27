@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError, type ProjectSummary, type SiteSummary } from "../api.js";
 import { PublicationBadge, relative } from "../dashboard/Dashboard.js";
@@ -13,15 +13,47 @@ export function projectHref(p: ProjectSummary): string {
   return `/studio/design/${p.id}`;
 }
 
-type Filter = "all" | "website" | "photo" | "design" | "design-template";
+export type ProjectFilter = "all" | "website" | "photo" | "design" | "design-template";
+
+const PROJECT_FILTERS: ProjectFilter[] = ["all", "website", "photo", "design", "design-template"];
+const PROJECT_RESULTS_PANEL_ID = "projects-results-panel";
+
+export function nextProjectFilter(current: ProjectFilter, key: string): ProjectFilter | null {
+  const index = PROJECT_FILTERS.indexOf(current);
+  if (index < 0) return null;
+  if (key === "ArrowRight" || key === "ArrowDown") return PROJECT_FILTERS[(index + 1) % PROJECT_FILTERS.length] ?? null;
+  if (key === "ArrowLeft" || key === "ArrowUp") return PROJECT_FILTERS[(index - 1 + PROJECT_FILTERS.length) % PROJECT_FILTERS.length] ?? null;
+  if (key === "Home") return PROJECT_FILTERS[0] ?? null;
+  if (key === "End") return PROJECT_FILTERS[PROJECT_FILTERS.length - 1] ?? null;
+  return null;
+}
+
+export function projectResultsLiveMessage({ loading, error, filter, count }: { loading: boolean; error: string | null; filter: ProjectFilter; count: number }): string {
+  if (loading) return "Loading your projects.";
+  if (error) return "Could not load your projects.";
+  const kindLabel = (PROJECT_KIND_LABEL[filter] ?? filter).toLowerCase();
+  if (count === 0) {
+    if (filter === "all") return "No projects found.";
+    return `No ${kindLabel} projects found.`;
+  }
+  if (filter === "all") return `Showing ${count} project${count === 1 ? "" : "s"}.`;
+  return `Showing ${count} ${kindLabel} project${count === 1 ? "" : "s"}.`;
+}
 
 export function ProjectsPage() {
   const toast = useToast();
   const [sites, setSites] = useState<SiteSummary[] | null>(null);
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<ProjectFilter>("all");
   const [confirm, setConfirm] = useState<ProjectSummary | null>(null);
+  const filterButtons = useRef<Record<ProjectFilter, HTMLButtonElement | null>>({
+    all: null,
+    website: null,
+    photo: null,
+    design: null,
+    "design-template": null,
+  });
 
   const load = async () => {
     try {
@@ -58,6 +90,14 @@ export function ProjectsPage() {
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const counts = { all: (sites?.length ?? 0) + (projects?.length ?? 0), website: sites?.length ?? 0, photo: projects?.filter((p) => p.kind === "photo").length ?? 0, design: projects?.filter((p) => p.kind === "design").length ?? 0, "design-template": projects?.filter((p) => p.kind === "design-template").length ?? 0 };
 
+  const onFilterKeyDown = (event: KeyboardEvent<HTMLButtonElement>, current: ProjectFilter) => {
+    const next = nextProjectFilter(current, event.key);
+    if (!next) return;
+    event.preventDefault();
+    setFilter(next);
+    filterButtons.current[next]?.focus();
+  };
+
   return (
     <StudioShell>
       <main className="studio-main">
@@ -73,58 +113,75 @@ export function ProjectsPage() {
             <Link to="/studio/photo" className="btn"><I.plus /> Open a photo</Link>
           </div>
         </div>
-        <div className="studio-filter" role="tablist" aria-label="Filter projects">
-          {(["all", "website", "photo", "design", "design-template"] as Filter[]).map((f) => (
-            <button key={f} role="tab" aria-selected={filter === f} className={`btn btn-sm${filter === f ? " btn-primary" : ""}`} onClick={() => setFilter(f)}>
+        <div className="studio-filter" role="tablist" aria-label="Filter projects" aria-orientation="horizontal">
+          {PROJECT_FILTERS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              id={`projects-filter-tab-${f}`}
+              role="tab"
+              aria-controls={PROJECT_RESULTS_PANEL_ID}
+              aria-selected={filter === f}
+              tabIndex={filter === f ? 0 : -1}
+              className={`btn btn-sm${filter === f ? " btn-primary" : ""}`}
+              onClick={() => setFilter(f)}
+              onKeyDown={(event) => onFilterKeyDown(event, f)}
+              ref={(node) => {
+                filterButtons.current[f] = node;
+              }}
+            >
               {f === "all" ? "All" : PROJECT_KIND_LABEL[f]}s · {counts[f]}
             </button>
           ))}
         </div>
+        <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{projectResultsLiveMessage({ loading, error, filter, count: rows.length })}</p>
         {error && <p className="form-error" role="alert">{error}</p>}
-        {loading && !error && <p className="muted" role="status">Loading your projects…</p>}
-        {!loading && rows.length === 0 && (
-          <div className="empty-state">
-            <h2>{filter === "all" ? "Nothing planted yet" : `No ${PROJECT_KIND_LABEL[filter]?.toLowerCase()}s yet`}</h2>
-            <p className="muted">Start a website, open a photo or create a design. Saved work appears here.</p>
-          </div>
-        )}
-        {rows.length > 0 && (
-          <ul className="site-grid" aria-label="Projects">
-            {rows.map((r) =>
-              r.site ? (
-                <li key={`site-${r.site.id}`} className="site-card">
-                  <div className="site-card-body">
-                    <span className="badge">Website</span>
-                    <h2>{r.site.name}</h2>
-                    <p className="muted small">/s/{r.site.slug}/ · updated {relative(r.site.updatedAt)}</p>
-                    <PublicationBadge site={r.site} />
-                  </div>
-                  <div className="site-card-actions">
-                    <Link to={`/sites/${r.site.id}/edit`} className="btn btn-primary">Open editor</Link>
-                    {r.site.liveUrl && <a className="btn" href={r.site.liveUrl} target="_blank" rel="noopener noreferrer">View live <I.external /></a>}
-                    <Link to="/websites" className="btn btn-ghost">Manage</Link>
-                  </div>
-                </li>
-              ) : (
-                <li key={`project-${r.project!.id}`} className="site-card">
-                  <div className="site-card-body">
-                    <span className="badge">{PROJECT_KIND_LABEL[r.project!.kind]}</span>
-                    <h2>{r.project!.name}</h2>
-                    <p className="muted small">
-                      {r.project!.meta.width && r.project!.meta.height ? `${r.project!.meta.width} × ${r.project!.meta.height}px · ` : ""}
-                      {r.project!.kind !== "photo" && typeof r.project!.meta.layers === "number" ? `${r.project!.meta.layers} layer${r.project!.meta.layers === 1 ? "" : "s"} · ` : ""}
-                      updated {relative(r.project!.updatedAt)} · rev {r.project!.revision}
-                    </p>
-                  </div>
-                  <div className="site-card-actions">
-                    <Link to={projectHref(r.project!)} className="btn btn-primary">{r.project!.kind === "design-template" ? "Edit template" : "Open"}</Link>
-                    <button className="btn btn-ghost btn-danger-text" onClick={() => setConfirm(r.project)} aria-label={`Delete ${r.project!.name}`}><I.trash /></button>
-                  </div>
-                </li>
-              ),
-            )}
-          </ul>
-        )}
+        <section id={PROJECT_RESULTS_PANEL_ID} role="tabpanel" aria-labelledby={`projects-filter-tab-${filter}`}>
+          {loading && !error && <p className="muted" role="status">Loading your projects…</p>}
+          {!loading && rows.length === 0 && (
+            <div className="empty-state">
+              <h2>{filter === "all" ? "Nothing planted yet" : `No ${PROJECT_KIND_LABEL[filter]?.toLowerCase()}s yet`}</h2>
+              <p className="muted">Start a website, open a photo or create a design. Saved work appears here.</p>
+            </div>
+          )}
+          {rows.length > 0 && (
+            <ul className="site-grid" aria-label="Projects">
+              {rows.map((r) =>
+                r.site ? (
+                  <li key={`site-${r.site.id}`} className="site-card">
+                    <div className="site-card-body">
+                      <span className="badge">Website</span>
+                      <h2>{r.site.name}</h2>
+                      <p className="muted small">/s/{r.site.slug}/ · updated {relative(r.site.updatedAt)}</p>
+                      <PublicationBadge site={r.site} />
+                    </div>
+                    <div className="site-card-actions">
+                      <Link to={`/sites/${r.site.id}/edit`} className="btn btn-primary">Open editor</Link>
+                      {r.site.liveUrl && <a className="btn" href={r.site.liveUrl} target="_blank" rel="noopener noreferrer">View live <I.external /></a>}
+                      <Link to="/websites" className="btn btn-ghost">Manage</Link>
+                    </div>
+                  </li>
+                ) : (
+                  <li key={`project-${r.project!.id}`} className="site-card">
+                    <div className="site-card-body">
+                      <span className="badge">{PROJECT_KIND_LABEL[r.project!.kind]}</span>
+                      <h2>{r.project!.name}</h2>
+                      <p className="muted small">
+                        {r.project!.meta.width && r.project!.meta.height ? `${r.project!.meta.width} × ${r.project!.meta.height}px · ` : ""}
+                        {r.project!.kind !== "photo" && typeof r.project!.meta.layers === "number" ? `${r.project!.meta.layers} layer${r.project!.meta.layers === 1 ? "" : "s"} · ` : ""}
+                        updated {relative(r.project!.updatedAt)} · rev {r.project!.revision}
+                      </p>
+                    </div>
+                    <div className="site-card-actions">
+                      <Link to={projectHref(r.project!)} className="btn btn-primary">{r.project!.kind === "design-template" ? "Edit template" : "Open"}</Link>
+                      <button type="button" className="btn btn-ghost btn-danger-text" onClick={() => setConfirm(r.project)} aria-label={`Delete ${r.project!.name}`}><I.trash /></button>
+                    </div>
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
+        </section>
       </main>
       {confirm && (
         <ConfirmDialog
