@@ -1,19 +1,20 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { I } from "./Icons.js";
 
 export function Modal({ title, onClose, children, wide = false, footer }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean; footer?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
-    const first = ref.current?.querySelector<HTMLElement>("button, input, select, textarea, [tabindex]:not([tabindex='-1'])");
-    first?.focus();
+    const focusables = ref.current ? Array.from(ref.current.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex='-1']):not([disabled])")) : [];
+    (focusables[0] ?? ref.current)?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
         onClose();
       }
       if (e.key === "Tab" && ref.current) {
-        const focusables = Array.from(ref.current.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), select, textarea, a[href], [tabindex]:not([tabindex='-1'])"));
+        const focusables = Array.from(ref.current.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex='-1']):not([disabled])"));
         if (!focusables.length) return;
         const firstEl = focusables[0]!, lastEl = focusables[focusables.length - 1]!;
         if (e.shiftKey && document.activeElement === firstEl) {
@@ -33,10 +34,10 @@ export function Modal({ title, onClose, children, wide = false, footer }: { titl
   }, [onClose]);
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`modal ${wide ? "modal-wide" : ""}`} role="dialog" aria-modal="true" aria-labelledby="modal-title" ref={ref}>
+      <div className={`modal ${wide ? "modal-wide" : ""}`} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} ref={ref}>
         <header className="modal-head">
-          <h2 id="modal-title">{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
+          <h2 id={titleId}>{title}</h2>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
             <I.x />
           </button>
         </header>
@@ -54,8 +55,8 @@ export function ConfirmDialog({ title, message, confirmLabel = "Confirm", danger
       onClose={onCancel}
       footer={
         <>
-          <button className="btn" onClick={onCancel}>Cancel</button>
-          <button className={`btn ${danger ? "btn-danger" : "btn-primary"}`} onClick={onConfirm}>{confirmLabel}</button>
+          <button type="button" className="btn" onClick={onCancel}>Cancel</button>
+          <button type="button" className={`btn ${danger ? "btn-danger" : "btn-primary"}`} onClick={onConfirm}>{confirmLabel}</button>
         </>
       }
     >
