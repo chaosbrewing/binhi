@@ -258,6 +258,10 @@
 .studio-empty { padding: 18px; border: 1px dashed var(--panel-border); border-radius: 11px; color: var(--text-muted); }
 .studio-empty p { margin: 4px 0 0; font-size: 13px; }
 .studio-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 18px; }
+.studio-list-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin: 0 0 10px; }
+.studio-list-controls .field-block { margin: 0; min-width: 220px; flex: 1 1 280px; }
+.studio-list-controls .field-block.sort { flex: 0 0 220px; }
+.studio-list-summary { margin: 0 0 14px; }
 .studio-main .page-head { margin-bottom: 14px; }
 .plain-list { margin: 0; padding: 0; list-style: none; }
 .library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 14px 0 0; padding: 0; list-style: none; }
@@ -272,6 +276,10 @@
 .library-detail-preview img { max-width: 100%; max-height: 420px; object-fit: contain; }
 .library-detail-fields .kv { margin-bottom: 12px; }
 @media (max-width: 700px) { .library-detail { grid-template-columns: 1fr; } }
+@media (max-width: 700px) {
+  .studio-list-controls .field-block,
+  .studio-list-controls .field-block.sort { flex: 1 1 100%; min-width: 0; }
+}
 
 /* ---- Design studio ---- */
 .design-presets { margin-top: 26px; }
