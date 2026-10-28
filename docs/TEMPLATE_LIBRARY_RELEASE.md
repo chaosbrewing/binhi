@@ -36,7 +36,7 @@ templates' art direction (inventory stage `approved` is left to the founder).
 | 14 | Seed target met | **met: 62 of 60** (see §3) | `docs/TEMPLATE_INVENTORY.json` |
 | 15 | Ownership and security checks pass | met | §6 |
 | 16 | Existing functionality passes regression | met | §4 |
-| 17 | CI passes | **pending**: runs when the branch is pushed | `.github/workflows/ci.yml` (new parallel `templates` job) |
+| 17 | CI passes | **met** on head `67364ae` (run 29): both jobs green, the template journey in 6 min 40 s | `.github/workflows/ci.yml`: "Typecheck, test, build, browser journey" and the new parallel "Template library journey (every catalog template)" |
 | 18 | Documentation describes actual capabilities | met | `docs/TEMPLATE_LIBRARY*.md`; limits stated |
 | 19 | The PR passes review | pending | a draft PR is opened; review is the founder's |
 | 20 | Production deployment separately authorised and verified | **not done, out of scope** | |
