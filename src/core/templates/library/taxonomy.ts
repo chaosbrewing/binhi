@@ -23,6 +23,23 @@ export const FORMAT_FILTERS: readonly { id: "all" | FormatId; label: string }[] 
   { id: "custom", label: "Custom" },
 ];
 
+/**
+ * Which editors can produce each format. "print" means a fixed-size graphic
+ * made for printing, exported as PNG or JPEG: there is no PDF export yet, so
+ * "documents" (which implies a document editor and PDF) needs the document
+ * editor and stays unavailable until it exists.
+ */
+export const FORMAT_EDITORS: Readonly<Record<FormatId, readonly EditorId[]>> = {
+  social: ["design"],
+  websites: ["website"],
+  print: ["design"],
+  documents: ["document"],
+  presentations: ["presentation"],
+  forms: ["form"],
+  video: ["video"],
+  custom: ["design", "website"],
+};
+
 export const STYLE_IDS = [
   "minimal",
   "editorial",

@@ -67,7 +67,7 @@ export class SiteService {
     return { ...toSummary(row), document: row.document as SiteDocument };
   }
 
-  async create(ownerId: string, input: { name: string; templateId: string }, ip?: string): Promise<SiteDetail> {
+  async create(ownerId: string, input: { name: string; templateId: string; source?: { canonicalId: string; version: number } }, ip?: string): Promise<SiteDetail> {
     const name = input.name.trim().slice(0, 80);
     if (!name) throw badRequest("Give your website a name");
     if (!getTemplate(input.templateId)) throw badRequest("Unknown template");
@@ -81,7 +81,7 @@ export class SiteService {
       await tx.insert(sites).values({ id, ownerId, name, slug, templateId: input.templateId, document, revision: 0, createdAt: now, updatedAt: now });
       await tx.insert(siteRevisions).values({ id: newId("rev"), siteId: id, revision: 0, document, kind: "template", label: `Created from ${getTemplate(input.templateId)!.name}`, summary: [], createdBy: ownerId });
     });
-    await audit(this.db, { actorId: ownerId, siteId: id, action: "site.created", details: { templateId: input.templateId }, ip });
+    await audit(this.db, { actorId: ownerId, siteId: id, action: "site.created", details: { templateId: input.templateId, ...(input.source ? { source: input.source } : {}) }, ip });
     return this.get(ownerId, id);
   }
 

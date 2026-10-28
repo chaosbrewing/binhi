@@ -105,6 +105,8 @@ export const TemplateManifest = z
     palette: z.array(HexSwatch).min(2).max(6),
     preview: z.object({ thumbnail: z.string().max(160).nullable(), alt: Text(160) }).strict(),
     publishedAt: DateOnly.nullable().default(null),
+    /** Editorial choice by BINHI, shown as "Featured". Never derived from usage. */
+    featured: z.boolean().default(false),
     /** Only "free" exists: there are no entitlements, so no premium tier is representable. */
     access: z.literal("free").default("free"),
 

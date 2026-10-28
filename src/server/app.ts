@@ -27,6 +27,8 @@ import { LibraryService } from "./creative/library.js";
 import { ProjectService } from "./creative/projects.js";
 import { BrandKitService } from "./creative/brandKits.js";
 import { registerCreativeRoutes } from "./creative/routes.js";
+import { TemplateLibraryService } from "./templates/library.js";
+import { registerTemplateLibraryRoutes } from "./templates/routes.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -42,13 +44,15 @@ export interface AppDeps {
   storage?: ObjectStorage;
   /** Override how published pages are fetched for verification (tests inject the app itself). */
   fetchImpl?: typeof fetch;
+  /** Test seam: replace the shipped template catalog. Production never sets this. */
+  templates?: { catalog?: readonly unknown[]; designs?: Readonly<Record<string, unknown>>; collections?: import("./templates/library.js").LibraryDeps["collections"] };
 }
 
 export interface BinhiApp {
   app: FastifyInstance;
   db: Db;
   sql: Sql;
-  services: { sites: SiteService; assets: AssetService; sessions: SessionService; publish: PublishService; library: LibraryService; projects: ProjectService; brandKits: BrandKitService };
+  services: { sites: SiteService; assets: AssetService; sessions: SessionService; publish: PublishService; library: LibraryService; projects: ProjectService; brandKits: BrandKitService; templateLibrary: TemplateLibraryService };
   close(): Promise<void>;
 }
 
@@ -70,6 +74,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   const brandKitSvc = new BrandKitService(db, librarySvc);
 
   const app = Fastify({ logger: config.env !== "test", bodyLimit: 6 * 1024 * 1024, trustProxy: true, disableRequestLogging: true });
+  const templateLibrarySvc = new TemplateLibraryService({ db, projects: projectSvc, sites: siteSvc, ...deps.templates, log: (m) => app.log.warn(m) });
   await app.register(cookie);
 
   // Raw uploads: the browser sends the file body directly with its metadata in headers.
@@ -355,6 +360,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
 
   /* ------------------------------------------------- creative studio (Phase 1) */
   registerCreativeRoutes(app, { requireUser, sites: siteSvc, assets: assetSvc, library: librarySvc, projects: projectSvc, brandKits: brandKitSvc });
+  registerTemplateLibraryRoutes(app, { requireUser, library: templateLibrarySvc, previewCsp });
 
   /* ------------------------------------------------------------- client SPA */
   // Built client: dist/client next to dist/server, or (when running from source) ../../dist/client.
@@ -374,7 +380,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
     app,
     db,
     sql,
-    services: { sites: siteSvc, assets: assetSvc, sessions: sessionsSvc, publish: publishSvc, library: librarySvc, projects: projectSvc, brandKits: brandKitSvc },
+    services: { sites: siteSvc, assets: assetSvc, sessions: sessionsSvc, publish: publishSvc, library: librarySvc, projects: projectSvc, brandKits: brandKitSvc, templateLibrary: templateLibrarySvc },
     async close() {
       await app.close();
       if (created) await created.sql.end();

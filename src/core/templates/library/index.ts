@@ -4,3 +4,8 @@ export * from "./schema.js";
 export * from "./lifecycle.js";
 export * from "./validate.js";
 export type { TemplateManifest as Manifest } from "./schema.js";
+export * from "./search.js";
+export * from "./card.js";
+export { CATALOG } from "./catalog/index.js";
+export { COLLECTIONS, type Collection } from "./catalog/collections.js";
+export { DESIGN_CONTENT } from "./catalog/designs.js";

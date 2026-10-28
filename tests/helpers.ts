@@ -13,6 +13,8 @@ export interface TestAppOptions {
   truncate?: boolean;
   /** Replace the fetch used for publication verification (default: inject into this app). */
   fetchImpl?: typeof fetch;
+  /** Replace the shipped template catalog (test seam). */
+  templates?: import("../src/server/app.js").AppDeps["templates"];
 }
 
 export async function testApp(overrides: Record<string, string> = {}, options: TestAppOptions = {}): Promise<BinhiApp> {
@@ -33,7 +35,7 @@ export async function testApp(overrides: Record<string, string> = {}, options: T
     const res = await appRef!.inject({ method: "GET", url: url.pathname + url.search, headers: (init?.headers as Record<string, string>) ?? {} });
     return new Response(res.body, { status: res.statusCode, headers: res.headers as Record<string, string> });
   });
-  const built = await buildApp({ config, db, sql, fetchImpl });
+  const built = await buildApp({ config, db, sql, fetchImpl, templates: options.templates });
   appRef = built.app;
   const close = built.close;
   built.close = async () => {

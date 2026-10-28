@@ -3,7 +3,7 @@
  * the first, so a reviewer sees the whole picture. Used by the unit tests,
  * by the catalog build check and, for user templates, at save time.
  */
-import { CATEGORIES, SUBCATEGORIES, getCategory, getSubcategory, type CategoryDef } from "./taxonomy.js";
+import { CATEGORIES, FORMAT_EDITORS, SUBCATEGORIES, getCategory, getSubcategory, type CategoryDef } from "./taxonomy.js";
 import { DOCUMENT_SCHEMA_VERSIONS, EDITORS, KIND_OUTPUTS } from "./editors.js";
 import { evaluateAvailability } from "./lifecycle.js";
 import { TemplateManifest, type TemplateManifest as Manifest } from "./schema.js";
@@ -62,6 +62,7 @@ export function validateManifest(m: Manifest, all: readonly Manifest[], ctx: Cat
     if (!category.formats.includes(m.format)) add(`Format "${m.format}" is not allowed in category "${category.id}"`);
     if (!category.editors.includes(m.editor)) add(`Editor "${m.editor}" is not allowed in category "${category.id}"`);
   }
+  if (!FORMAT_EDITORS[m.format].includes(m.editor)) add(`Format "${m.format}" cannot be produced by the ${m.editor} editor`);
   if (m.subcategory !== undefined) {
     const sub = getSubcategory(m.subcategory);
     if (!sub) add(`Unknown subcategory "${m.subcategory}"`);
