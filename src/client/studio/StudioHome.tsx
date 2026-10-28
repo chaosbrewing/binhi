@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, type ProjectSummary, type SiteSummary, type TemplateSummary } from "../api.js";
 import { I } from "../components/Icons.js";
@@ -27,6 +27,7 @@ const FALLBACK_TEMPLATES: HomeTemplate[] = [
 
 export function StudioHome() {
   const navigate = useNavigate();
+  const templateRowRef = useRef<HTMLDivElement | null>(null);
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState("Use the prompt or choose a quick action to begin.");
   const [sites, setSites] = useState<SiteSummary[]>([]);
@@ -81,8 +82,16 @@ export function StudioHome() {
       to: `/studio/design/${template.id}`,
     }));
     const merged = [...fromSites, ...fromDesigns];
-    return merged.length > 0 ? merged : FALLBACK_TEMPLATES;
+    if (merged.length >= 6) return merged.slice(0, 6);
+    const seen = new Set(merged.map((template) => template.title.toLowerCase()));
+    const filler = FALLBACK_TEMPLATES.filter((template) => !seen.has(template.title.toLowerCase()));
+    return [...merged, ...filler].slice(0, 6);
   }, [designTemplates, siteTemplates]);
+
+  useEffect(() => {
+    // Always show the first templates first after data hydration.
+    templateRowRef.current?.scrollTo({ left: 0, behavior: "auto" });
+  }, [templates]);
 
   const resolvePromptTarget = (value: string) => {
     const phrase = value.toLowerCase();
@@ -172,7 +181,7 @@ export function StudioHome() {
             <h2 id="templates-heading">Popular templates</h2>
             <Link to="/templates" className="btn btn-ghost">See all templates <span aria-hidden="true">→</span></Link>
           </div>
-          <div className="studio-template-row" role="list" aria-label="Popular templates">
+          <div className="studio-template-row" role="list" aria-label="Popular templates" ref={templateRowRef}>
             {templates.map((template) => (
               <Link key={template.id} role="listitem" className="studio-template-card" to={template.to}>
                 {template.swatch ? (
