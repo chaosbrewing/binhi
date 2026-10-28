@@ -122,7 +122,7 @@ export function BrandKitsPage() {
             <h1>Your colours, fonts and logo in one place</h1>
             <p className="muted">A kit changes nothing by itself. Apply it to a design from the Design Studio, or push its colours and fonts into a website's theme as a reviewable revision.</p>
           </div>
-          <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Studio</Link>
+          <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Today</Link>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
 

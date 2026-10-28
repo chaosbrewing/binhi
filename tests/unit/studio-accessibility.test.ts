@@ -2,6 +2,29 @@ import { describe, expect, it } from "vitest";
 import { nextProjectFilter, projectResultsLiveMessage } from "../../src/client/studio/ProjectsPage.js";
 import { libraryResultsLiveMessage } from "../../src/client/studio/LibraryPage.js";
 import { libraryPickerLiveMessage } from "../../src/client/studio/LibraryPicker.js";
+import { navigationItems, navigationOwner, STUDIO_NAVIGATION } from "../../src/client/studio/navigation.js";
+
+describe("DIR-002 navigation contract", () => {
+  it("exposes the approved groups and labels without the shelved video editor", () => {
+    expect(STUDIO_NAVIGATION.map((section) => section.label)).toEqual(["Workspace", "Create", "Resources"]);
+    expect(STUDIO_NAVIGATION[0]?.items.map((item) => item.label)).toEqual(["Today", "Projects", "Recent"]);
+    expect(STUDIO_NAVIGATION[1]?.items.map((item) => item.label)).toEqual([
+      "Website Builder", "Design Studio", "Photo Editor", "Form Creator", "PDF Editor",
+      "File Converter", "Image Compressor", "Templates",
+    ]);
+    expect(STUDIO_NAVIGATION[2]?.items.map((item) => item.label)).toEqual(["Brand Kits", "Assets", "Settings"]);
+    expect(navigationItems.some((item) => /video/i.test(item.label))).toBe(false);
+  });
+
+  it("owns deep links and marks unfinished capabilities as planned", () => {
+    expect(navigationOwner("/sites/site_123/edit")?.label).toBe("Website Builder");
+    expect(navigationOwner("/studio/design/prj_123")?.label).toBe("Design Studio");
+    expect(navigationOwner("/studio/compress")?.label).toBe("Image Compressor");
+    expect(navigationItems.filter((item) => item.availability === "planned").map((item) => item.label)).toEqual([
+      "Form Creator", "PDF Editor", "File Converter",
+    ]);
+  });
+});
 
 describe("project filter keyboard navigation", () => {
   it("moves to adjacent filters and wraps at both ends", () => {

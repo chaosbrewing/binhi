@@ -127,7 +127,7 @@ export function PhotoEditor({ mode = "photo" }: PhotoEditorProps) {
         <div className="photo-topline">
           <div><span className="studio-eyebrow">{mode === "compress" ? "Format and file size" : "Non-destructive image workspace"}</span><h1>{toolTitle}</h1><p>{mode === "compress" ? "Export a smaller or differently encoded raster image and inspect the real result." : "Crop, resize and adjust without changing your original. Save to reopen the project anywhere."}</p></div>
           <div className="photo-actions">
-            <Link className="btn btn-ghost" to="/"><span aria-hidden="true">←</span> Studio</Link>
+            <Link className="btn btn-ghost" to="/"><span aria-hidden="true">←</span> Today</Link>
             <label className="btn btn-primary photo-drop-label" htmlFor="photo-file"><I.plus /> Choose image</label>
             <input ref={fileInput} className="photo-file-input" id="photo-file" type="file" disabled={busy} accept="image/png,image/jpeg,image/webp" onChange={(event) => void chooseFile(event)} aria-label="Choose a PNG, JPEG or static WebP image" />
           </div>

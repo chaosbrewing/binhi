@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { I } from "../components/Icons.js";
 import { StudioShell } from "./StudioShell.js";
 
-export type ComingSoonTool = "design" | "convert" | "forms";
+export type ComingSoonTool = "design" | "convert" | "forms" | "pdf";
 type ToolPlan = { name: string; eyebrow: string; intro: string; milestones: { title: string; copy: string }[] };
 const plans: Record<ComingSoonTool, ToolPlan> = {
   design: {
@@ -22,11 +22,19 @@ const plans: Record<ComingSoonTool, ToolPlan> = {
     ],
   },
   forms: {
-    name: "Form Builder", eyebrow: "Forms for your site", intro: "A form tool should cover more than fields. We are designing the path from a useful form to a trustworthy submission workflow.",
+    name: "Form Creator", eyebrow: "Forms for your site", intro: "A form tool should cover more than fields. We are designing the path from a useful form to a trustworthy submission workflow.",
     milestones: [
       { title: "Build a standalone form", copy: "Text, email, number, choice, date and consent fields with typed validation; conditional logic comes later." },
       { title: "Protect every submission", copy: "Server-side validation, spam controls, private owner permissions and retention rules before release." },
       { title: "Publish and collect safely", copy: "Versioned forms with public links and private submissions. Existing website contact forms remain available in Website Builder." },
+    ],
+  },
+  pdf: {
+    name: "PDF Editor", eyebrow: "Document tools", intro: "Safe PDF editing needs predictable rendering, privacy boundaries and verified exports. This capability is planned, not available yet.",
+    milestones: [
+      { title: "Inspect before editing", copy: "Show page count, dimensions and supported features before making any changes." },
+      { title: "Protect document privacy", copy: "Explain when processing stays local and require an explicit action before any upload." },
+      { title: "Export verified output", copy: "Validate the resulting PDF structure and preserve the original document." },
     ],
   },
 };
@@ -36,7 +44,7 @@ export function ComingSoon({ tool }: { tool: ComingSoonTool }) {
   return (
     <StudioShell>
       <main className="studio-main">
-        <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Back to studio</Link>
+        <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Back to Today</Link>
         <section className="studio-hero studio-motion" style={{ marginTop: 18 }}>
           <div className="studio-hero-copy">
             <span className="studio-eyebrow">{plan.eyebrow} · In the works</span>

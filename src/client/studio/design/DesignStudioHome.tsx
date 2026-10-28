@@ -67,7 +67,7 @@ export function DesignStudioHome() {
             <h1>Start a fixed-size design</h1>
             <p className="muted">Pick a size, add text, shapes and images from your asset library, then export a verified PNG or JPEG. Designs save to My Projects as you work.</p>
           </div>
-          <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Studio</Link>
+          <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Today</Link>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
         {groups.map((group) => (

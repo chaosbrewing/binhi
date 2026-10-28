@@ -27,7 +27,7 @@ export function AccountPage() {
     <div className="shell">
       <header className="shell-header">
         <Link to="/" className="plain-link"><Logo /></Link>
-        <Link to="/" className="btn btn-ghost">Back to studio</Link>
+        <Link to="/" className="btn btn-ghost">Back to Today</Link>
       </header>
       <main className="shell-main narrow">
         <h1>Your account</h1>
