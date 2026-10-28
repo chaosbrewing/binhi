@@ -58,5 +58,509 @@ export const LOCK = {
       "height": 450,
       "renderedFrom": "d306b6f27c8a944f9e0a144fb7ab9692287a7a1fa736c0828c67c67a79139137"
     }
+  },
+  "tpl.site.linkinbio@1": {
+    "contentSha256": "2a1e23286338196b3bebb54a733c2512e8114b0e23248a3fa4e76a28888ce8d8",
+    "preview": {
+      "file": "/template-previews/tpl.site.linkinbio@1.jpg",
+      "width": 600,
+      "height": 450,
+      "renderedFrom": "2a1e23286338196b3bebb54a733c2512e8114b0e23248a3fa4e76a28888ce8d8"
+    }
+  },
+  "tpl.site.event@1": {
+    "contentSha256": "9e7c544ae20649d7c24a3ffb4946842d903e22c210d0dede36e5e1641d594882",
+    "preview": {
+      "file": "/template-previews/tpl.site.event@1.jpg",
+      "width": 600,
+      "height": 450,
+      "renderedFrom": "9e7c544ae20649d7c24a3ffb4946842d903e22c210d0dede36e5e1641d594882"
+    }
+  },
+  "tpl.site.launch@1": {
+    "contentSha256": "5f077cfbc41fe303ab527451b6ce16740f34212c75e8586c0b2eea77347a9767",
+    "preview": {
+      "file": "/template-previews/tpl.site.launch@1.jpg",
+      "width": 600,
+      "height": 450,
+      "renderedFrom": "5f077cfbc41fe303ab527451b6ce16740f34212c75e8586c0b2eea77347a9767"
+    }
+  },
+  "tpl.site.community@1": {
+    "contentSha256": "9852dbeb4b30ebea0d14583c189bf1cc0304b48dd668128c7906be2a5c9f85eb",
+    "preview": {
+      "file": "/template-previews/tpl.site.community@1.jpg",
+      "width": 600,
+      "height": 450,
+      "renderedFrom": "9852dbeb4b30ebea0d14583c189bf1cc0304b48dd668128c7906be2a5c9f85eb"
+    }
+  },
+  "tpl.design.quote-card@1": {
+    "contentSha256": "835a2ccb271519a42a9757e2fb7d9ea9d0440d9dee58e9765395e0ac06bf4dfa",
+    "preview": {
+      "file": "/template-previews/tpl.design.quote-card@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "835a2ccb271519a42a9757e2fb7d9ea9d0440d9dee58e9765395e0ac06bf4dfa"
+    }
+  },
+  "tpl.design.announcement-bold@1": {
+    "contentSha256": "a5fe63bca28dcb91374c81b366f66164c18f500d2b624be3926caa448eb0659d",
+    "preview": {
+      "file": "/template-previews/tpl.design.announcement-bold@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "a5fe63bca28dcb91374c81b366f66164c18f500d2b624be3926caa448eb0659d"
+    }
+  },
+  "tpl.design.product-spotlight@1": {
+    "contentSha256": "542508a4774b980df0b22a7c0f1a107bb6160a111b1282fbfd99ec0493ddccc7",
+    "preview": {
+      "file": "/template-previews/tpl.design.product-spotlight@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "542508a4774b980df0b22a7c0f1a107bb6160a111b1282fbfd99ec0493ddccc7"
+    }
+  },
+  "tpl.design.tip-of-the-day@1": {
+    "contentSha256": "2320a83f62501fa65368356ffdc0f1e7cb8d3f7d014ef1e652c431d68dcfedec",
+    "preview": {
+      "file": "/template-previews/tpl.design.tip-of-the-day@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "2320a83f62501fa65368356ffdc0f1e7cb8d3f7d014ef1e652c431d68dcfedec"
+    }
+  },
+  "tpl.design.testimonial-card@1": {
+    "contentSha256": "7a330bd944389790b806d632f0c36f666dce9d1568b2761daf6efe1c057152fc",
+    "preview": {
+      "file": "/template-previews/tpl.design.testimonial-card@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "7a330bd944389790b806d632f0c36f666dce9d1568b2761daf6efe1c057152fc"
+    }
+  },
+  "tpl.design.sale-story@1": {
+    "contentSha256": "1f176ecbd916500dd22cabff5988a50969cd7b44ad711ea1386658169995d193",
+    "preview": {
+      "file": "/template-previews/tpl.design.sale-story@1.jpg",
+      "width": 360,
+      "height": 640,
+      "renderedFrom": "1f176ecbd916500dd22cabff5988a50969cd7b44ad711ea1386658169995d193"
+    }
+  },
+  "tpl.design.event-story@1": {
+    "contentSha256": "d83a904f20de4282261d53b7951167e09578f07fb05a76d98984ea13fa841df1",
+    "preview": {
+      "file": "/template-previews/tpl.design.event-story@1.jpg",
+      "width": 360,
+      "height": 640,
+      "renderedFrom": "d83a904f20de4282261d53b7951167e09578f07fb05a76d98984ea13fa841df1"
+    }
+  },
+  "tpl.design.behind-the-scenes-story@1": {
+    "contentSha256": "64f536768848bd17ba20868ec93250f354c4ef1c0f206d61d93664f03e374d69",
+    "preview": {
+      "file": "/template-previews/tpl.design.behind-the-scenes-story@1.jpg",
+      "width": 360,
+      "height": 640,
+      "renderedFrom": "64f536768848bd17ba20868ec93250f354c4ef1c0f206d61d93664f03e374d69"
+    }
+  },
+  "tpl.design.thumbnail-bold@1": {
+    "contentSha256": "ecfc7172d951d6047d9c8561612c27e838a6e664a7172eec7afbf68508cff0b4",
+    "preview": {
+      "file": "/template-previews/tpl.design.thumbnail-bold@1.jpg",
+      "width": 640,
+      "height": 360,
+      "renderedFrom": "ecfc7172d951d6047d9c8561612c27e838a6e664a7172eec7afbf68508cff0b4"
+    }
+  },
+  "tpl.design.thumbnail-split@1": {
+    "contentSha256": "12e4dec75360ecdfcc300cf354f814355c746eeb6e0ec8be9d19e84d4289dda0",
+    "preview": {
+      "file": "/template-previews/tpl.design.thumbnail-split@1.jpg",
+      "width": 640,
+      "height": 360,
+      "renderedFrom": "12e4dec75360ecdfcc300cf354f814355c746eeb6e0ec8be9d19e84d4289dda0"
+    }
+  },
+  "tpl.design.facebook-cover-brand@1": {
+    "contentSha256": "5984976c361101f7e5303a87b77bff283474959fa31b437af564a8c6de110ae0",
+    "preview": {
+      "file": "/template-previews/tpl.design.facebook-cover-brand@1.jpg",
+      "width": 640,
+      "height": 334,
+      "renderedFrom": "5984976c361101f7e5303a87b77bff283474959fa31b437af564a8c6de110ae0"
+    }
+  },
+  "tpl.design.header-minimal@1": {
+    "contentSha256": "22279e068b15361f9228134e6e7f10f0d750ab1973186d003ad9f0ece1cdf97a",
+    "preview": {
+      "file": "/template-previews/tpl.design.header-minimal@1.jpg",
+      "width": 640,
+      "height": 213,
+      "renderedFrom": "22279e068b15361f9228134e6e7f10f0d750ab1973186d003ad9f0ece1cdf97a"
+    }
+  },
+  "tpl.design.poster-open-air@1": {
+    "contentSha256": "91268b8a810dc81c8b5f2a7070a862d6a7c2605fbdf390892c44392efbeae38b",
+    "preview": {
+      "file": "/template-previews/tpl.design.poster-open-air@1.jpg",
+      "width": 452,
+      "height": 640,
+      "renderedFrom": "91268b8a810dc81c8b5f2a7070a862d6a7c2605fbdf390892c44392efbeae38b"
+    }
+  },
+  "tpl.design.poster-gig-retro@1": {
+    "contentSha256": "816d9b00849987f56d55f0c9b6508040684d6563646b8d95a95f2323796baade",
+    "preview": {
+      "file": "/template-previews/tpl.design.poster-gig-retro@1.jpg",
+      "width": 452,
+      "height": 640,
+      "renderedFrom": "816d9b00849987f56d55f0c9b6508040684d6563646b8d95a95f2323796baade"
+    }
+  },
+  "tpl.design.flyer-sale-tiles@1": {
+    "contentSha256": "6fee32a32123742e696df72c7b917fe8cc7133c013dde10e948d7c58eb42ff7b",
+    "preview": {
+      "file": "/template-previews/tpl.design.flyer-sale-tiles@1.jpg",
+      "width": 451,
+      "height": 640,
+      "renderedFrom": "6fee32a32123742e696df72c7b917fe8cc7133c013dde10e948d7c58eb42ff7b"
+    }
+  },
+  "tpl.design.flyer-hiring@1": {
+    "contentSha256": "bb2295c5a6aebb9bc33affe4d3224d244e7e03fd2487974b9ef00bc610ec2211",
+    "preview": {
+      "file": "/template-previews/tpl.design.flyer-hiring@1.jpg",
+      "width": 451,
+      "height": 640,
+      "renderedFrom": "bb2295c5a6aebb9bc33affe4d3224d244e7e03fd2487974b9ef00bc610ec2211"
+    }
+  },
+  "tpl.design.flyer-community-notice@1": {
+    "contentSha256": "a575c633561acf86e3761dc9157fc50ca9bf4368d0de92b5e7b2dad0e5768d1c",
+    "preview": {
+      "file": "/template-previews/tpl.design.flyer-community-notice@1.jpg",
+      "width": 451,
+      "height": 640,
+      "renderedFrom": "a575c633561acf86e3761dc9157fc50ca9bf4368d0de92b5e7b2dad0e5768d1c"
+    }
+  },
+  "tpl.design.poster-exhibition@1": {
+    "contentSha256": "9c594b0380e150a17d343d91a57611c44cc2dbe6cf9d433c7ff581621b34db65",
+    "preview": {
+      "file": "/template-previews/tpl.design.poster-exhibition@1.jpg",
+      "width": 452,
+      "height": 640,
+      "renderedFrom": "9c594b0380e150a17d343d91a57611c44cc2dbe6cf9d433c7ff581621b34db65"
+    }
+  },
+  "tpl.design.flyer-workshop@1": {
+    "contentSha256": "74859886502aefc089842478e394cdfc1d4b93a52997e9d3472fb77c47d7e4f3",
+    "preview": {
+      "file": "/template-previews/tpl.design.flyer-workshop@1.jpg",
+      "width": 451,
+      "height": 640,
+      "renderedFrom": "74859886502aefc089842478e394cdfc1d4b93a52997e9d3472fb77c47d7e4f3"
+    }
+  },
+  "tpl.design.flyer-open-day@1": {
+    "contentSha256": "ea2585dc91c6c4f4e14d6ef45f59f0470d182055f9b95c8b8724453f6351d2e7",
+    "preview": {
+      "file": "/template-previews/tpl.design.flyer-open-day@1.jpg",
+      "width": 451,
+      "height": 640,
+      "renderedFrom": "ea2585dc91c6c4f4e14d6ef45f59f0470d182055f9b95c8b8724453f6351d2e7"
+    }
+  },
+  "tpl.design.logo-monogram@1": {
+    "contentSha256": "8889a4a91bbd877801b7799c801c3b809e81bdbabe0a60384f3996ede3505793",
+    "preview": {
+      "file": "/template-previews/tpl.design.logo-monogram@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "8889a4a91bbd877801b7799c801c3b809e81bdbabe0a60384f3996ede3505793"
+    }
+  },
+  "tpl.design.logo-wordmark@1": {
+    "contentSha256": "7d5397893615a880d418784c00dd4ff5a2fc720fb9bc0b33e39b2fe10d083ae8",
+    "preview": {
+      "file": "/template-previews/tpl.design.logo-wordmark@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "7d5397893615a880d418784c00dd4ff5a2fc720fb9bc0b33e39b2fe10d083ae8"
+    }
+  },
+  "tpl.design.logo-badge@1": {
+    "contentSha256": "ef9baead2d8c54492fa59acb9cc1ce128006e98c47ffa253c4d30d25b426c9c5",
+    "preview": {
+      "file": "/template-previews/tpl.design.logo-badge@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "ef9baead2d8c54492fa59acb9cc1ce128006e98c47ffa253c4d30d25b426c9c5"
+    }
+  },
+  "tpl.design.brand-board@1": {
+    "contentSha256": "46abe6051bda543acbf8b2c25536407de3a3b70a605cd5669dd8e49db8b8321f",
+    "preview": {
+      "file": "/template-previews/tpl.design.brand-board@1.jpg",
+      "width": 640,
+      "height": 360,
+      "renderedFrom": "46abe6051bda543acbf8b2c25536407de3a3b70a605cd5669dd8e49db8b8321f"
+    }
+  },
+  "tpl.design.moodboard-grid@1": {
+    "contentSha256": "676604dd93c12863c6e07a553a6ecc41e136804a35d70412231cc20dca61fe28",
+    "preview": {
+      "file": "/template-previews/tpl.design.moodboard-grid@1.jpg",
+      "width": 640,
+      "height": 360,
+      "renderedFrom": "676604dd93c12863c6e07a553a6ecc41e136804a35d70412231cc20dca61fe28"
+    }
+  },
+  "tpl.design.brand-colors-sheet@1": {
+    "contentSha256": "47f5f0b3091edcccdc391f0e99b8f1e77fb70142a93f904ddf11e45d3369eb91",
+    "preview": {
+      "file": "/template-previews/tpl.design.brand-colors-sheet@1.jpg",
+      "width": 512,
+      "height": 640,
+      "renderedFrom": "47f5f0b3091edcccdc391f0e99b8f1e77fb70142a93f904ddf11e45d3369eb91"
+    }
+  },
+  "tpl.design.card-minimal@1": {
+    "contentSha256": "b7119d898ab0e05063a6d9b93c5ecd7aa1797c35c7b532757b30ed25e821c628",
+    "preview": {
+      "file": "/template-previews/tpl.design.card-minimal@1.jpg",
+      "width": 640,
+      "height": 366,
+      "renderedFrom": "b7119d898ab0e05063a6d9b93c5ecd7aa1797c35c7b532757b30ed25e821c628"
+    }
+  },
+  "tpl.design.card-bold@1": {
+    "contentSha256": "609451f8f66563376f3b57ebde72f3248314f0d23885313112538901d2db350c",
+    "preview": {
+      "file": "/template-previews/tpl.design.card-bold@1.jpg",
+      "width": 640,
+      "height": 366,
+      "renderedFrom": "609451f8f66563376f3b57ebde72f3248314f0d23885313112538901d2db350c"
+    }
+  },
+  "tpl.design.card-elegant@1": {
+    "contentSha256": "f9daa7f256d541cf0570ca924f5420b8c3b120eaedc94baa5f29f70041d5108d",
+    "preview": {
+      "file": "/template-previews/tpl.design.card-elegant@1.jpg",
+      "width": 640,
+      "height": 366,
+      "renderedFrom": "f9daa7f256d541cf0570ca924f5420b8c3b120eaedc94baa5f29f70041d5108d"
+    }
+  },
+  "tpl.design.invoice-a4@1": {
+    "contentSha256": "ccb2d816025b2d60bd941420d5810d590e9efdb2e6cdf430bacbcc17220a7088",
+    "preview": {
+      "file": "/template-previews/tpl.design.invoice-a4@1.jpg",
+      "width": 452,
+      "height": 640,
+      "renderedFrom": "ccb2d816025b2d60bd941420d5810d590e9efdb2e6cdf430bacbcc17220a7088"
+    }
+  },
+  "tpl.design.price-list@1": {
+    "contentSha256": "e5356cd97a5f031a74f38820b6aab6b82c6d94bbe5b84657bb1d66b3984d0ac8",
+    "preview": {
+      "file": "/template-previews/tpl.design.price-list@1.jpg",
+      "width": 451,
+      "height": 640,
+      "renderedFrom": "e5356cd97a5f031a74f38820b6aab6b82c6d94bbe5b84657bb1d66b3984d0ac8"
+    }
+  },
+  "tpl.design.certificate-classic@1": {
+    "contentSha256": "c33398b8481edb032ad8a4a6adf921edaa2d5660b7aeee870f0092d485be1d25",
+    "preview": {
+      "file": "/template-previews/tpl.design.certificate-classic@1.jpg",
+      "width": 640,
+      "height": 452,
+      "renderedFrom": "c33398b8481edb032ad8a4a6adf921edaa2d5660b7aeee870f0092d485be1d25"
+    }
+  },
+  "tpl.design.banner-promo@1": {
+    "contentSha256": "38b7316d47dc2cc40c260c7eafce35765e08d1cc961d7ce03e91ddb267285124",
+    "preview": {
+      "file": "/template-previews/tpl.design.banner-promo@1.jpg",
+      "width": 640,
+      "height": 240,
+      "renderedFrom": "38b7316d47dc2cc40c260c7eafce35765e08d1cc961d7ce03e91ddb267285124"
+    }
+  },
+  "tpl.design.launch-link-preview@1": {
+    "contentSha256": "bd73bd8051868bedd89897b809435ae578955f55060724ff4c301af088092936",
+    "preview": {
+      "file": "/template-previews/tpl.design.launch-link-preview@1.jpg",
+      "width": 640,
+      "height": 336,
+      "renderedFrom": "bd73bd8051868bedd89897b809435ae578955f55060724ff4c301af088092936"
+    }
+  },
+  "tpl.design.lead-magnet-cover@1": {
+    "contentSha256": "0804918009dde9882c9b0670c840f7e930f68e9478afcd3a35d01c708ef94ab3",
+    "preview": {
+      "file": "/template-previews/tpl.design.lead-magnet-cover@1.jpg",
+      "width": 512,
+      "height": 640,
+      "renderedFrom": "0804918009dde9882c9b0670c840f7e930f68e9478afcd3a35d01c708ef94ab3"
+    }
+  },
+  "tpl.design.coupon-offer@1": {
+    "contentSha256": "8eaea671554c76b7b307277cd8dabc33cda443531dd69d72198bdff91006c2d1",
+    "preview": {
+      "file": "/template-previews/tpl.design.coupon-offer@1.jpg",
+      "width": 640,
+      "height": 366,
+      "renderedFrom": "8eaea671554c76b7b307277cd8dabc33cda443531dd69d72198bdff91006c2d1"
+    }
+  },
+  "tpl.design.banner-summer@1": {
+    "contentSha256": "8c3226ad63a6978d22e8a73cdc2cbfaa4d93eea36ffe6bec2002c02d0c71425c",
+    "preview": {
+      "file": "/template-previews/tpl.design.banner-summer@1.jpg",
+      "width": 640,
+      "height": 213,
+      "renderedFrom": "8c3226ad63a6978d22e8a73cdc2cbfaa4d93eea36ffe6bec2002c02d0c71425c"
+    }
+  },
+  "tpl.design.media-kit-cover@1": {
+    "contentSha256": "9ca2a2eda1fd7d0a8d5bcb54a0c388012e29c0323c3e81d1cee93400d9e39c79",
+    "preview": {
+      "file": "/template-previews/tpl.design.media-kit-cover@1.jpg",
+      "width": 452,
+      "height": 640,
+      "renderedFrom": "9ca2a2eda1fd7d0a8d5bcb54a0c388012e29c0323c3e81d1cee93400d9e39c79"
+    }
+  },
+  "tpl.design.photo-grid-three@1": {
+    "contentSha256": "74f69d899e138a4764a5eb3a4ad6cdd27c664c92ea23b7ab44a092889dcd8f06",
+    "preview": {
+      "file": "/template-previews/tpl.design.photo-grid-three@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "74f69d899e138a4764a5eb3a4ad6cdd27c664c92ea23b7ab44a092889dcd8f06"
+    }
+  },
+  "tpl.design.collage-four-portrait@1": {
+    "contentSha256": "b90ff97a83d3998ae13ed783a643767976235f8ef514b4df1225f23da81c5c04",
+    "preview": {
+      "file": "/template-previews/tpl.design.collage-four-portrait@1.jpg",
+      "width": 512,
+      "height": 640,
+      "renderedFrom": "b90ff97a83d3998ae13ed783a643767976235f8ef514b4df1225f23da81c5c04"
+    }
+  },
+  "tpl.design.before-after@1": {
+    "contentSha256": "9cf04b76d47813b904fef71fafb56c0a0ae2ac67daa09721c03bb3e5408d57c4",
+    "preview": {
+      "file": "/template-previews/tpl.design.before-after@1.jpg",
+      "width": 640,
+      "height": 360,
+      "renderedFrom": "9cf04b76d47813b904fef71fafb56c0a0ae2ac67daa09721c03bb3e5408d57c4"
+    }
+  },
+  "tpl.design.contact-sheet@1": {
+    "contentSha256": "217b401e9c1b425962ff916a7ba14f94d144b7bbc876e0bc0b125cefae9ea8e9",
+    "preview": {
+      "file": "/template-previews/tpl.design.contact-sheet@1.jpg",
+      "width": 640,
+      "height": 427,
+      "renderedFrom": "217b401e9c1b425962ff916a7ba14f94d144b7bbc876e0bc0b125cefae9ea8e9"
+    }
+  },
+  "tpl.design.press-kit-cover@1": {
+    "contentSha256": "3a926fd011bab9a5db0a44e0106c39228b3a47fd0dfd2c60d70c06577afcf57c",
+    "preview": {
+      "file": "/template-previews/tpl.design.press-kit-cover@1.jpg",
+      "width": 452,
+      "height": 640,
+      "renderedFrom": "3a926fd011bab9a5db0a44e0106c39228b3a47fd0dfd2c60d70c06577afcf57c"
+    }
+  },
+  "tpl.design.about-me-card@1": {
+    "contentSha256": "4eba9b1e87d0b3291d13a41cf9d9504567ae1397482a4dc9105dd114df50cea6",
+    "preview": {
+      "file": "/template-previews/tpl.design.about-me-card@1.jpg",
+      "width": 512,
+      "height": 640,
+      "renderedFrom": "4eba9b1e87d0b3291d13a41cf9d9504567ae1397482a4dc9105dd114df50cea6"
+    }
+  },
+  "tpl.design.invitation-wedding@1": {
+    "contentSha256": "1948396ebdae0f51d95cea4b6fa068fac913417d4f5f0fdd578ff6a110411dba",
+    "preview": {
+      "file": "/template-previews/tpl.design.invitation-wedding@1.jpg",
+      "width": 451,
+      "height": 640,
+      "renderedFrom": "1948396ebdae0f51d95cea4b6fa068fac913417d4f5f0fdd578ff6a110411dba"
+    }
+  },
+  "tpl.design.invitation-birthday@1": {
+    "contentSha256": "3940166288f45ffc3ffcf2fe2bf971fc9271c7c43d82a76b3953de03423cc48d",
+    "preview": {
+      "file": "/template-previews/tpl.design.invitation-birthday@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "3940166288f45ffc3ffcf2fe2bf971fc9271c7c43d82a76b3953de03423cc48d"
+    }
+  },
+  "tpl.design.layout-hero-statement@1": {
+    "contentSha256": "cbea4b21a0d402b9535285a1110c932bc3f536c4c295edc5a3737bb7c1955a3a",
+    "preview": {
+      "file": "/template-previews/tpl.design.layout-hero-statement@1.jpg",
+      "width": 640,
+      "height": 360,
+      "renderedFrom": "cbea4b21a0d402b9535285a1110c932bc3f536c4c295edc5a3737bb7c1955a3a"
+    }
+  },
+  "tpl.design.layout-three-cards@1": {
+    "contentSha256": "1e4f98ddd7c413aaa665c5715726811e955af2d793aa4cab43f47c4153b707fb",
+    "preview": {
+      "file": "/template-previews/tpl.design.layout-three-cards@1.jpg",
+      "width": 640,
+      "height": 360,
+      "renderedFrom": "1e4f98ddd7c413aaa665c5715726811e955af2d793aa4cab43f47c4153b707fb"
+    }
+  },
+  "tpl.design.planner-weekly@1": {
+    "contentSha256": "76b01fac3109f2f3afdcf13fd4c71e0fdb72bd8ad9f041f7e7dc7b0fdcbac75a",
+    "preview": {
+      "file": "/template-previews/tpl.design.planner-weekly@1.jpg",
+      "width": 452,
+      "height": 640,
+      "renderedFrom": "76b01fac3109f2f3afdcf13fd4c71e0fdb72bd8ad9f041f7e7dc7b0fdcbac75a"
+    }
+  },
+  "tpl.design.menu-restaurant@1": {
+    "contentSha256": "92207dfbbbf210f649458cc45abb2e355bae2f893807d11c4a1b2ea26337f049",
+    "preview": {
+      "file": "/template-previews/tpl.design.menu-restaurant@1.jpg",
+      "width": 451,
+      "height": 640,
+      "renderedFrom": "92207dfbbbf210f649458cc45abb2e355bae2f893807d11c4a1b2ea26337f049"
+    }
+  },
+  "tpl.design.flyer-property-listing@1": {
+    "contentSha256": "1b71f56c24a643a6aaeb28fac71467afb2284b1a140525ee02fd5e4b6edaf75f",
+    "preview": {
+      "file": "/template-previews/tpl.design.flyer-property-listing@1.jpg",
+      "width": 451,
+      "height": 640,
+      "renderedFrom": "1b71f56c24a643a6aaeb28fac71467afb2284b1a140525ee02fd5e4b6edaf75f"
+    }
+  },
+  "tpl.design.podcast-cover@1": {
+    "contentSha256": "c5d9c6bf47438b6547bb3ade6ca44fff0524953c658239a6549b44a539b0a0fc",
+    "preview": {
+      "file": "/template-previews/tpl.design.podcast-cover@1.jpg",
+      "width": 640,
+      "height": 640,
+      "renderedFrom": "c5d9c6bf47438b6547bb3ade6ca44fff0524953c658239a6549b44a539b0a0fc"
+    }
   }
 } as const;

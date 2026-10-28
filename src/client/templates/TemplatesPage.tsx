@@ -2,13 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, type ProjectSummary, type TemplateCard, type TemplateFacets, type TemplateTaxonomy } from "../api.js";
 import { useAuth } from "../auth/AuthContext.js";
-import { ConfirmDialog } from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { I } from "../components/Icons.js";
 import { createDesignDocument } from "../../core/creative/index.js";
-import { relative } from "../utils/relativeTime.js";
 import { StudioShell } from "../studio/StudioShell.js";
 import { loadPrefs, pushRecent, toggleFavorite, type TemplatePrefs } from "./prefs.js";
+import { PersonalTemplates } from "./PersonalTemplates.js";
 import { TemplateCardView } from "./TemplateCardView.js";
 import { TemplatePreview } from "./TemplatePreview.js";
 import "./templates.css";
@@ -20,7 +19,7 @@ const BLANKS = [
   { id: "landscape", label: "Landscape", note: "1920 × 1080", w: 1920, h: 1080 },
 ] as const;
 
-interface Filters { q: string; format: string; category: string; style: string; orientation: string; sort: string }
+interface Filters { q: string; format: string; category: string; style: string; orientation: string; color: string; editor: string; sort: string }
 
 /**
  * Templates: one place to find a starting point for any output BINHI can
@@ -32,7 +31,7 @@ export function TemplatesPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const filters: Filters = useMemo(() => ({ q: params.get("q") ?? "", format: params.get("format") ?? "all", category: params.get("category") ?? "", style: params.get("style") ?? "", orientation: params.get("orientation") ?? "", sort: params.get("sort") ?? "" }), [params]);
+  const filters: Filters = useMemo(() => ({ q: params.get("q") ?? "", format: params.get("format") ?? "all", category: params.get("category") ?? "", style: params.get("style") ?? "", orientation: params.get("orientation") ?? "", color: params.get("color") ?? "", editor: params.get("editor") ?? "", sort: params.get("sort") ?? "" }), [params]);
   const [search, setSearch] = useState(filters.q);
 
   const [taxonomy, setTaxonomy] = useState<TemplateTaxonomy | null>(null);
@@ -49,11 +48,10 @@ export function TemplatesPage() {
   const [collectionCards, setCollectionCards] = useState<Record<string, TemplateCard[]>>({});
   const [mine, setMine] = useState<ProjectSummary[] | null>(null);
   const [preview, setPreview] = useState<TemplateCard | null>(null);
-  const [confirm, setConfirm] = useState<ProjectSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
 
-  const isBrowse = !filters.q && filters.format === "all" && !filters.category && !filters.style && !filters.orientation;
+  const isBrowse = !filters.q && filters.format === "all" && !filters.category && !filters.style && !filters.orientation && !filters.color && !filters.editor;
 
   const setFilter = useCallback((patch: Partial<Filters>) => {
     const next = new URLSearchParams(params);
@@ -81,7 +79,7 @@ export function TemplatesPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await api.templateList({ q: filters.q, format: filters.format, category: filters.category, style: filters.style, orientation: filters.orientation, sort: filters.sort, page: nextPage, pageSize: PAGE_SIZE });
+      const r = await api.templateList({ q: filters.q, format: filters.format, category: filters.category, style: filters.style, orientation: filters.orientation, color: filters.color, editor: filters.editor, sort: filters.sort, page: nextPage, pageSize: PAGE_SIZE });
       if (mySeq !== seq.current) return;
       setItems((prev) => (replace ? r.items : [...prev, ...r.items]));
       setTotal(r.total);
@@ -92,7 +90,7 @@ export function TemplatesPage() {
     } finally {
       if (mySeq === seq.current) setLoading(false);
     }
-  }, [filters.q, filters.format, filters.category, filters.style, filters.orientation, filters.sort]);
+  }, [filters.q, filters.format, filters.category, filters.style, filters.orientation, filters.color, filters.editor, filters.sort]);
 
   useEffect(() => {
     void fetchPage(1, true);
@@ -134,27 +132,6 @@ export function TemplatesPage() {
       setBusy(false);
     }
   };
-  const useMine = async (t: ProjectSummary) => {
-    setBusy(true);
-    try {
-      const { project } = await api.duplicateProject(t.id, { kind: "design", name: t.name });
-      navigate(`/studio/design/${project.id}`);
-    } catch (e) {
-      toast(e instanceof ApiError ? e.message : "Could not start from this template", "error");
-      setBusy(false);
-    }
-  };
-  const removeMine = async (t: ProjectSummary) => {
-    setConfirm(null);
-    try {
-      await api.deleteProject(t.id);
-      setMine((m) => (m ?? []).filter((x) => x.id !== t.id));
-      toast(`Template "${t.name}" deleted`, "success");
-    } catch (e) {
-      toast(e instanceof ApiError ? e.message : "Could not delete the template", "error");
-    }
-  };
-
   const grid = (cards: TemplateCard[], label: string) => (
     <ul className="tpl-grid" aria-label={label}>
       {cards.map((c) => <TemplateCardView key={c.id} card={c} favorite={isFav(c.id)} onPreview={setPreview} onToggleFavorite={onFavorite} />)}
@@ -214,6 +191,18 @@ export function TemplatesPage() {
               {taxonomy?.orientations.map((o) => <option key={o} value={o}>{o[0]!.toUpperCase() + o.slice(1)}</option>)}
             </select>
           </label>
+          <label><span>Colour</span>
+            <select aria-label="Colour" value={filters.color} onChange={(e) => setFilter({ color: e.target.value })}>
+              <option value="">Any colour</option>
+              {taxonomy?.colors.map((c) => <option key={c.id} value={c.id} disabled={c.count === 0 && filters.color !== c.id}>{c.label} ({c.count})</option>)}
+            </select>
+          </label>
+          <label><span>Opens in</span>
+            <select aria-label="Opens in" value={filters.editor} onChange={(e) => setFilter({ editor: e.target.value })}>
+              <option value="">Any editor</option>
+              {taxonomy?.editors.map((c) => <option key={c.id} value={c.id} disabled={c.count === 0 && filters.editor !== c.id}>{c.label} ({c.count})</option>)}
+            </select>
+          </label>
           <label><span>Sort</span>
             <select aria-label="Sort" value={filters.sort} onChange={(e) => setFilter({ sort: e.target.value })}>
               <option value="">{filters.q ? "Best match" : "Newest"}</option>
@@ -256,25 +245,7 @@ export function TemplatesPage() {
               </section>
             )}
 
-            <section aria-labelledby="tpl-mine-h" className="tpl-section">
-              <h2 id="tpl-mine-h">Your templates</h2>
-              {mine === null && <p className="muted" role="status">Loading…</p>}
-              {mine && mine.length === 0 && <div className="studio-empty"><strong>No templates of your own yet.</strong><p>Open any design and use “Save as template” to keep its layout for next time.</p></div>}
-              {mine && mine.length > 0 && (
-                <ul className="site-grid" aria-label="Your design templates">
-                  {mine.map((t) => (
-                    <li key={t.id} className="site-card">
-                      <div className="site-card-body"><span className="badge">Template</span><h3>{t.name}</h3><p className="muted small">{t.meta.width} × {t.meta.height}px · {t.meta.layers} layer{t.meta.layers === 1 ? "" : "s"} · updated {relative(t.updatedAt)}</p></div>
-                      <div className="site-card-actions">
-                        <button className="btn btn-primary" disabled={busy} onClick={() => void useMine(t)}>Use template</button>
-                        <Link to={`/studio/design/${t.id}`} className="btn">Edit template</Link>
-                        <button className="btn btn-ghost btn-danger-text" aria-label={`Delete template ${t.name}`} onClick={() => setConfirm(t)}><I.trash /></button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <PersonalTemplates templates={mine} setTemplates={setMine} />
           </>
         )}
 
@@ -300,7 +271,6 @@ export function TemplatesPage() {
       </main>
 
       {preview && <TemplatePreview card={preview} favorite={isFav(preview.id)} onToggleFavorite={onFavorite} onUsed={onUsed} onClose={() => setPreview(null)} />}
-      {confirm && <ConfirmDialog title={`Delete template "${confirm.name}"?`} message="Designs already created from it are not affected. This cannot be undone." confirmLabel="Delete template" danger onConfirm={() => void removeMine(confirm)} onCancel={() => setConfirm(null)} />}
     </StudioShell>
   );
 }

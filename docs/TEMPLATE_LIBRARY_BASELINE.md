@@ -38,6 +38,7 @@ migration, merge or release; those go through the decisions in section 8.
 |---|---|
 | Base | `origin/main` @ `73e6092` (2026-10-28, Cursor Agent: studio homepage). Feature branch `claude/binhi-template-library` created from it; no history rewritten. |
 | Typecheck | `npm run typecheck` exit 0 (client + server). |
+| Main's CI history (correction) | The first version of this report said main was green. That was only true of the local unit and integration run. GitHub CI on `main` was **red for three consecutive pushes** (runs 23, 24, 25: `d5a7dcf`, `793cd97`, `73e6092`) because the studio browser journey still expected a heading the Cursor homepage redesign had removed. Commit `7b260a2` ("Stage 2 navigation foundation", landed while this work was in progress) updated that journey and run 27 is green. This branch merges `7b260a2`. |
 | Tests | `vitest run`: 21 files, 149 tests, all pass against a disposable local PostgreSQL 16 (`binhi_test`). The suite refuses non-test databases (`tests/test-database.ts`). |
 | CI definition | `.github/workflows/ci.yml`: typecheck, `npm test` on Postgres 16, build, Playwright journeys `test:e2e` and `test:e2e:studio`. |
 | Not run in baseline | Browser journeys (run per milestone when UI changes); production. |
@@ -161,20 +162,21 @@ taxonomy with zero public templates.
 
 ## 8. Decisions required (YES/NO)
 
-* **D1.** Provide `chaos_origins_workflow_v2_1.pdf` (or its verified repo path)? Until then the working mapping is used.
-* **D2.** Approve one additive migration (nullable `template_ref` on `binhi_projects`, plus favorites/recents tables), authored after the order of PR #4 versus this work is decided? (Default if NO: browser-local favorites/recents, provenance in the audit log.)
-* **D3.** Keep v1.0 free of any design-schema change and of icon dependencies, with image placeholders as labelled frames? (Recommended YES.)
-* **D4.** Accept that the first release will list templates only for Websites and Design Studio output, with Photo, Forms, Documents, Presentations and Video as documented-but-unavailable contracts? (Recommended YES.)
+* **D1.** Provide `chaos_origins_workflow_v2_1.pdf` (or its verified repo path)? Until then the working mapping is used. *Still open.*
+* **D2.** Approve one additive migration (a nullable `template_ref` column on `binhi_projects` for provenance, a small metadata column for personal templates, and server-side favorites/recents tables), authored after the order of PR #4 versus this work is decided? Default while open: no migration; provenance lives in the audit log, favorites/recents stay in the browser, personal templates have a name only. *Still open; nothing was blocked by it.*
+* **D3.** Keep v1.0 free of any design-schema change and of icon dependencies, with image placeholders as labelled frames? **Applied as the default** (recommended YES); no design-schema change was made.
+* **D4.** Accept that the first release lists templates only for Websites and Design Studio output, with Photo, Forms, Documents, Presentations, Email and Video as documented contracts only? **Applied as the default** (recommended YES).
+* **D5 (new).** The Design Studio never loads the web fonts its font list names, so design text falls back to system fonts on most devices (published websites do load Google Fonts). Approve loading the design fonts in the Design Studio (the app's CSP already allows `fonts.googleapis.com`), or self-hosting the OFL font files? Until then templates are authored to survive fallback fonts and avoid `Inter`.
 
 ## 9. Milestone register
 
-| Milestone | State | Notes |
+| Milestone | State | Evidence |
 |---|---|---|
-| M0 Baseline and governance | **done** (this document) | Items verified: 1–6, 8–14 of the audit list; item 7 (icons/elements): Essential 250 in open PRs #2/#3, Elements 300 backlog only, 0 of 300 implemented; item 15 this report. |
-| M1 Taxonomy and schema | next | Pure code and tests; no migration, no UI. |
-| M2 Discovery UI | pending | Code-defined catalog served through a read-only API; no migration. |
-| M3 Instantiation | pending | Uses existing `ProjectService`/`SiteService` create paths; provenance gated by D2. |
-| M4 Seed catalog | pending | Counted only when the editor journey passes. |
-| M5 Brand Kit and personal templates | pending | Reuses `design-template` projects. |
-| M6 Cross-editor contracts | pending | Contracts only. |
-| M7 Quality and release | pending | No merge or publish without founder authorization. |
+| M0 Baseline and governance | done | this document; branch from verified `main` |
+| M1 Taxonomy and schema | done | `tests/unit/template-library.test.ts` |
+| M2 Discovery | done | `tests/unit/template-search.test.ts`, `tests/integration/template-library.test.ts`, `e2e/templates.ts` |
+| M3 Instantiation | done | integration + journey (ownership, independence, provenance in the audit log) |
+| M4 Seed catalog | done, see the release report for counts | `docs/TEMPLATE_INVENTORY.json` written by the journey |
+| M5 Brand Kits and personal templates | done within the no-migration limit | `tests/unit/template-brand.test.ts`, integration, journey |
+| M6 Cross-editor contracts | done (contracts and tests, all unavailable) | `tests/unit/template-adapters.test.ts` |
+| M7 Quality and release preparation | see `docs/TEMPLATE_LIBRARY_RELEASE.md` | |

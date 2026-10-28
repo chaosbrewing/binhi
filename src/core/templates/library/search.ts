@@ -11,6 +11,36 @@ import type { TemplateManifest as Manifest } from "./schema.js";
 
 export type TemplateSort = "relevance" | "latest" | "name";
 
+export const COLOR_FAMILIES = ["red", "orange", "yellow", "green", "teal", "blue", "purple", "pink", "neutral"] as const;
+export type ColorFamily = (typeof COLOR_FAMILIES)[number];
+export const COLOR_LABEL: Record<ColorFamily, string> = { red: "Red", orange: "Orange", yellow: "Yellow", green: "Green", teal: "Teal", blue: "Blue", purple: "Purple", pink: "Pink", neutral: "Black, white and grey" };
+
+/** The named family of a #rrggbb colour. Very dark, very light and unsaturated colours are "neutral". */
+export function colorFamily(hex: string): ColorFamily {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!m) return "neutral";
+  const [r, g, b] = [parseInt(m[1]!, 16) / 255, parseInt(m[2]!, 16) / 255, parseInt(m[3]!, 16) / 255];
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+  if (d < 0.08 || l < 0.12 || l > 0.93) return "neutral";
+  const sat = d / (1 - Math.abs(2 * l - 1));
+  if (sat < 0.18) return "neutral";
+  let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h = (h * 60 + 360) % 360;
+  if (h >= 345 || h < 15) return "red";
+  if (h < 40) return "orange";
+  if (h < 70) return "yellow";
+  if (h < 160) return "green";
+  if (h < 200) return "teal";
+  if (h < 255) return "blue";
+  if (h < 300) return "purple";
+  return "pink";
+}
+
+/** The families people will notice in a template: its three most visible palette colours. */
+export function templateColorFamilies(m: Manifest): Set<ColorFamily> {
+  return new Set(m.palette.slice(0, 3).map(colorFamily));
+}
+
 export interface TemplateQuery {
   q?: string;
   format?: FormatId | "all";
@@ -19,6 +49,7 @@ export interface TemplateQuery {
   style?: StyleId;
   orientation?: Orientation;
   editor?: EditorId;
+  color?: ColorFamily;
   /** Collection id from the catalog; applied by the caller (see matchesCollection). */
   sort?: TemplateSort;
 }
@@ -137,6 +168,7 @@ export function matchesFilters(m: Manifest, q: TemplateQuery, skip?: "format" | 
   if (skip !== "style" && q.style && !m.styles.includes(q.style)) return false;
   if (q.orientation && m.orientation !== q.orientation) return false;
   if (q.editor && m.editor !== q.editor) return false;
+  if (q.color && !templateColorFamilies(m).has(q.color)) return false;
   return true;
 }
 

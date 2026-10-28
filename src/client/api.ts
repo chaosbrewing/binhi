@@ -1,5 +1,6 @@
 import type { SiteDocument, Operation, ValidationReport } from "../core/index.js";
 import type { TemplateCard } from "../core/templates/library/card.js";
+import type { BrandBindings } from "../core/templates/library/catalog/designs/types.js";
 import type { BrandKitDocument, DesignDocument, PhotoProjectDocument, ProjectKind } from "../core/creative/index.js";
 
 export class ApiError extends Error {
@@ -84,6 +85,13 @@ export interface TemplateSummary {
   swatch: [string, string, string];
 }
 export type { TemplateCard };
+export type { BrandBindings } from "../core/templates/library/catalog/designs/types.js";
+export interface TemplateUseResult {
+  kind: "website" | "design";
+  id: string;
+  path: string;
+  brand?: { kitName: string; changes: number; adjustments: string[]; logoPlaced: boolean };
+}
 export interface TemplateFormat { id: string; label: string; count: number; available: boolean; note: string | null }
 export interface TemplateCategoryInfo { id: string; number: number; name: string; formats: string[]; count: number; subcategories: { name: string }[] }
 export interface TemplateTaxonomy {
@@ -91,6 +99,8 @@ export interface TemplateTaxonomy {
   categories: TemplateCategoryInfo[];
   styles: { id: string; label: string; count: number }[];
   orientations: string[];
+  colors: { id: string; label: string; count: number }[];
+  editors: { id: string; label: string; count: number }[];
   collections: { id: string; title: string; description: string; templateIds: string[] }[];
   total: number;
 }
@@ -101,10 +111,11 @@ export interface TemplateDetail extends TemplateCard {
   license: { id: string; attribution: string | null; notes: string };
   requiredFeatures: string[];
   dependencies: { fonts: string[]; icons: string[]; elements: string[]; bundledAssets: string[]; brandTokens: string[]; components: string[] };
+  brandTokens: string[];
   availabilityNotes: string;
   hasDocument: boolean;
 }
-export interface TemplateQueryParams { q?: string; format?: string; category?: string; style?: string; orientation?: string; sort?: string; page?: number; pageSize?: number }
+export interface TemplateQueryParams { q?: string; format?: string; category?: string; style?: string; orientation?: string; color?: string; editor?: string; sort?: string; page?: number; pageSize?: number }
 export interface RevisionSummary {
   id: string;
   revision: number;
@@ -189,8 +200,9 @@ export const api = {
   },
   templateCards: (ids: string[]) => request<{ items: TemplateCard[] }>("POST", "/api/template-library/cards", { ids }),
   templateDetail: (id: string) => request<{ template: TemplateDetail }>("GET", `/api/template-library/templates/${encodeURIComponent(id)}`),
-  templateDocument: (id: string) => request<{ document: DesignDocument }>("GET", `/api/template-library/templates/${encodeURIComponent(id)}/document`),
-  useTemplate: (id: string, name?: string) => request<{ result: { kind: "website" | "design"; id: string; path: string } }>("POST", `/api/template-library/templates/${encodeURIComponent(id)}/use`, name ? { name } : {}),
+  templateDocument: (id: string) => request<{ document: DesignDocument; brand: BrandBindings }>("GET", `/api/template-library/templates/${encodeURIComponent(id)}/document`),
+  usePersonalTemplate: (projectId: string, name?: string) => request<{ result: TemplateUseResult }>("POST", `/api/template-library/mine/${projectId}/use`, name ? { name } : {}),
+  useTemplate: (id: string, input: { name?: string; brandKitId?: string } = {}) => request<{ result: TemplateUseResult }>("POST", `/api/template-library/templates/${encodeURIComponent(id)}/use`, input),
   sites: () => request<{ sites: SiteSummary[] }>("GET", "/api/sites"),
   createSite: (name: string, templateId: string) => request<{ site: SiteDetail }>("POST", "/api/sites", { name, templateId }),
   site: (id: string) => request<{ site: SiteDetail }>("GET", `/api/sites/${id}`),

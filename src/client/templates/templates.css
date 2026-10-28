@@ -1,3 +1,7 @@
+/* The preview dialog renders outside .tpl-page, so the favorite colour is a root token. */
+:root { --tpl-fav-ink: #7a4f00; }
+:root[data-theme="dark"] { --tpl-fav-ink: #f2c14e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tpl-fav-ink: #f2c14e; } }
 .tpl-page { max-width: 1240px; }
 .tpl-section { margin-top: 30px; }
 .tpl-section h2 { font-size: 19px; margin: 0 0 12px; }
@@ -43,7 +47,8 @@
 .tpl-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 .tpl-chip.is-unavailable { color: var(--text-muted); border-style: dashed; }
 .tpl-chip.is-unavailable[aria-pressed="true"] { color: var(--accent-text); }
-.tpl-chip-count { font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; }
+.tpl-chip-count { font-size: 12px; font-variant-numeric: tabular-nums; }
+.tpl-chip[aria-pressed="true"] .tpl-chip-count { opacity: .9; }
 
 .tpl-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-top: 14px; }
 .tpl-filters label { display: grid; gap: 4px; font-size: 12px; color: var(--text-muted); }
@@ -85,7 +90,7 @@
 .tpl-meta, .tpl-tools { margin: 0; font-size: 12px; color: var(--text-muted); }
 .tpl-tools { display: flex; align-items: center; gap: 8px; }
 .tpl-fav { color: var(--text-muted); min-width: 40px; min-height: 40px; }
-.tpl-fav.is-on { color: #b7791f; }
+.tpl-fav.is-on { color: var(--tpl-fav-ink); }
 
 .tpl-blank { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
 .tpl-blank-card {
@@ -123,7 +128,7 @@
 .tpl-facts dt { color: var(--text-muted); }
 .tpl-facts dd { margin: 0; overflow-wrap: anywhere; }
 .tpl-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.tpl-actions .btn.is-on { color: #b7791f; }
+.tpl-actions .btn.is-on { color: var(--tpl-fav-ink); }
 
 @media (max-width: 820px) {
   .tpl-preview { grid-template-columns: 1fr; }
@@ -138,3 +143,11 @@
   .tpl-thumb { transition: none; }
   .tpl-thumb:hover { transform: none; }
 }
+
+.tpl-kit { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--panel-border); border-radius: 10px; background: var(--bg-elevated); }
+.tpl-kit select { min-height: 40px; }
+.tpl-adjust { display: block; margin-top: 4px; color: var(--text-muted); }
+
+.tpl-thumb-static { cursor: default; display: block; }
+.tpl-thumb-static:hover { transform: none; box-shadow: none; }
+.tpl-mine-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }

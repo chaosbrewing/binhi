@@ -6,7 +6,8 @@ Keep the existing React/Vite client, Fastify server, and PostgreSQL storage.
 ## Creative studio (Phase 1)
 
 The signed-in home is the studio dashboard: My Projects, Website Builder,
-Design Studio, Photo Editor, Image Compressor, Templates, Brand Kits and the
+Design Studio, Photo Editor, Image Compressor, Templates (a searchable library, see
+`docs/TEMPLATE_LIBRARY.md`), Brand Kits and the
 private Asset Library work today; File Converter and Form Builder are planned
 destinations with roadmap screens. Website create/edit URLs are unchanged.
 Photo originals and designs are saved to the account (private library +

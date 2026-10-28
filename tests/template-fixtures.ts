@@ -28,7 +28,7 @@ export function designTemplate(over: Partial<TemplateManifestInput> = {}): Templ
     keywords: ["quote"],
     styles: ["minimal"],
     palette: ["#111111", "#f4f1ea"],
-    preview: { thumbnail: "/template-previews/tpl.design.quote-card.png", alt: "Quote card preview" },
+    preview: { thumbnail: "/template-previews/tpl.design.quote-card@1.jpg", alt: "Quote card preview" },
     publishedAt: "2026-10-28",
     visibility: "public",
     license: { id: "binhi-original", attribution: null },

@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { AuthUser } from "../auth/session.js";
 import { RateLimiter } from "../security/rateLimit.js";
 import { tooMany } from "../security/errors.js";
-import { FORMAT_IDS, ORIENTATIONS, STYLE_IDS } from "../../core/templates/library/index.js";
+import { COLOR_FAMILIES, EDITOR_IDS, FORMAT_IDS, ORIENTATIONS, STYLE_IDS } from "../../core/templates/library/index.js";
 import type { TemplateLibraryService } from "./library.js";
 
 interface Deps {
@@ -22,6 +22,8 @@ const Query = z.object({
   subcategory: z.string().max(100).optional(),
   style: z.enum(STYLE_IDS).optional(),
   orientation: z.enum(ORIENTATIONS).optional(),
+  color: z.enum(COLOR_FAMILIES).optional(),
+  editor: z.enum(EDITOR_IDS).optional(),
   sort: z.enum(["relevance", "latest", "name"]).optional(),
   page: z.coerce.number().int().min(1).max(1000).optional(),
   pageSize: z.coerce.number().int().min(1).max(48).optional(),
@@ -55,18 +57,21 @@ export function registerTemplateLibraryRoutes(app: FastifyInstance, deps: Deps):
     return { template: deps.library.detail(id, user.id) };
   });
 
+  // The document and which layers follow a Brand Kit, so the browser can preview a kit with the same rules the server applies.
   app.get("/api/template-library/templates/:id/document", async (req) => {
     deps.requireUser(req);
     const { id } = TemplateRef.parse(req.params);
-    return { document: deps.library.designDocument(id) };
+    const { document, brand } = deps.library.designContent(id);
+    return { document, brand };
   });
 
   // Website previews are rendered with placeholder content in a script-free, sandboxed response.
   const previewHandler = async (req: FastifyRequest, reply: FastifyReply) => {
-    deps.requireUser(req);
+    const user = deps.requireUser(req);
     const { id } = TemplateRef.parse(req.params);
     const slug = (req.params as { slug?: string }).slug;
-    const html = deps.library.sitePreviewHtml(id, slug);
+    const { kit } = z.object({ kit: z.string().min(1).max(40).optional() }).parse(req.query ?? {});
+    const html = await deps.library.sitePreviewHtml(id, slug, { ownerId: user.id, kitId: kit });
     reply.header("Content-Security-Policy", `${deps.previewCsp(false)}; sandbox`);
     reply.header("Cache-Control", "private, no-store");
     reply.header("X-Content-Type-Options", "nosniff");
@@ -75,11 +80,20 @@ export function registerTemplateLibraryRoutes(app: FastifyInstance, deps: Deps):
   app.get("/api/template-library/templates/:id/preview/", previewHandler);
   app.get("/api/template-library/templates/:id/preview/:slug/", previewHandler);
 
+  // The caller's own saved design templates (ownership is checked by the project service).
+  app.post("/api/template-library/mine/:projectId/use", async (req) => {
+    const user = deps.requireUser(req);
+    if (!useLimiter.check(`tpl-use:${user.id}`)) throw tooMany("You are creating projects very quickly. Please wait a moment.");
+    const { projectId } = z.object({ projectId: z.string().min(1).max(40) }).parse(req.params);
+    const body = z.object({ name: z.string().trim().min(1).max(80).optional() }).parse(req.body ?? {});
+    return { result: await deps.library.usePersonal(user.id, projectId, body, req.ip) };
+  });
+
   app.post("/api/template-library/templates/:id/use", async (req) => {
     const user = deps.requireUser(req);
     if (!useLimiter.check(`tpl-use:${user.id}`)) throw tooMany("You are creating projects very quickly. Please wait a moment.");
     const { id } = TemplateRef.parse(req.params);
-    const body = z.object({ name: z.string().trim().min(1).max(80).optional() }).parse(req.body ?? {});
+    const body = z.object({ name: z.string().trim().min(1).max(80).optional(), brandKitId: z.string().min(1).max(40).optional() }).parse(req.body ?? {});
     return { result: await deps.library.use(user.id, id, body, req.ip) };
   });
 }

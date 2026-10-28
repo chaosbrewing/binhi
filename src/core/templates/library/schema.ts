@@ -103,7 +103,8 @@ export const TemplateManifest = z
     aliases: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
     styles: z.array(z.enum(STYLE_IDS)).min(1).max(3),
     palette: z.array(HexSwatch).min(2).max(6),
-    preview: z.object({ thumbnail: z.string().max(160).nullable(), alt: Text(160) }).strict(),
+    /** Thumbnails are generated files under /template-previews only: no other path, scheme or host is accepted. */
+    preview: z.object({ thumbnail: z.string().regex(/^\/template-previews\/[A-Za-z0-9._@-]{1,100}\.jpg$/, "Thumbnails must be generated files under /template-previews").nullable(), alt: Text(160) }).strict(),
     publishedAt: DateOnly.nullable().default(null),
     /** Editorial choice by BINHI, shown as "Featured". Never derived from usage. */
     featured: z.boolean().default(false),

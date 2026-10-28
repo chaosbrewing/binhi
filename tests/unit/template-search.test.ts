@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseManifest, searchTemplates, tokenize, type Manifest, type TemplateManifestInput } from "../../src/core/templates/library/index.js";
+import { colorFamily, parseManifest, searchTemplates, tokenize, type Manifest, type TemplateManifestInput } from "../../src/core/templates/library/index.js";
 import { designTemplate, siteTemplate } from "../template-fixtures.js";
 
 function m(over: TemplateManifestInput): Manifest {
@@ -15,6 +15,21 @@ const catalog: Manifest[] = [
 ];
 
 const names = (q: Parameters<typeof searchTemplates>[1]) => searchTemplates(catalog, q).items.map((t) => t.name);
+
+describe("colour families", () => {
+  it("names the colours people see", () => {
+    expect(colorFamily("#e11d48")).toBe("red");
+    expect(colorFamily("#f97316")).toBe("orange");
+    expect(colorFamily("#fde047")).toBe("yellow");
+    expect(colorFamily("#16a34a")).toBe("green");
+    expect(colorFamily("#0e7490")).toBe("teal");
+    expect(colorFamily("#2563eb")).toBe("blue");
+    expect(colorFamily("#7c3aed")).toBe("purple");
+    expect(colorFamily("#db2777")).toBe("pink");
+    for (const c of ["#000000", "#ffffff", "#111827", "#f5f5f4", "#777777", "#fafaf9"]) expect(colorFamily(c), c).toBe("neutral");
+    expect(colorFamily("not-a-colour")).toBe("neutral");
+  });
+});
 
 describe("template search", () => {
   it("tokenizes without stop words and folds apostrophes", () => {
@@ -61,6 +76,15 @@ describe("template search", () => {
     expect(names({ style: "minimal" }).sort()).toEqual(["Minimal landing page", "Quote card"]);
     expect(names({ orientation: "portrait" }).sort()).toEqual(["Event poster", "Story sale"]);
     expect(names({ format: "social", style: "playful" })).toEqual(["Story sale"]);
+  });
+
+  it("filters by colour family and by editor", () => {
+    expect(names({ color: "purple" })).toEqual([]);
+    expect(names({ color: "orange" })).toEqual([]);
+    expect(names({ editor: "website" }).sort()).toEqual(["Minimal landing page", "Personal portfolio"]);
+    expect(names({ editor: "design" }).sort()).toEqual(["Event poster", "Quote card", "Story sale"]);
+    // The fixture palette is #111111 and #f4f1ea, so every template is neutral.
+    expect(names({ color: "neutral" })).toHaveLength(5);
   });
 
   it("combines search and filters", () => {

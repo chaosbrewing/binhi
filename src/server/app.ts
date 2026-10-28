@@ -74,7 +74,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   const brandKitSvc = new BrandKitService(db, librarySvc);
 
   const app = Fastify({ logger: config.env !== "test", bodyLimit: 6 * 1024 * 1024, trustProxy: true, disableRequestLogging: true });
-  const templateLibrarySvc = new TemplateLibraryService({ db, projects: projectSvc, sites: siteSvc, ...deps.templates, log: (m) => app.log.warn(m) });
+  const templateLibrarySvc = new TemplateLibraryService({ db, projects: projectSvc, sites: siteSvc, brandKits: brandKitSvc, ...deps.templates, log: (m) => app.log.warn(m) });
   await app.register(cookie);
 
   // Raw uploads: the browser sends the file body directly with its metadata in headers.

@@ -55,12 +55,54 @@ jobs:
         run: npm run test:e2e
       - name: Creative studio journey (dashboard, photo projects, library, design, templates, brand kits)
         run: npm run test:e2e:studio
-      - name: Template library journey (every catalog template: preview, create, edit, reopen, publish)
-        run: npm run test:e2e:templates
       - name: Upload e2e screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: binhi-e2e-screenshots
           path: e2e/screenshots
+          if-no-files-found: ignore
+
+  templates:
+    name: Template library journey (every catalog template)
+    # A separate job: the journey runs the full preview, create, edit, reopen and export/publish
+    # path for every template, each on its own account, so it takes a while.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: binhi
+          POSTGRES_PASSWORD: binhi_dev_pw
+          POSTGRES_DB: binhi_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U binhi"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      BINHI_TEST_DATABASE_URL: postgres://binhi:binhi_dev_pw@127.0.0.1:5432/binhi_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Production build
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Template library journey
+        run: npm run test:e2e:templates
+      - name: Upload e2e screenshots and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: binhi-template-journey
+          path: e2e/screenshots/templates
           if-no-files-found: ignore
