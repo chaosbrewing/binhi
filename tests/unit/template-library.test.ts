@@ -17,7 +17,7 @@ import {
   validateTaxonomy,
   type TemplateManifestInput,
 } from "../../src/core/templates/library/index.js";
-import { countByStage, completedCount, validateInventory, type InventoryEntry } from "../../src/core/templates/library/inventory.js";
+import { approvedCount, countByStage, completedCount, validateInventory, type InventoryEntry } from "../../src/core/templates/library/inventory.js";
 import { designTemplate, siteTemplate } from "../template-fixtures.js";
 
 describe("taxonomy", () => {
@@ -203,10 +203,6 @@ describe("catalog validation", () => {
     expect(issues.length).toBeGreaterThan(0);
   });
 
-  it("ships an empty catalog until templates have evidence (no placeholder records)", async () => {
-    const { CATALOG } = await import("../../src/core/templates/library/catalog/index.js");
-    expect(CATALOG.length).toBe(0);
-  });
 });
 
 describe("inventory", () => {
@@ -217,13 +213,14 @@ describe("inventory", () => {
     expect(validateInventory([m], [bad]).some((i) => /without evidence for "editor-verified"/.test(i.message))).toBe(true);
   });
 
-  it("a published template must be fully approved", () => {
+  it("a published template must have passed its whole journey; approval is separate", () => {
     const e: InventoryEntry = { id: m.id, version: 1, stage: "implemented", evidence: { implemented: "unit" } };
-    expect(validateInventory([m], [e]).some((i) => /requires inventory stage "approved"/.test(i.message))).toBe(true);
-    const full: InventoryEntry = { id: m.id, version: 1, stage: "approved", evidence: { implemented: "a", "preview-verified": "b", "editor-verified": "c", "export-verified": "d", approved: "founder" } };
-    expect(validateInventory([m], [full])).toEqual([]);
-    expect(completedCount([full, e])).toBe(1);
-    expect(countByStage([full, e]).implemented).toBe(1);
+    expect(validateInventory([m], [e]).some((i) => /requires inventory stage "export-verified"/.test(i.message))).toBe(true);
+    const done: InventoryEntry = { id: m.id, version: 1, stage: "export-verified", evidence: { implemented: "a", "preview-verified": "b", "editor-verified": "c", "export-verified": "d" } };
+    expect(validateInventory([m], [done])).toEqual([]);
+    expect(completedCount([done, e])).toBe(1);
+    expect(approvedCount([done, e])).toBe(0);
+    expect(countByStage([done, e]).implemented).toBe(1);
   });
 
   it("flags orphan entries", () => {

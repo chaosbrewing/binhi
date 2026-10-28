@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api.js";
 import { useAuth } from "../auth/AuthContext.js";
 import { Logo } from "../components/Logo.js";
+import { clearPrefs } from "../templates/prefs.js";
 
 export function AccountPage() {
   const { user, setUser } = useAuth();
@@ -16,6 +17,7 @@ export function AccountPage() {
     setError(null);
     try {
       await api.deleteAccount(password);
+      if (user) clearPrefs(user.id);
       setUser(null);
       nav("/signin", { replace: true });
     } catch (err) {

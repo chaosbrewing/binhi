@@ -9,3 +9,7 @@ export * from "./card.js";
 export { CATALOG } from "./catalog/index.js";
 export { COLLECTIONS, type Collection } from "./catalog/collections.js";
 export { DESIGN_CONTENT } from "./catalog/designs.js";
+export * from "./fingerprint.js";
+export { INVENTORY } from "./catalog/inventory.js";
+export { LOCK } from "./catalog/lock.js";
+export * from "./inventory.js";

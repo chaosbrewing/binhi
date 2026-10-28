@@ -19,7 +19,7 @@ const PhotoEditor = lazy(() => import("./studio/photo/PhotoEditor.js").then((m) 
 const ComingSoon = lazy(() => import("./studio/ComingSoon.js").then((m) => ({ default: m.ComingSoon })));
 const ProjectsPage = lazy(() => import("./studio/ProjectsPage.js").then((m) => ({ default: m.ProjectsPage })));
 const LibraryPage = lazy(() => import("./studio/LibraryPage.js").then((m) => ({ default: m.LibraryPage })));
-const TemplatesPage = lazy(() => import("./studio/TemplatesPage.js").then((m) => ({ default: m.TemplatesPage })));
+const TemplatesPage = lazy(() => import("./templates/TemplatesPage.js").then((m) => ({ default: m.TemplatesPage })));
 const BrandKitsPage = lazy(() => import("./studio/BrandKitsPage.js").then((m) => ({ default: m.BrandKitsPage })));
 const DesignStudioHome = lazy(() => import("./studio/design/DesignStudioHome.js").then((m) => ({ default: m.DesignStudioHome })));
 const DesignEditor = lazy(() => import("./studio/design/DesignEditor.js").then((m) => ({ default: m.DesignEditor })));

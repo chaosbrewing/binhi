@@ -406,7 +406,7 @@ try {
   await page.screenshot({ path: `${output}/05-design.png` });
   await page.goto(`${base}/templates`);
   await page.getByRole("heading", { name: "Promo template" }).waitFor();
-  assert.ok((await page.getByRole("list", { name: "Website templates" }).getByRole("listitem").count()) >= 5);
+  assert.ok((await page.getByRole("list", { name: "Templates", exact: true }).getByRole("listitem").count()) >= 6, "the six website starters are listed in the template library");
   await page.getByRole("button", { name: "Use template" }).click();
   await page.waitForURL(/\/studio\/design\/prj_[a-z0-9]+/);
   assert.notEqual(/prj_[a-z0-9]+/.exec(page.url())![0], designId);

@@ -1,4 +1,5 @@
 import type { SiteDocument, Operation, ValidationReport } from "../core/index.js";
+import type { TemplateCard } from "../core/templates/library/card.js";
 import type { BrandKitDocument, DesignDocument, PhotoProjectDocument, ProjectKind } from "../core/creative/index.js";
 
 export class ApiError extends Error {
@@ -82,6 +83,28 @@ export interface TemplateSummary {
   description: string;
   swatch: [string, string, string];
 }
+export type { TemplateCard };
+export interface TemplateFormat { id: string; label: string; count: number; available: boolean; note: string | null }
+export interface TemplateCategoryInfo { id: string; number: number; name: string; formats: string[]; count: number; subcategories: { name: string }[] }
+export interface TemplateTaxonomy {
+  formats: TemplateFormat[];
+  categories: TemplateCategoryInfo[];
+  styles: { id: string; label: string; count: number }[];
+  orientations: string[];
+  collections: { id: string; title: string; description: string; templateIds: string[] }[];
+  total: number;
+}
+export interface TemplateFacets { formats: Record<string, number>; categories: Record<string, number>; styles: Record<string, number> }
+export interface TemplateList { items: TemplateCard[]; total: number; page: number; pageSize: number; facets: TemplateFacets }
+export interface TemplateDetail extends TemplateCard {
+  keywords: string[];
+  license: { id: string; attribution: string | null; notes: string };
+  requiredFeatures: string[];
+  dependencies: { fonts: string[]; icons: string[]; elements: string[]; bundledAssets: string[]; brandTokens: string[]; components: string[] };
+  availabilityNotes: string;
+  hasDocument: boolean;
+}
+export interface TemplateQueryParams { q?: string; format?: string; category?: string; style?: string; orientation?: string; sort?: string; page?: number; pageSize?: number }
 export interface RevisionSummary {
   id: string;
   revision: number;
@@ -158,6 +181,16 @@ export const api = {
   logout: () => request<{ ok: true }>("POST", "/api/auth/logout"),
   deleteAccount: (password: string) => request<{ ok: true }>("DELETE", "/api/auth/account", { password }),
   templates: () => request<{ templates: TemplateSummary[] }>("GET", "/api/templates"),
+  templateTaxonomy: () => request<TemplateTaxonomy>("GET", "/api/template-library/taxonomy"),
+  templateList: (params: TemplateQueryParams) => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "" && v !== "all") qs.set(k, String(v));
+    return request<TemplateList>("GET", `/api/template-library/templates${qs.size ? `?${qs}` : ""}`);
+  },
+  templateCards: (ids: string[]) => request<{ items: TemplateCard[] }>("POST", "/api/template-library/cards", { ids }),
+  templateDetail: (id: string) => request<{ template: TemplateDetail }>("GET", `/api/template-library/templates/${encodeURIComponent(id)}`),
+  templateDocument: (id: string) => request<{ document: DesignDocument }>("GET", `/api/template-library/templates/${encodeURIComponent(id)}/document`),
+  useTemplate: (id: string, name?: string) => request<{ result: { kind: "website" | "design"; id: string; path: string } }>("POST", `/api/template-library/templates/${encodeURIComponent(id)}/use`, name ? { name } : {}),
   sites: () => request<{ sites: SiteSummary[] }>("GET", "/api/sites"),
   createSite: (name: string, templateId: string) => request<{ site: SiteDetail }>("POST", "/api/sites", { name, templateId }),
   site: (id: string) => request<{ site: SiteDetail }>("GET", `/api/sites/${id}`),

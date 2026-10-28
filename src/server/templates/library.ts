@@ -157,7 +157,7 @@ export class TemplateLibraryService {
   sitePreviewHtml(id: string, slug?: string): string {
     const m = this.find(id);
     if (!m || m.content.type !== "builtin-site") throw notFound("Template not found");
-    const doc = createSiteDocument(m.content.builder, m.name);
+    const doc = createSiteDocument(m.content.builder, m.content.sampleName ?? m.name);
     const page = slug ? doc.pages.find((p) => p.slug === slug) : doc.pages.find((p) => p.isHome);
     if (!page) throw notFound("Page not found");
     return renderPage(doc, page.id, { mode: "preview", baseHref: `/api/template-library/templates/${m.id}/preview/`, formAction: () => "#" });

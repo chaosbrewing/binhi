@@ -57,7 +57,7 @@ const Creator = z.discriminatedUnion("kind", [
 ]);
 
 const ContentRef = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("builtin-site"), builder: Slug }).strict(),
+  z.object({ type: z.literal("builtin-site"), builder: Slug, /** Fictional name shown in previews only; a project takes the name its owner types. */ sampleName: Text(40).optional() }).strict(),
   z.object({ type: z.literal("builtin-design"), key: Slug }).strict(),
   z.object({ type: z.literal("project"), projectId: z.string().max(40) }).strict(),
 ]);
