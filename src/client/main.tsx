@@ -8,6 +8,7 @@ import { applyStoredTheme } from "./theme.js";
 import { StudioHome } from "./studio/StudioHome.js";
 import "./styles/app.css";
 import "./studio/studio.css";
+import "./studio/design/fonts.css";
 
 applyStoredTheme();
 

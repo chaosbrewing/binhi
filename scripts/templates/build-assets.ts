@@ -41,12 +41,15 @@ async function bundleDesignRenderer(): Promise<string> {
   const entry = `
     import { renderDesign, wrapText } from ${JSON.stringify(path.join(root, "src/client/studio/design/renderDesign.ts"))};
     import { fontStack } from ${JSON.stringify(path.join(root, "src/core/creative/design.ts"))};
-    window.__fit = (doc) => {
+    window.__fit = async (doc) => {
       const ctx = document.createElement("canvas").getContext("2d");
       const issues = [];
       for (const l of doc.layers) {
         if (l.type !== "text") continue;
-        ctx.font = l.fontWeight + " " + l.fontSize + "px " + fontStack(l.font);
+        const font = l.fontWeight + " " + l.fontSize + "px " + fontStack(l.font);
+        await document.fonts.load(font).catch(() => []);
+        if (!document.fonts.check(font)) issues.push(l.name + ": font did not load (" + l.font + ")");
+        ctx.font = font;
         const lines = wrapText(ctx, l.text, l.width);
         const need = lines.length * l.fontSize * l.lineHeight;
         const widest = Math.max(...lines.map((s) => ctx.measureText(s).width));
@@ -71,6 +74,8 @@ async function bundleDesignRenderer(): Promise<string> {
   const r = await build({ stdin: { contents: entry, resolveDir: root, loader: "ts" }, bundle: true, write: false, format: "iife", platform: "browser", logLevel: "silent" });
   return r.outputFiles[0]!.text;
 }
+
+const fontCss = readFileSync(path.join(root, "src/client/studio/design/fonts.css"), "utf8").replace(/url\(\/fonts\//g, "url(http://template-assets.test/fonts/");
 
 async function main() {
   const lock: Record<string, LockEntry> = {};
@@ -117,7 +122,10 @@ async function main() {
       } else {
         const doc = parseDesignContent(DESIGN_CONTENT[(m.content as { key: string }).key]).document;
         const page = await browser.newPage();
+        // The Design Studio's own self-hosted fonts (public/fonts), so text is measured and drawn with the fonts users get.
+        await page.route("http://template-assets.test/fonts/*", (route) => route.fulfill({ path: path.join(root, "public", "fonts", path.basename(new URL(route.request().url()).pathname)), contentType: "font/woff2", headers: { "access-control-allow-origin": "*" } }));
         await page.setContent("<!doctype html><meta charset=utf-8><body></body>");
+        await page.addStyleTag({ content: fontCss });
         await page.addScriptTag({ content: designBundle! });
         const fit = await page.evaluate((d) => (window as unknown as { __fit: (d: unknown) => string[] }).__fit(d), doc);
         for (const msg of fit) fitProblems.push(`${key}: ${msg}`);

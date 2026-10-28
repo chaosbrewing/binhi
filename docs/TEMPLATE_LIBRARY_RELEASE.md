@@ -12,9 +12,10 @@ gate, decisions) and `docs/TEMPLATE_LIBRARY.md` (how it works).
 | Is the feature ready for **review and merge** into `main`? | **YES, after the founder items below** | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
 | Is it ready to be **published** to production? | **NOT YET** | The production database and live HTTP were not verified from this sandbox; the founder must run `npm run db:check` first. This change adds **no migration**, so the production schema risk is nil, but the unverified baseline from the icon release checklist still stands. |
 
-Founder items before merge: **D1** (workflow PDF), **D5** (design fonts), the
-merge **order** relative to PRs #2, #3 and #4 (§7), and a review of the 62
-templates' art direction (inventory stage `approved` is left to the founder).
+Founder answers (2026-10-28, "Yes all") are recorded in §12. Still open before
+merge: **D1** (the workflow PDF itself must be supplied), the merge **order**
+relative to PRs #2, #3 and #4 (§7, a choice, not a yes/no), and **D2**, which is
+approved but waits on that order, so no migration has been written.
 
 ## 2. Acceptance criteria (directive §25)
 
@@ -47,8 +48,10 @@ templates' art direction (inventory stage `approved` is left to the founder).
   as primary: 14; reachable as primary or secondary: 25. Empty: 7 Forms, 17
   Video, 22 Health, 24 Email, 26 Merchandise. 7, 17 and 24 have no editor;
   22 and 26 could have had templates and do not.
-* **Templates created: 62. Functional: 62** (all at `export-verified`; none
-  `approved`, which is the founder's).
+* **Templates created: 62. Functional: 62. Approved: 62** (the founder approved
+  the art direction on 2026-10-28; `docs/TEMPLATE_APPROVALS.json` binds each
+  approval to the template's content fingerprint, and changing a template
+  withdraws its approval).
   * Website templates: **10** (6 from Phase 1, registered without changing their
     content, and 4 new: Link in bio, Event website, Product launch, Community
     group).
@@ -68,8 +71,9 @@ templates' art direction (inventory stage `approved` is left to the founder).
   (ignoring colour) and fails if any two same-orientation designs are near-identical.
 
 Limits that shape the art, stated plainly: text and shapes only; solid colours;
-photo areas are labelled frames, not image slots; fonts depend on the viewer's
-device (decision D5). Nothing uses icons or Elements 300, so the catalog does not
+photo areas are labelled frames, not image slots. Inter, Playfair Display, DM
+Sans, Space Grotesk and Lora are self-hosted (D5), Latin scripts only; Georgia
+and Monospace are device fonts and differ slightly between devices. Nothing uses icons or Elements 300, so the catalog does not
 depend on PR #2/#3 or on assets that do not exist.
 
 ## 4. Verification
@@ -189,18 +193,26 @@ is sufficient; there is nothing to restore in the database.
 
 | Risk | Owner | Note |
 |---|---|---|
-| Fonts differ by device (D5) | Founder | Layouts have slack and are measured; previews use fallback fonts for designs |
+| Georgia / Monospace differ by device | Maintainers | The other five fonts are self-hosted (D5). Layouts keep slack and are measured; the build fails on overflow |
+| `Inter` is also the app's interface font, so the whole app now renders in hosted Inter (previously the system fallback on most devices) | Founder | Side effect of D5; all journeys and axe pass; revert by removing the `fonts.css` import in `src/client/main.tsx` |
 | Merge order with #2/#3/#4 | Founder | see §7 |
 | Production DB state unverified | Founder | `npm run db:check`; no schema change here |
-| Art direction of 62 templates | Founder | inventory `approved` is empty by design |
 | Journey takes about 15 minutes | Maintainers | its own CI job; `-- --quick` for iteration |
 | Project create-then-validate quirk (§6) | Maintainers | pre-existing |
 
-## 12. Decisions required (YES/NO)
+## 12. Decisions
 
-1. **D1:** provide `chaos_origins_workflow_v2_1.pdf`?
-2. **D2:** approve one additive migration (provenance column, personal-template
-   metadata, server-side favorites), authored after PR #4's order is settled?
-3. **D5:** load or self-host the design fonts so designs look the same on every device?
-4. Merge order: #4 (auth), then #2/#3 (icons), then this branch, or this branch first?
-5. Approve the 62 templates' art direction for release (sets inventory `approved`)?
+Founder answers, 2026-10-28: **"Yes all"** to the five questions below. What each
+yes did, and did not, authorise:
+
+| # | Question | Result |
+|---|---|---|
+| 1 | D1: provide `chaos_origins_workflow_v2_1.pdf` | **Open.** I cannot supply the file. When it is added to the repo or the session, I will audit this work against it and report gaps. |
+| 2 | D2: approve one additive migration (provenance column, personal-template metadata, server-side favorites), authored after PR #4's order is settled | **Approved, not started.** The approval is conditional on #4's order, which is unanswered (see 4). I will not write a migration numbered against an order that is not decided. Applying any migration to production stays a separate approval. |
+| 3 | D5: load or self-host the design fonts | **Done.** Self-hosted (§3, §11, `public/fonts/README.md`). Re-measured every template with the real fonts: no overflow. Thumbnails regenerated. All journeys, axe and tests pass. |
+| 4 | Merge order: #4 (auth), then #2/#3 (icons), then this branch, or this branch first? | **Open.** "Yes" does not choose between orders. Needed: which comes first. |
+| 5 | Approve the 62 templates' art direction | **Recorded.** `docs/TEMPLATE_APPROVALS.json`; inventory shows 62 approved. This is approval of the art direction only. It is not authority to merge or publish. |
+
+Not authorised by "Yes all", and not done: merging PR #13, publishing, any
+production database change, any change to production secrets or deployment
+settings. `npm run db:check` is still required before any publish.

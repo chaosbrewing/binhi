@@ -8,8 +8,10 @@
  *
  * A template counts as complete for the seed target at "export-verified":
  * its whole user journey passes (preview, create, edit, save, reopen, export
- * or publish). "approved" is the founder's release approval and is never
- * claimed by tooling.
+ * or publish). "approved" is the founder's release approval: tooling never
+ * decides it, it only copies a recorded founder approval
+ * (docs/TEMPLATE_APPROVALS.json) onto a template whose content fingerprint
+ * still matches what was approved. Changing a template voids its approval.
  */
 import type { Manifest } from "./index.js";
 
@@ -73,4 +75,32 @@ export function completedCount(entries: readonly InventoryEntry[]): number {
 /** Templates the founder has approved for release. */
 export function approvedCount(entries: readonly InventoryEntry[]): number {
   return entries.filter((e) => e.stage === "approved").length;
+}
+
+/** A founder's recorded approval: template key (`id@version`) to the content fingerprint that was approved. */
+export interface ApprovalRecord {
+  approvedBy: string;
+  approvedAt: string;
+  basis: string;
+  entries: Record<string, string>;
+}
+
+/** Approvals that no longer describe the catalog: unknown template or changed content. */
+export function validateApprovals(record: ApprovalRecord, lock: Readonly<Record<string, { contentSha256: string }>>): InventoryIssue[] {
+  const issues: InventoryIssue[] = [];
+  for (const [key, sha] of Object.entries(record.entries)) {
+    const current = lock[key];
+    if (!current) issues.push({ where: key, message: "Approval has no matching template" });
+    else if (current.contentSha256 !== sha) issues.push({ where: key, message: "Template content changed after it was approved" });
+  }
+  return issues;
+}
+
+/** Marks export-verified entries as approved only where the founder's approval matches the proven content fingerprint. */
+export function applyApprovals<E extends InventoryEntry & { contentSha256: string | null }>(entries: readonly E[], record: ApprovalRecord): E[] {
+  return entries.map((e) => {
+    const key = `${e.id}@${e.version}`;
+    if (stageIndex(e.stage) < stageIndex("export-verified") || e.contentSha256 === null || record.entries[key] !== e.contentSha256) return e;
+    return { ...e, stage: "approved", evidence: { ...e.evidence, approved: `docs/TEMPLATE_APPROVALS.json#${key}` } } as E;
+  });
 }

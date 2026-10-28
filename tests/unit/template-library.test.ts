@@ -17,7 +17,7 @@ import {
   validateTaxonomy,
   type TemplateManifestInput,
 } from "../../src/core/templates/library/index.js";
-import { approvedCount, countByStage, completedCount, validateInventory, type InventoryEntry } from "../../src/core/templates/library/inventory.js";
+import { applyApprovals, approvedCount, countByStage, completedCount, validateApprovals, validateInventory, type ApprovalRecord, type InventoryEntry } from "../../src/core/templates/library/inventory.js";
 import { designTemplate, siteTemplate } from "../template-fixtures.js";
 
 describe("taxonomy", () => {
@@ -221,6 +221,22 @@ describe("inventory", () => {
     expect(completedCount([done, e])).toBe(1);
     expect(approvedCount([done, e])).toBe(0);
     expect(countByStage([done, e]).implemented).toBe(1);
+  });
+
+  it("approval is copied only from a founder record that matches the proven content", () => {
+    const proven = { id: "tpl.design.x", version: 1, contentSha256: "aaa", stage: "export-verified" as const, evidence: { implemented: "a", "preview-verified": "b", "editor-verified": "c", "export-verified": "d" } };
+    const record: ApprovalRecord = { approvedBy: "founder", approvedAt: "2026-10-28", basis: "test", entries: { "tpl.design.x@1": "aaa" } };
+    const [approved] = applyApprovals([proven], record);
+    expect(approved!.stage).toBe("approved");
+    expect(approved!.evidence.approved).toContain("tpl.design.x@1");
+    // content changed since approval: stays export-verified
+    expect(applyApprovals([{ ...proven, contentSha256: "bbb" }], record)[0]!.stage).toBe("export-verified");
+    // never approves something that has not passed its whole journey
+    expect(applyApprovals([{ ...proven, stage: "editor-verified" as const }], record)[0]!.stage).toBe("editor-verified");
+    // no record, no approval
+    expect(applyApprovals([proven], { ...record, entries: {} })[0]!.stage).toBe("export-verified");
+    expect(validateApprovals(record, { "tpl.design.x@1": { contentSha256: "bbb" } }).some((i) => /changed after it was approved/.test(i.message))).toBe(true);
+    expect(validateApprovals(record, {}).some((i) => /no matching template/.test(i.message))).toBe(true);
   });
 
   it("flags orphan entries", () => {

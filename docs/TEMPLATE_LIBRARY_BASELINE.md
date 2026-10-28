@@ -167,6 +167,7 @@ taxonomy with zero public templates.
 * **D3.** Keep v1.0 free of any design-schema change and of icon dependencies, with image placeholders as labelled frames? **Applied as the default** (recommended YES); no design-schema change was made.
 * **D4.** Accept that the first release lists templates only for Websites and Design Studio output, with Photo, Forms, Documents, Presentations, Email and Video as documented contracts only? **Applied as the default** (recommended YES).
 * **D5 (new).** The Design Studio never loads the web fonts its font list names, so design text falls back to system fonts on most devices (published websites do load Google Fonts). Approve loading the design fonts in the Design Studio (the app's CSP already allows `fonts.googleapis.com`), or self-hosting the OFL font files? Until then templates are authored to survive fallback fonts and avoid `Inter`.
+  **Resolved:** the founder answered yes (2026-10-28). Implemented as self-hosting (no third-party requests, no CSP change): see `public/fonts/README.md`.
 
 ## 9. Milestone register
 

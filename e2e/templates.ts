@@ -14,14 +14,14 @@
  */
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { randomUUID } from "node:crypto";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { getTestDatabaseUrl } from "../tests/test-database.js";
 import { runMigrations } from "../src/server/db/migrate.js";
-import { CATALOG, DESIGN_CONTENT, LOCK, parseDesignContent, type Manifest } from "../src/core/templates/library/index.js";
+import { CATALOG, DESIGN_CONTENT, LOCK, applyApprovals, parseDesignContent, type ApprovalRecord, type Manifest } from "../src/core/templates/library/index.js";
 
 if (process.env.BINHI_E2E_BASE || process.argv.includes("--remote")) throw new Error("Template tests run only against a local disposable test database.");
 const database = getTestDatabaseUrl();
@@ -585,15 +585,16 @@ try {
   if (succeeded && !quick) {
     // The machine-verifiable inventory: one entry per template, bound to the content fingerprint it was proven against.
     const stageNames = ["implemented", "preview-verified", "editor-verified", "export-verified"] as const;
-    const entries = journeys.map((j) => {
+    const approvals = existsSync("docs/TEMPLATE_APPROVALS.json") ? (JSON.parse(readFileSync("docs/TEMPLATE_APPROVALS.json", "utf8")) as ApprovalRecord) : { approvedBy: "", approvedAt: "", basis: "", entries: {} };
+    const entries = applyApprovals(journeys.map((j) => {
       const proven = ["implemented", ...j.stages];
       const stage = [...stageNames].reverse().find((n) => proven.includes(n)) ?? "planned";
       return { id: j.id, version: j.version, contentSha256: (LOCK as Record<string, { contentSha256: string }>)[`${j.id}@${j.version}`]?.contentSha256 ?? null, stage, evidence: Object.fromEntries(proven.map((n) => [n, n === "implemented" ? "tests/unit/template-catalog.test.ts#documents-are-valid" : `e2e/templates.ts#${n}`])) };
-    });
+    }), approvals);
     let commit = "unknown";
     try { commit = execSync("git rev-parse HEAD", { encoding: "utf8" }).trim(); } catch { /* not a git checkout */ }
     const counts = Object.fromEntries(["planned", ...stageNames, "approved"].map((n) => [n, entries.filter((e) => e.stage === n).length]));
-    writeFileSync("docs/TEMPLATE_INVENTORY.json", `${JSON.stringify({ generatedBy: "e2e/templates.ts", note: "Written only by a passing run of the template library journey. A stage appears here only after the browser journey proved it for that template and content fingerprint. 'approved' is the founder's release approval and is never written by tooling.", generatedAgainstCommit: commit, counts, entries }, null, 2)}\n`);
+    writeFileSync("docs/TEMPLATE_INVENTORY.json", `${JSON.stringify({ generatedBy: "e2e/templates.ts", note: "Written only by a passing run of the template library journey. A stage appears here only after the browser journey proved it for that template and content fingerprint. 'approved' appears only where the founder's recorded approval (docs/TEMPLATE_APPROVALS.json) matches the content fingerprint proven here; tooling never decides it.", generatedAgainstCommit: commit, counts, entries }, null, 2)}\n`);
   }
   await browser?.close();
   server.kill("SIGTERM");

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { CATALOG, LOCK, canonicalContent, countByStage, validateCatalog, validateInventory, type InventoryEntry, type Manifest } from "../../src/core/templates/library/index.js";
+import { CATALOG, LOCK, canonicalContent, countByStage, validateApprovals, validateCatalog, validateInventory, type ApprovalRecord, type InventoryEntry, type Manifest } from "../../src/core/templates/library/index.js";
 import { DESIGN_CONTENT } from "../../src/core/templates/library/index.js";
 import { createSiteDocument, getTemplate } from "../../src/core/templates/index.js";
 import { validateDocument } from "../../src/core/ops/apply.js";
@@ -138,7 +138,17 @@ describe("shipped catalog", () => {
       expect(e.contentSha256, `${e.id}: inventory was proven against different content. Re-run the template journey`).toBe(lock?.contentSha256);
       for (const ref of Object.values(e.evidence)) expect(existsSync(path.join(root, ref.split("#")[0]!)), `${e.id}: evidence file ${ref} does not exist`).toBe(true);
     }
-    expect(countByStage(entries).approved, "approval is the founder's, never claimed by tooling").toBe(0);
-    expect(file.counts.approved).toBe(0);
+    // Approval is the founder's: it appears only where a recorded approval matches the proven content (see the next test).
+    const record = JSON.parse(readFileSync(path.join(root, "docs/TEMPLATE_APPROVALS.json"), "utf8")) as ApprovalRecord;
+    const approvedKeys = file.entries.filter((e) => e.stage === "approved").map((e) => `${e.id}@${e.version}`).sort();
+    expect(approvedKeys, "inventory approvals must equal the recorded founder approvals").toEqual(Object.keys(record.entries).sort());
+    expect(file.counts.approved).toBe(approvedKeys.length);
+  });
+
+  it("records founder approvals that still describe the shipped content", () => {
+    const record = JSON.parse(readFileSync(path.join(root, "docs/TEMPLATE_APPROVALS.json"), "utf8")) as ApprovalRecord;
+    expect(record.approvedBy).toBeTruthy();
+    expect(record.basis).toBeTruthy();
+    expect(validateApprovals(record, LOCK as Record<string, { contentSha256: string }>), "a template changed after approval: re-approve it or revert the change").toEqual([]);
   });
 });
