@@ -45,7 +45,7 @@ export function Dashboard() {
       <header className="shell-header">
         <Logo />
         <nav className="shell-nav" aria-label="Account">
-          <Link to="/" className="btn btn-ghost">Studio home</Link>
+          <Link to="/" className="btn btn-ghost">Today</Link>
           <ThemeToggle />
           <Link to="/account" className="btn btn-ghost">{user?.displayName}</Link>
           <button className="btn btn-ghost" onClick={() => void logout().then(() => nav("/signin"))}>Sign out</button>

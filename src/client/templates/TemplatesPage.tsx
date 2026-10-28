@@ -179,7 +179,7 @@ export function TemplatesPage() {
             <h1>Start with something real</h1>
             <p className="muted">Every template opens as your own editable project. Pick one, make it yours, and export or publish it.</p>
           </div>
-          <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Studio</Link>
+          <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Today</Link>
         </div>
 
         <form className="tpl-search" role="search" onSubmit={(e) => { e.preventDefault(); setFilter({ q: search.trim() }); }}>

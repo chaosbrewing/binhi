@@ -185,7 +185,7 @@ try {
   record("blank canvas options start a real design project");
 
   // Unavailable formats are named honestly, never advertised.
-  for (const [format, phrase] of [["Presentations", /no slide editor/i], ["Forms", /Form Builder is planned/i], ["Video", /no motion or video editor/i], ["Documents", /no document editor/i]] as const) {
+  for (const [format, phrase] of [["Presentations", /no slide editor/i], ["Forms", /Form Creator is planned/i], ["Video", /no motion or video editor/i], ["Documents", /no document or PDF editor/i]] as const) {
     await formatChip(page, format).click();
     await page.getByText(new RegExp(`${format} templates are not available yet`)).waitFor();
     await page.getByText(phrase).waitFor();

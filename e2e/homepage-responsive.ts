@@ -86,6 +86,7 @@ async function main() {
         const ctaButton = cta?.querySelector<HTMLElement>(".btn");
         const ctaHeadline = cta?.querySelector<HTMLElement>("h2");
         const menuButton = document.querySelector<HTMLElement>(".studio-shell-menu");
+        const collapseButton = document.querySelector<HTMLElement>(".studio-sidebar-collapse");
         const sideNav = document.querySelector<HTMLElement>(".studio-sidebar");
         const chips = Array.from(document.querySelectorAll<HTMLElement>(".studio-home-chip"));
         const templateRow = document.querySelector<HTMLElement>(".studio-template-row");
@@ -120,6 +121,7 @@ async function main() {
           documentDirection: getComputedStyle(document.documentElement).direction,
           categoryRows: categoriesTopRows,
           menuVisible: !!menuButton && getComputedStyle(menuButton).display !== "none",
+          collapseVisible: !!collapseButton && getComputedStyle(collapseButton).display !== "none",
           sideNavPinned: !!sideNav && getComputedStyle(sideNav).position !== "fixed",
           ctaStacked: !!ctaButton && !!ctaHeadline && ctaButton.getBoundingClientRect().top > ctaHeadline.getBoundingClientRect().bottom,
           ctaInline: !!ctaButton && !!ctaHeadline && ctaButton.getBoundingClientRect().left > ctaHeadline.getBoundingClientRect().right,
@@ -155,14 +157,29 @@ async function main() {
 
       if (viewport.name === "mobile") {
         assert.equal(metrics.menuVisible, true, "mobile: menu button visible");
+        assert.equal(metrics.collapseVisible, false, "mobile: desktop collapse control hidden");
         assert.equal(metrics.ctaStacked, true, "mobile: CTA stacks below copy");
+        const menu = page.getByRole("button", { name: "Open navigation menu" });
+        await menu.click();
+        assert.equal(await menu.getAttribute("aria-expanded"), "true", "mobile: menu reports open state");
+        await page.getByRole("navigation", { name: "Primary navigation" }).getByText("Today", { exact: true }).waitFor();
+        await page.keyboard.press("Escape");
+        assert.equal(await menu.getAttribute("aria-expanded"), "false", "mobile: Escape closes menu");
       } else if (viewport.name === "tablet") {
         assert.equal(metrics.menuVisible, true, "tablet: menu button visible in collapsible nav mode");
+        assert.equal(metrics.collapseVisible, false, "tablet: desktop collapse control hidden");
         assert.equal(metrics.templateRowOverflows, true, "tablet: templates row remains horizontally browsable");
       } else {
         assert.equal(metrics.menuVisible, false, "desktop: menu button hidden");
+        assert.equal(metrics.collapseVisible, true, "desktop: collapse control visible");
         assert.equal(metrics.sideNavPinned, true, "desktop: sidebar pinned");
         assert.equal(metrics.ctaInline, true, "desktop: CTA aligns beside copy");
+        const collapse = page.getByRole("button", { name: "Collapse sidebar" });
+        await collapse.click();
+        const expand = page.getByRole("button", { name: "Expand sidebar" });
+        await expand.waitFor();
+        assert.equal(await expand.getAttribute("aria-expanded"), "false", "desktop: collapsed state is exposed");
+        assert.equal(await page.getByRole("link", { name: "Today", exact: true }).count(), 1, "desktop: collapsed links retain accessible names");
       }
 
       assert.deepEqual(errors, [], `${viewport.name}: no console/page errors`);

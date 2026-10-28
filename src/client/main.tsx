@@ -43,6 +43,7 @@ function App() {
       <Route path="/signup" element={<SignUp />} />
       <Route path="/" element={<RequireAuth><StudioHome /></RequireAuth>} />
       <Route path="/projects" element={<RequireAuth><DeferredRoute><ProjectsPage /></DeferredRoute></RequireAuth>} />
+      <Route path="/recent" element={<RequireAuth><DeferredRoute><ProjectsPage /></DeferredRoute></RequireAuth>} />
       <Route path="/websites" element={<RequireAuth><DeferredRoute><Dashboard /></DeferredRoute></RequireAuth>} />
       <Route path="/library" element={<RequireAuth><DeferredRoute><LibraryPage /></DeferredRoute></RequireAuth>} />
       <Route path="/templates" element={<RequireAuth><DeferredRoute><TemplatesPage /></DeferredRoute></RequireAuth>} />
@@ -54,6 +55,7 @@ function App() {
       <Route path="/studio/design/:projectId" element={<RequireAuth><DeferredRoute><DesignEditor /></DeferredRoute></RequireAuth>} />
       <Route path="/studio/convert" element={<RequireAuth><DeferredRoute><ComingSoon tool="convert" /></DeferredRoute></RequireAuth>} />
       <Route path="/studio/forms" element={<RequireAuth><DeferredRoute><ComingSoon tool="forms" /></DeferredRoute></RequireAuth>} />
+      <Route path="/studio/pdf" element={<RequireAuth><DeferredRoute><ComingSoon tool="pdf" /></DeferredRoute></RequireAuth>} />
       <Route path="/sites/new" element={<RequireAuth><DeferredRoute><NewSite /></DeferredRoute></RequireAuth>} />
       <Route path="/sites/:siteId/edit" element={<RequireAuth><DeferredRoute><EditorRoute /></DeferredRoute></RequireAuth>} />
       <Route path="/account" element={<RequireAuth><DeferredRoute><AccountPage /></DeferredRoute></RequireAuth>} />

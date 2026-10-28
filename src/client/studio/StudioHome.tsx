@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api, type ProjectSummary, type SiteSummary, type TemplateSummary } from "../api.js";
+import { api, type ProjectSummary, type TemplateSummary } from "../api.js";
 import { I } from "../components/Icons.js";
 import { StudioShell } from "./StudioShell.js";
 
@@ -30,19 +30,15 @@ export function StudioHome() {
   const templateRowRef = useRef<HTMLDivElement | null>(null);
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState("Use the prompt or choose a quick action to begin.");
-  const [sites, setSites] = useState<SiteSummary[]>([]);
-  const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [siteTemplates, setSiteTemplates] = useState<TemplateSummary[]>([]);
   const [designTemplates, setDesignTemplates] = useState<ProjectSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    Promise.all([api.sites(), api.projects(), api.templates(), api.projects("design-template")])
-      .then(([siteResult, projectResult, templateResult, designTemplateResult]) => {
+    Promise.all([api.templates(), api.projects("design-template")])
+      .then(([templateResult, designTemplateResult]) => {
         if (!active) return;
-        setSites(siteResult.sites);
-        setProjects(projectResult.projects);
         setSiteTemplates(templateResult.templates);
         setDesignTemplates(designTemplateResult.projects);
       })
@@ -53,19 +49,18 @@ export function StudioHome() {
   }, []);
 
   const featureCards = useMemo<FeatureCard[]>(() => {
-    const projectCount = sites.length + projects.length;
     return [
-      { id: "projects", title: "My Projects", description: projectCount > 0 ? `${projectCount} active project${projectCount === 1 ? "" : "s"} across websites, photos and designs.` : "View and manage all your designs, photos, websites and files.", to: "/projects", icon: <I.layers /> },
+      { id: "website", title: "Website Builder", description: "Build, edit and publish complete websites.", to: "/websites", icon: <I.desktop /> },
       { id: "design", title: "Design Studio", description: "Create stunning graphics, social media posts, and more.", to: "/studio/design", icon: <I.elements /> },
       { id: "photo", title: "Photo Editor", description: "Edit, enhance and transform your photos.", to: "/studio/photo", icon: <I.image /> },
       { id: "templates", title: "Templates", description: "Start with beautiful, customizable templates.", to: "/templates", icon: <I.sections /> },
-      { id: "library", title: "Asset Library", description: "Keep your photos, graphics and files organized.", to: "/library", icon: <I.inbox /> },
       { id: "brand", title: "Brand Kits", description: "Save your colors, logos and fonts for a consistent look.", to: "/brand-kits", icon: <I.palette /> },
       { id: "compress", title: "Image Compressor", description: "Reduce file size without losing quality.", to: "/studio/compress", icon: <I.down /> },
       { id: "convert", title: "File Converter", description: "Convert between file formats with clear status and limits.", to: "/studio/convert", icon: <I.history />, soon: true },
-      { id: "forms", title: "Form Builder", description: "Create beautiful forms and collect responses.", to: "/studio/forms", icon: <I.pages />, soon: true },
+      { id: "forms", title: "Form Creator", description: "Create forms and collect responses safely.", to: "/studio/forms", icon: <I.pages />, soon: true },
+      { id: "pdf", title: "PDF Editor", description: "Edit documents with private, verified processing.", to: "/studio/pdf", icon: <I.pages />, soon: true },
     ];
-  }, [sites.length, projects.length]);
+  }, []);
 
   const templates = useMemo<HomeTemplate[]>(() => {
     const fromSites = siteTemplates.slice(0, 4).map((template) => ({
