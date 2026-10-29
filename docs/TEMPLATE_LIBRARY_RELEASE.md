@@ -9,13 +9,14 @@ gate, decisions) and `docs/TEMPLATE_LIBRARY.md` (how it works).
 
 | Question | Answer | Why |
 |---|---|---|
-| Is the feature ready for **review and merge** into `main`? | **YES, after the founder items below** | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
+| Is the feature ready for **review and merge** into `main`? | **YES, after auth (PR #4) is on `main` and the §14 approvals** | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
 | Is it ready to be **published** to production? | **NOT YET** | The production database and live HTTP were not verified from this sandbox; the founder must run `npm run db:check` first. This change adds **no migration**, so the production schema risk is nil, but the unverified baseline from the icon release checklist still stands. |
 
-Founder answers (2026-10-28, "Yes all") are recorded in §12. Still open before
-merge: **D1** (the workflow PDF itself must be supplied), the merge **order**
-relative to PRs #2, #3 and #4 (§7, a choice, not a yes/no), and **D2**, which is
-approved but waits on that order, so no migration has been written.
+Founder answers (2026-10-28 and 2026-10-29) are recorded in §12. Done: D1 (workflow
+PDF supplied and audited), D5 (fonts), art-direction approval, merge order (auth
+first). Still open before merge: PR #4 must land on `main` first (its base is a
+Replit branch, §7); the D2 migration waits on that; and the workflow v2.1 phase
+approvals in §14.
 
 ## 2. Acceptance criteria (directive §25)
 
@@ -139,9 +140,23 @@ contracts.
   documents (no new fields), so a previous build opens them unchanged. The old
   `/api/templates` endpoint and the six legacy website template ids keep working
   (`sites.template_id` still stores the legacy id).
-* **PR #4 (social auth)** adds migrations `0002` and `0003`. This branch does
-  not, so it cannot collide, but a later template migration would need renumbering
-  after #4. **PRs #2 and #3** change `design.ts`, `DesignEditor.tsx` and
+* **Merge order (founder, 2026-10-29): auth first.** PR #4 (social sign-in) must
+  land before this branch. Findings from reading the repositories, not assumed:
+  * PR #4's base is `replit/auth-baseline-2026-10-26`, **not `main`**, and its
+    branch is 18 commits behind `main` (it forked from the old Phase 1 PR). It
+    needs retargeting or updating onto current `main` before it can merge there;
+    that is the auth owner's work, not this branch's.
+  * It adds migrations `0002` and `0003`. Icons (#2, #3) and PR #14 add none, so
+    after auth lands the next migration number is `0004`.
+  * A throwaway test merge of PR #4's branch into this one conflicts in five
+    files (`src/server/app.ts`, `src/client/dashboard/AccountPage.tsx`,
+    `tests/helpers.ts`, `package.json`, `docs/TESTING.md`), all small and
+    textual. After auth merges, this branch will merge `main` and resolve them,
+    then re-run every check.
+  * The D2 migration will be written on top of `0003`, after auth is on `main`.
+    Writing it earlier would number it against a history this branch does not
+    contain.
+* **PRs #2 and #3** (icons) change `design.ts`, `DesignEditor.tsx` and
   `renderDesign.ts`; this branch changes none of them, so they should merge
   cleanly, and icons can be added to templates only after #2/#3 land and the
   catalog's `design.icons` feature is enabled.
@@ -207,12 +222,47 @@ yes did, and did not, authorise:
 
 | # | Question | Result |
 |---|---|---|
-| 1 | D1: provide `chaos_origins_workflow_v2_1.pdf` | **Open.** I cannot supply the file. When it is added to the repo or the session, I will audit this work against it and report gaps. |
-| 2 | D2: approve one additive migration (provenance column, personal-template metadata, server-side favorites), authored after PR #4's order is settled | **Approved, not started.** The approval is conditional on #4's order, which is unanswered (see 4). I will not write a migration numbered against an order that is not decided. Applying any migration to production stays a separate approval. |
+| 1 | D1: provide `chaos_origins_workflow_v2_1.pdf` | **Done 2026-10-29.** PDF supplied, read in full and audited: `docs/TEMPLATE_LIBRARY_BASELINE.md` section 1. Open items it found: Phase 1, 2, 4 and 7 exit approvals are not recorded (decision 6 below), and release notes and a monitoring plan were missing (drafted in section 13). |
+| 2 | D2: approve one additive migration (provenance column, personal-template metadata, server-side favorites), authored after PR #4's order is settled | **Approved, waiting on a merge.** The order is now settled (auth first), but PR #4 is not on `main` yet, so a `0004` migration cannot be written against the real history. Will start once auth is on `main`. Applying any migration to production stays a separate approval. |
 | 3 | D5: load or self-host the design fonts | **Done.** Self-hosted (§3, §11, `public/fonts/README.md`). Re-measured every template with the real fonts: no overflow. Thumbnails regenerated. All journeys, axe and tests pass. |
-| 4 | Merge order: #4 (auth), then #2/#3 (icons), then this branch, or this branch first? | **Open.** "Yes" does not choose between orders. Needed: which comes first. |
+| 4 | Merge order: #4 (auth), then #2/#3 (icons), then this branch, or this branch first? | **Answered 2026-10-29: "Merge auth first."** Recorded in section 7. Read as an order, not as an instruction to merge PR #4: I have not merged it. |
 | 5 | Approve the 62 templates' art direction | **Recorded.** `docs/TEMPLATE_APPROVALS.json`; inventory shows 62 approved. This is approval of the art direction only. It is not authority to merge or publish. |
 
-Not authorised by "Yes all", and not done: merging PR #13, publishing, any
+Not authorised so far, and not done: merging PR #13 or PR #4, publishing, any
 production database change, any change to production secrets or deployment
 settings. `npm run db:check` is still required before any publish.
+
+Decision 6 (new, from the v2.1 audit): the workflow requires a founder approval
+at the exit of Phase 1 (concept), Phase 2 (scope), Phase 4 (requirements met) and
+Phase 7 (communications). See section 14 for the questions.
+
+## 13. Release notes (draft) and monitoring plan (workflow v2.1 Phase 6)
+
+Not approved, not published. Plain-language draft for when production release is
+authorised:
+
+> **Templates.** Browse 62 ready-made templates: 10 website starters and 52
+> designs for social posts, posters, flyers, logos, business cards, invitations
+> and more. Pick one and it becomes your own project to edit; the original is
+> never changed. Add a Brand Kit to see your colours, fonts and logo in the
+> template before you start. Save your own designs as personal templates and
+> reuse them. Presentations, forms, video, documents and email templates are
+> marked "soon": those editors do not exist yet. Designs now use the same fonts on
+> every device.
+
+Monitoring after release, using only what exists (no new infrastructure):
+* Audit log records `template.used` with template id, version and kit; count
+  uses per template per day to see what people actually start.
+* The template-use rate limit (30 per account per 10 minutes) returns 429; a rise
+  signals scripting or a loop in the client.
+* Watch server 5xx on `/api/template-library/*` and 404 on
+  `/template-previews/*` and `/fonts/*` (a missing preview or font).
+* No client analytics or tracking is added; browsing, favorites and recents stay
+  in the browser.
+
+## 14. Workflow v2.1 approvals still owed (YES/NO)
+
+1. Treat your directive as the Phase 1 approval of the concept?
+2. Treat your directive as the Phase 2 approval of the scope?
+3. Approve, at PR review, that Phase 4 requirements are met?
+4. Approve, at PR review, the Phase 7 communications (UI copy and docs)?

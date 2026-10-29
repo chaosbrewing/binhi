@@ -4,16 +4,47 @@ Status: M0 complete. Written 2026-10-28 on branch `claude/binhi-template-library
 created from `origin/main` @ `73e6092`. Nothing here is published, merged or
 applied to production.
 
-## 1. Governing workflow — limitation (must be resolved by the founder)
+## 1. Governing workflow: Application Development Workflow v2.1
 
-The directive names `chaos_origins_workflow_v2_1.pdf`. It is **not** in this
-repository and was not found anywhere on the build machine (full filesystem
-search). `docs/CREATIVE_STUDIO.md` already records that no canonical seven-phase
-specification was ever found. This record therefore does **not** claim
-conformance to workflow v2.1. It applies the Four-Question Gate exactly as
-written in the directive and the seven-phase mapping in `docs/CREATIVE_STUDIO.md`
-(discover, define, architect, design, build, verify, release) as an explicit
-working mapping. **Decision D1 asks for the authoritative PDF.**
+Decision D1 resolved on 2026-10-29: the founder supplied `chaos_origins_workflow_v2_1.pdf`
+(two pages, "Internal development standard, founder-governed, 26 October 2026").
+It was read in full. Before that, this record used a working mapping taken from
+`docs/CREATIVE_STUDIO.md` (discover, define, architect, design, build, verify,
+release). **That mapping does not match the real standard and is superseded here.**
+`docs/CREATIVE_STUDIO.md` still says no canonical specification was found; it is
+out of this PR's scope and is flagged for the founder.
+
+### Conformance audit against v2.1
+
+Statuses use the v2.1 vocabulary: NOT STARTED, IN PROGRESS, BLOCKED, AWAITING
+APPROVAL, VERIFIED, COMPLETED. Evidence is in `docs/TEMPLATE_LIBRARY_RELEASE.md`.
+
+| v2.1 requirement | Status | Evidence / gap |
+|---|---|---|
+| §1 Four-Question Gate recorded before implementation | VERIFIED | §2 below, written before the first code commit |
+| Phase 1 Evaluation, exit: founder approves concept | **AWAITING APPROVAL** | The founder's directive commissioned the feature, but no separate concept approval was recorded. Not assumed. |
+| Phase 2 Planning and MVP, exit: founder approves scope | **AWAITING APPROVAL** | Same: scope came from the directive; no separate scope approval was recorded. Not assumed. |
+| Phase 3 UX and Design, exit: design passes review | VERIFIED | Founder approved the art direction of the 62 templates (2026-10-28, `docs/TEMPLATE_APPROVALS.json`); axe-core, keyboard and phone-width checks pass; loading, empty, error and "soon" states exist |
+| Phase 4 Engineering, exit: approved requirements met | AWAITING APPROVAL | Built within the directive; no migration (controlled-migration rule trivially met); founder review of PR #13 pending |
+| Phase 5 Quality Assurance, exit: required tests pass, critical blockers resolved | VERIFIED | Commands, outcomes and CI runs recorded in the release report; no critical blocker open. Passing tests are not claimed as production readiness |
+| Phase 6 Release and Feedback | **NOT STARTED** | Needs explicit production approval. Rollback is documented. Release notes and a monitoring plan were missing; drafted in the release report. Configuration, secrets and backups are verified only at release time with `npm run db:check`, which has not been run |
+| Phase 7 Product Language, exit: communications approved | AWAITING APPROVAL | UI copy and docs were scanned for jargon and inflated claims: none found. No communications approval recorded |
+| §3 Execution protocol: records retrieved, approvals obtained at gates, authorised scope only, outcomes verified, decisions recorded | VERIFIED | Decisions D1 to D5 and the founder's answers are recorded; nothing merged, published or applied to production |
+| §4 Governance: authorisation for destructive, financial, security-sensitive and production actions; never fabricate access, tests or approvals | VERIFIED | None taken. Approvals are recorded only from the founder's own words and bound to content fingerprints |
+| §5 Default response contract (Objective, Current State, Execution Plan, Verification, Risks and Blockers, Decisions Required (Yes/No), Next Action) | IN PROGRESS | Used from 2026-10-29. Earlier reports followed the directive's own longer format, which listed these headings under other names |
+
+### Status record (v2.1 §4)
+
+| Field | Value |
+|---|---|
+| Project | BINHI Template Library |
+| Owner | Founder |
+| Version | v1.0 (template manifest v1) |
+| Phase | 5 complete, 6 not started |
+| Overall state | AWAITING APPROVAL |
+| Branch / PR | `claude/binhi-template-library`, PR #13 (draft) |
+| Dependencies | PR #4 (auth) merges first, by founder order; icons (#2, #3) are independent |
+| Open risks | see `docs/TEMPLATE_LIBRARY_RELEASE.md` section 11 |
 
 ## 2. Four-Question Gate (recorded before implementation)
 
@@ -155,14 +186,14 @@ taxonomy with zero public templates.
 |---|---|---|---|
 | Migration number collision with PR #4 | Broken migration chain at merge | Keep M1–M2 migration-free; regenerate our migration after #4's order is decided | Founder (D2) |
 | Design schema collisions with PR #2/#3 | Merge conflicts, broken icon dependency | No design-schema change in v1.0 without D3; no icon dependency | Founder (D3) |
-| Workflow PDF missing | Governance gaps | Working mapping, request the PDF | Founder (D1) |
+| Workflow PDF missing | Governance gaps | Resolved 2026-10-29: PDF supplied and audited (section 1) | Founder (D1) |
 | Replit workspace behind main | Stale deploy base | Sync only after approved merge | Founder |
 | Production schema unverified | Unknown prod state | Founder runs `npm run db:check` before any publish | Founder |
 | Seed target of 60 | Padding or broken templates | Count only templates passing the editor journey; report any shortfall for approval | Claude/Founder |
 
 ## 8. Decisions required (YES/NO)
 
-* **D1.** Provide `chaos_origins_workflow_v2_1.pdf` (or its verified repo path)? Until then the working mapping is used. *Still open.*
+* **D1.** Provide `chaos_origins_workflow_v2_1.pdf`. **Resolved 2026-10-29:** supplied and audited (section 1).
 * **D2.** Approve one additive migration (a nullable `template_ref` column on `binhi_projects` for provenance, a small metadata column for personal templates, and server-side favorites/recents tables), authored after the order of PR #4 versus this work is decided? Default while open: no migration; provenance lives in the audit log, favorites/recents stay in the browser, personal templates have a name only. *Still open; nothing was blocked by it.*
 * **D3.** Keep v1.0 free of any design-schema change and of icon dependencies, with image placeholders as labelled frames? **Applied as the default** (recommended YES); no design-schema change was made.
 * **D4.** Accept that the first release lists templates only for Websites and Design Studio output, with Photo, Forms, Documents, Presentations, Email and Video as documented contracts only? **Applied as the default** (recommended YES).
