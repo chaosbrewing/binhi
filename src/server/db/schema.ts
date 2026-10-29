@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, jsonb, index, uniqueIndex, customType } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, jsonb, index, uniqueIndex, customType, boolean } from "drizzle-orm/pg-core";
 
 /**
  * BINHI persistence. Every table is prefixed `binhi_` so the schema can live
@@ -18,6 +18,7 @@ export const users = pgTable(
     id: text("id").primaryKey(),
     email: text("email").notNull(),
     passwordHash: text("password_hash").notNull(),
+    passwordEnabled: boolean("password_enabled").notNull().default(true),
     displayName: text("display_name").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -259,3 +260,39 @@ export const brandKits = pgTable(
   },
   (t) => ({ ownerIdx: index("binhi_brand_kits_owner_idx").on(t.ownerId) }),
 );
+
+/** External identities map to immutable BINHI users; never use provider email as an identity key. */
+export const authIdentities = pgTable("binhi_auth_identities", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull(),
+  issuer: text("issuer").notNull(),
+  subject: text("subject").notNull(),
+  email: text("email"),
+  /** Apple consent revocation only; AES-GCM ciphertext, never a private key or plaintext token. */
+  revocationCiphertext: text("revocation_ciphertext"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => ({
+  identity: uniqueIndex("binhi_auth_identity_subject_idx").on(t.issuer, t.subject),
+  userIssuer: uniqueIndex("binhi_auth_identity_user_issuer_idx").on(t.userId, t.issuer),
+}));
+
+export const oauthTransactions = pgTable("binhi_oauth_transactions", {
+  stateHash: text("state_hash").primaryKey(),
+  bindingHash: text("binding_hash").notNull(),
+  provider: text("provider").notNull(),
+  intent: text("intent").notNull(),
+  nonceHash: text("nonce_hash").notNull(),
+  verifierCiphertext: text("verifier_ciphertext"),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  sessionId: text("session_id").references(() => sessions.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => ({ expiry: index("binhi_oauth_transactions_expiry_idx").on(t.expiresAt) }));
+
+export const authGrants = pgTable("binhi_auth_grants", {
+  tokenHash: text("token_hash").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionId: text("session_id").notNull().references(() => sessions.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+}, t => ({ expiry: index("binhi_auth_grants_expiry_idx").on(t.expiresAt) }));

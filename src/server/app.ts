@@ -29,11 +29,14 @@ import { BrandKitService } from "./creative/brandKits.js";
 import { registerCreativeRoutes } from "./creative/routes.js";
 import { TemplateLibraryService } from "./templates/library.js";
 import { registerTemplateLibraryRoutes } from "./templates/routes.js";
+import { SocialAuth, GRANT_COOKIE, bindingCookie, callbackPath } from "./auth/social.js";
+import { registerSocialRoutes } from "./auth/routes.js";
 
 declare module "fastify" {
   interface FastifyRequest {
     user: AuthUser | null;
     sessionToken: string | undefined;
+    authSessionId: string | null;
   }
 }
 
@@ -46,6 +49,7 @@ export interface AppDeps {
   fetchImpl?: typeof fetch;
   /** Test seam: replace the shipped template catalog. Production never sets this. */
   templates?: { catalog?: readonly unknown[]; designs?: Readonly<Record<string, unknown>>; collections?: import("./templates/library.js").LibraryDeps["collections"] };
+  oidcFetchImpl?: typeof fetch;
 }
 
 export interface BinhiApp {
@@ -63,6 +67,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   const created = deps.db ? null : createDb(config.databaseUrl);
   const db = deps.db ?? created!.db;
   const sql = deps.sql ?? created!.sql;
+  const social = new SocialAuth(sql, config, deps.oidcFetchImpl);
   const storage = deps.storage ?? (config.mediaStorage === "disk" ? new DiskStorage(config.mediaDir!) : new PostgresBlobStorage(db));
 
   const sessionsSvc = new SessionService(db, config.sessionSecret);
@@ -99,6 +104,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
 
   app.decorateRequest("user", null);
   app.decorateRequest("sessionToken", undefined);
+  app.decorateRequest("authSessionId", null);
 
   app.addHook("onRequest", async (req, reply) => {
     reply.header("X-Content-Type-Options", "nosniff");
@@ -106,14 +112,17 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
     reply.header("X-Frame-Options", "SAMEORIGIN");
     req.sessionToken = req.cookies[SESSION_COOKIE];
     if (req.url.startsWith("/api/")) {
+      if (req.url.startsWith("/api/auth/")) reply.header("Cache-Control", "no-store");
       if (!apiLimiter.check(`api:${req.ip}`)) throw tooMany();
       // CSRF: every state-changing API call must carry the editor header; browsers
       // never add custom headers to cross-site form posts or simple requests.
-      if (req.method !== "GET" && req.method !== "HEAD" && req.headers["x-binhi-request"] !== "editor") {
+      const appleCallback = req.method === "POST" && (req.routeOptions.config as { appleOAuthCallback?: boolean }).appleOAuthCallback === true;
+      if (req.method !== "GET" && req.method !== "HEAD" && !appleCallback && req.headers["x-binhi-request"] !== "editor") {
         throw forbidden("Missing request header");
       }
       const resolved = await sessionsSvc.resolve(req.sessionToken);
       req.user = resolved?.user ?? null;
+      req.authSessionId = resolved?.sessionId ?? null;
     }
   });
 
@@ -140,6 +149,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   const setSessionCookie = (reply: FastifyReply, token: string) => {
     reply.setCookie(SESSION_COOKIE, token, { httpOnly: true, sameSite: "lax", secure: config.env === "production", path: "/", maxAge: Math.floor(SESSION_TTL_MS / 1000) });
   };
+  registerSocialRoutes(app, social, sessionsSvc, config, requireUser, setSessionCookie);
 
   /* ---------------------------------------------------------------- health */
   app.get("/api/health", async () => {
@@ -169,7 +179,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
     const body = Credentials.parse(req.body);
     const rows = await db.select().from(users).where(and(eq(users.email, body.email), isNull(users.deletedAt))).limit(1);
     const user = rows[0];
-    const ok = user ? await verifyPassword(body.password, user.passwordHash) : await verifyPassword(body.password, "scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAA");
+    const ok = user?.passwordEnabled ? await verifyPassword(body.password, user.passwordHash) : await verifyPassword(body.password, "scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAA");
     if (!user || !ok) throw unauthorized("That email and password don't match");
     const session = await sessionsSvc.create(user.id, req.headers["user-agent"]);
     setSessionCookie(reply, session.token);
@@ -179,6 +189,8 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
   app.post("/api/auth/logout", async (req, reply) => {
     await sessionsSvc.revoke(req.sessionToken);
     reply.clearCookie(SESSION_COOKIE, { path: "/" });
+    reply.clearCookie(GRANT_COOKIE, { path: "/api/auth" });
+    for (const provider of ["google", "apple"] as const) reply.clearCookie(bindingCookie(provider), { path: callbackPath(provider) });
     return { ok: true };
   });
 
@@ -188,9 +200,14 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
 
   app.delete("/api/auth/account", async (req, reply) => {
     const user = requireUser(req);
-    const body = z.object({ password: z.string().min(1) }).parse(req.body);
+    if (!authLimiter.check(`delete:${user.id}`)) throw tooMany();
+    const body = z.object({ password: z.string().min(1).max(PASSWORD_MAX).optional() }).parse(req.body ?? {});
     const rows = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
-    if (!rows[0] || !(await verifyPassword(body.password, rows[0].passwordHash))) throw unauthorized("That password is not correct");
+    if (!rows[0]) throw unauthorized();
+    if (body.password) {
+      if (!rows[0].passwordEnabled || !(await verifyPassword(body.password, rows[0].passwordHash))) throw unauthorized("That password is not correct");
+    } else await social.consumeGrant(user.id, req.authSessionId!, req.cookies[GRANT_COOKIE]);
+    await social.revokeForDeletion(user.id);
     const owned = await siteSvc.list(user.id);
     for (const s of owned) {
       await publishSvc.unpublish(user.id, s.id, req.ip).catch(() => undefined);
@@ -201,7 +218,9 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
     for (const a of await librarySvc.list(user.id)) await librarySvc.delete(user.id, a.id, { force: true }, req.ip);
     await db.update(users).set({ deletedAt: new Date(), email: `deleted-${user.id}@deleted.invalid`, passwordHash: "deleted" }).where(eq(users.id, user.id));
     await sessionsSvc.revokeAllForUser(user.id);
+    await social.removeIdentities(user.id);
     reply.clearCookie(SESSION_COOKIE, { path: "/" });
+    reply.clearCookie(GRANT_COOKIE, { path: "/api/auth" });
     await audit(db, { actorId: user.id, action: "account.deleted", ip: req.ip });
     return { ok: true };
   });

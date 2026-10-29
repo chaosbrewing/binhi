@@ -9,6 +9,7 @@ export const TEST_DATABASE_URL = getTestDatabaseUrl();
 
 /** Build a fresh app against the test database with every BINHI table emptied. */
 export interface TestAppOptions {
+  oidcFetchImpl?: typeof fetch;
   /** Empty every BINHI table first (default true). Pass false for a second app sharing the database. */
   truncate?: boolean;
   /** Replace the fetch used for publication verification (default: inject into this app). */
@@ -35,7 +36,7 @@ export async function testApp(overrides: Record<string, string> = {}, options: T
     const res = await appRef!.inject({ method: "GET", url: url.pathname + url.search, headers: (init?.headers as Record<string, string>) ?? {} });
     return new Response(res.body, { status: res.statusCode, headers: res.headers as Record<string, string> });
   });
-  const built = await buildApp({ config, db, sql, fetchImpl, templates: options.templates });
+  const built = await buildApp({ config, db, sql, fetchImpl, oidcFetchImpl: options.oidcFetchImpl, templates: options.templates });
   appRef = built.app;
   const close = built.close;
   built.close = async () => {

@@ -15,6 +15,20 @@
       "when": 1792835271269,
       "tag": "0001_binhi_creative_studio",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793035971896,
+      "tag": "0002_nervous_carlie_cooper",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793036923986,
+      "tag": "0003_awesome_the_enforcers",
+      "breakpoints": true
     }
   ]
 }

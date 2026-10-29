@@ -1,13 +1,75 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api.js";
+import type { OAuthIntent, ProviderStatus, SocialProvider } from "../../core/auth.js";
 import { useAuth } from "./AuthContext.js";
 import { Logo } from "../components/Logo.js";
+import { OAuthCallbackNotice } from "./OAuthCallbackNotice.js";
+import "./social-auth.css";
 
 function useRedirectTarget(): string {
   const loc = useLocation();
   const from = (loc.state as { from?: string } | null)?.from;
   return from && from.startsWith("/") ? from : "/";
+}
+
+function OAuthOptions({ intent }: { intent: Extract<OAuthIntent, "login"> }) {
+  const [providers, setProviders] = useState<ProviderStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [pending, setPending] = useState<SocialProvider | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const result = await api.authProviders();
+      setProviders(result.providers);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { void load(); }, []);
+
+  const begin = async (provider: SocialProvider) => {
+    setPending(provider);
+    setError(null);
+    try {
+      const result = await api.startOAuth(provider, intent);
+      window.location.assign(result.redirectUrl);
+    } catch {
+      setError("Could not start sign-in. Please try again.");
+      setPending(null);
+    }
+  };
+
+  return (
+    <section className="auth-social" aria-label="Other sign-in options">
+      <p className="auth-alt">Or continue with</p>
+      {loading ? <p className="muted" role="status">Checking sign-in options…</p> : loadError ? (
+        <div><p className="form-error" role="alert">Sign-in options could not be checked.</p><button type="button" className="btn" onClick={() => void load()}>Try again</button></div>
+      ) : (
+        <div className="auth-social-options">
+          {(["google", "apple"] as const).map((id) => {
+            const provider = providers.find((item) => item.id === id);
+            const label = provider?.label ?? (id === "google" ? "Google" : "Apple");
+            return (
+              <div key={id}>
+                <button type="button" className="btn" disabled={!provider?.available || pending !== null} onClick={() => void begin(id)}>
+                  {pending === id ? `Connecting to ${label}…` : `Continue with ${label}`}
+                </button>
+                {!provider?.available && <span className="muted auth-provider-note">{provider ? "Setup required — this option is not available yet." : "Setup status unavailable."}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {error && <p className="form-error" role="alert">{error}</p>}
+    </section>
+  );
 }
 
 export function SignIn() {
@@ -37,6 +99,8 @@ export function SignIn() {
 
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to keep growing your website.">
+      <OAuthCallbackNotice />
+      <OAuthOptions intent="login" />
       <form onSubmit={submit} className="auth-form" noValidate>
         <label>
           Email
@@ -82,6 +146,8 @@ export function SignUp() {
 
   return (
     <AuthShell title="Plant your first site" subtitle="A BINHI account keeps your websites, media and publishing history together.">
+      <OAuthCallbackNotice />
+      <OAuthOptions intent="login" />
       <form onSubmit={submit} className="auth-form" noValidate>
         <label>
           Your name

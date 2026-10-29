@@ -1,0 +1,70 @@
+.auth-social {
+  margin: 14px 0 18px;
+}
+
+.auth-social-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.auth-social-options > div {
+  display: grid;
+  gap: 4px;
+  min-width: min(100%, 190px);
+}
+
+.auth-provider-note {
+  display: block;
+  font-size: 12px;
+}
+
+.auth-identities {
+  list-style: none;
+  margin: 10px 0 16px;
+  padding: 0;
+  border-top: 1px solid var(--panel-border);
+}
+
+.auth-identities li {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(100px, 2fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.auth-identities li > span,
+.auth-identities small {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.auth-identities small {
+  grid-column: 1 / -1;
+}
+
+.auth-reauth {
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+}
+
+@media (max-width: 560px) {
+  .auth-identities li {
+    grid-template-columns: 1fr auto;
+  }
+
+  .auth-identities li > span {
+    grid-column: 1;
+  }
+
+  .auth-identities li > button {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}

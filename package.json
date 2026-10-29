@@ -22,6 +22,7 @@
     "test:e2e:templates": "node --import tsx e2e/templates.ts",
     "templates:assets": "node --import tsx scripts/templates/build-assets.ts",
     "templates:assets:check": "node --import tsx scripts/templates/build-assets.ts --check",
+    "test:e2e:auth": "node --import tsx e2e/social-auth.ts",
     "test:e2e:home-responsive": "node --import tsx e2e/homepage-responsive.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",
