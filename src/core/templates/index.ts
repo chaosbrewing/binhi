@@ -8,7 +8,7 @@ import { validateDocument } from "../ops/apply.js";
 export interface TemplateDefinition {
   id: string;
   name: string;
-  category: "Personal portfolio" | "Creative studio" | "Freelancer services" | "Small business" | "Minimal landing page" | "Blank";
+  category: "Personal portfolio" | "Creative studio" | "Freelancer services" | "Small business" | "Minimal landing page" | "Blank" | "Link in bio" | "Event" | "Product launch" | "Community";
   description: string;
   /** Accent colour shown on the template card. */
   swatch: [string, string, string];
@@ -229,7 +229,105 @@ const landing: TemplateDefinition = {
   },
 };
 
-export const TEMPLATES: TemplateDefinition[] = [blank, portfolio, studio, freelancer, business, landing];
+const linkinbio: TemplateDefinition = {
+  id: "linkinbio",
+  name: "Link in bio",
+  category: "Link in bio",
+  description: "One short page for your social profiles: a photo, a line about you and a stack of big buttons.",
+  swatch: ["#fdf2f8", "#831843", "#db2777"],
+  build: (name) => {
+    const seed: ThemeSeed = { primary: "#db2777", secondary: "#be185d", accent: "#fbcfe8", background: "#fdf2f8", surface: "#ffffff", text: "#500724", muted: "#9d4a6c", border: "#fbcfe8", heading: "DM Sans", body: "DM Sans", radius: 999 };
+    const link = (label: string, variant: "primary" | "secondary" | "ghost") => {
+      const b = button(label, variant, { kind: "url", href: "https://example.com", newTab: true });
+      b.style = { ...b.style, width: "100%", justifyContent: "center" };
+      return b;
+    };
+    const home = page("Home", "home", [
+      section(
+        [
+          image(`${name}`, { width: 140, aspectRatio: "1 / 1", radius: 999, objectFit: "cover" }),
+          heading(name, 1, { textAlign: "center" }, "heading2"),
+          para("Designer and maker. New work every week.", { textAlign: "center" }),
+          link("My latest project", "primary"),
+          link("Shop the prints", "secondary"),
+          link("Book a session", "secondary"),
+          link("Read the newsletter", "secondary"),
+          makeNode("socialLinks", { links: [{ network: "instagram", url: "https://instagram.com/" }, { network: "youtube", url: "https://youtube.com/" }, { network: "email", url: "mailto:hello@example.com" }], size: 28, style: "circle" }, { style: { display: "flex", gap: 14, justifyContent: "center" } }),
+        ],
+        { padY: 56, align: "center", contentWidth: 480 },
+      ),
+    ]);
+    return finish(name, seed, [home], null, footerNode(name, false), "Links to everything in one place.");
+  },
+};
+
+const event: TemplateDefinition = {
+  id: "event",
+  name: "Event website",
+  category: "Event",
+  description: "A one-day event page: date and place, the programme, what to expect and an RSVP form.",
+  swatch: ["#f0fdfa", "#134e4a", "#0e7490"],
+  build: (name) => {
+    const seed: ThemeSeed = { primary: "#0e7490", secondary: "#155e75", accent: "#fcd34d", background: "#f0fdfa", surface: "#ccfbf1", text: "#134e4a", muted: "#41706b", border: "#99f6e4", heading: "Georgia", body: "DM Sans", radius: 10 };
+    const rsvp = page("RSVP", "rsvp", [
+      section([heading("Will you join us?", 1), para("Let us know you are coming so we can plan for everyone."), makeNode("form", { title: "", fields: [{ id: newId("fld"), type: "text", label: "Name", required: true }, { id: newId("fld"), type: "email", label: "Email", required: true }, { id: newId("fld"), type: "select", label: "Guests", options: ["Just me", "2", "3", "4 or more"], required: true }, { id: newId("fld"), type: "textarea", label: "Anything we should know?", required: false }], submitLabel: "RSVP", successMessage: "Thank you! We will see you there." })], { contentWidth: 720 }),
+    ]);
+    const home = page("Home", "home", [
+      section([makeNode("hero", {}, { children: [para("Saturday 14 June · 2 pm to late", { letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--b-primary)" }, "caption"), heading(name, 1, undefined, "display"), para("Riverside Park, Your City. Music, food and good company by the water. Free for everyone."), stack([button("RSVP", "primary", { kind: "page", pageId: rsvp.id }), button("See the programme", "secondary", { kind: "anchor", anchor: "programme" })], { justifyContent: "center" })] })], { padY: 130, bg: { type: "color", color: "var(--b-surface)" } }),
+      section([heading("Programme", 2, { textAlign: "center" }), columns(3, [[card("2 pm", "Gates open, food stalls and games for children.")], [card("4 pm", "Live music from local bands on the main stage.")], [card("8 pm", "Lanterns on the water and a closing set.")]])], { anchor: "programme" }),
+      section([columns(2, [[heading("Good to know"), para("Bring a blanket. Food and drink are on sale, and water is free. The site is step-free and there is a quiet space near the entrance.")], [makeNode("contact", { email: "hello@example.com", phone: "+00 000 000 000", address: "Riverside Park, Your City", hours: "Saturday 2 pm to 11 pm" })]])], { bg: { type: "color", color: "var(--b-surface)" } }),
+      section([heading("Save your place", 2, { textAlign: "center" }), stack([button("RSVP now", "primary", { kind: "page", pageId: rsvp.id })], { justifyContent: "center" })], { align: "center" }),
+    ]);
+    return finish(name, seed, [home, rsvp], navHeader(name, "RSVP", rsvp.id), footerNode(name), "An open-air community day by the river.");
+  },
+};
+
+const launch: TemplateDefinition = {
+  id: "launch",
+  name: "Product launch",
+  category: "Product launch",
+  description: "A launch page with a bold headline, three benefits, three plans and a questions section.",
+  swatch: ["#fafafa", "#18181b", "#e11d48"],
+  build: (name) => {
+    const seed: ThemeSeed = { primary: "#e11d48", secondary: "#be123c", accent: "#fecdd3", background: "#fafafa", surface: "#ffffff", text: "#18181b", muted: "#71717a", border: "#e4e4e7", heading: "Space Grotesk", body: "Inter", radius: 14 };
+    const plan = (title: string, price: string, body: string, featured = false) => {
+      const c = card(title, body);
+      c.children = [heading(title, 3), heading(price, 2), para(body, undefined, "small"), button(featured ? "Start free trial" : "Choose plan", featured ? "primary" : "secondary", { kind: "anchor", anchor: "signup" })];
+      return c;
+    };
+    const home = page("Home", "home", [
+      section([makeNode("hero", {}, { children: [para("Now in public beta", { letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--b-primary)" }, "caption"), heading(`${name}: finish your work in half the time`, 1, undefined, "display"), para("A calmer way to plan, track and ship. Set up in minutes, no training needed."), stack([button("Start free", "primary", { kind: "anchor", anchor: "signup" }), button("See pricing", "ghost", { kind: "anchor", anchor: "pricing" })], { justifyContent: "center" })] })], { padY: 130 }),
+      section([columns(3, [[card("Plan in minutes", "Turn a messy list into a clear week with one click.", "check")], [card("See progress", "A single view shows what is done and what is next.", "sparkle")], [card("Share easily", "Send a link. No account needed to follow along.", "heart")]])], { bg: { type: "color", color: "var(--b-surface)" } }),
+      section([heading("Simple pricing", 2, { textAlign: "center" }), columns(3, [[plan("Starter", "Free", "For one person trying it out.")], [plan("Team", "$12", "Per person per month, billed yearly.", true)], [plan("Business", "$29", "Per person per month with priority support.")]])], { anchor: "pricing" }),
+      section([heading("Questions", 2), heading("Can I try it first?", 3), para("Yes. The Starter plan is free and you can upgrade at any time."), heading("Can I cancel?", 3), para("Anytime, from your account. We never lock you in.")], { contentWidth: 760, bg: { type: "color", color: "var(--b-surface)" } }),
+      section([heading("Get early access", 2, { textAlign: "center" }), makeNode("form", { fields: [{ id: newId("fld"), type: "email", label: "Email", placeholder: "you@example.com", required: true }], submitLabel: "Join the beta", successMessage: "You are in. Watch your inbox." }, { style: { width: "100%", maxWidth: 420, display: "flex", flexDirection: "column", gap: 12 } })], { align: "center", anchor: "signup", padY: 96 }),
+    ]);
+    return finish(name, seed, [home], navHeader(name), footerNode(name, false), "A calmer way to plan, track and ship.");
+  },
+};
+
+const community: TemplateDefinition = {
+  id: "community",
+  name: "Community group",
+  category: "Community",
+  description: "A site for a club, charity or neighbourhood group: what you do, how to help, what's on and how to reach you.",
+  swatch: ["#f7fee7", "#14532d", "#15803d"],
+  build: (name) => {
+    const seed: ThemeSeed = { primary: "#15803d", secondary: "#166534", accent: "#bbf7d0", background: "#f7fee7", surface: "#ecfccb", text: "#14532d", muted: "#4d7c52", border: "#d9f99d", heading: "DM Sans", body: "Lora", radius: 20 };
+    const contact = page("Contact", "contact", [
+      section([heading("Get in touch", 1), para("Questions, ideas or want to help? Write to us and a volunteer will reply within a few days."), makeNode("form", {})], { contentWidth: 720 }),
+    ]);
+    const home = page("Home", "home", [
+      section([makeNode("hero", {}, { children: [heading(`${name} brings neighbours together`, 1, undefined, "display"), para("We run weekly meals, repair cafés and clean-up days for everyone nearby. All are welcome."), stack([button("Get involved", "primary", { kind: "page", pageId: contact.id }), button("What's on", "secondary", { kind: "anchor", anchor: "whats-on" })], { justifyContent: "center" })] })], { padY: 120, bg: { type: "color", color: "var(--b-surface)" } }),
+      section([heading("How you can help", 2, { textAlign: "center" }), columns(3, [[card("Volunteer", "Give a couple of hours. We will match you to something you enjoy.", "heart")], [card("Donate", "Gifts of any size keep the doors open. Ask us how.", "sparkle")], [card("Spread the word", "Tell a neighbour or share our page with a friend.", "check")]])]),
+      section([heading("What's on", 2), columns(2, [[card("Community meal", "Every Thursday, 6 pm. Pay what you can.")], [card("Repair café", "First Saturday of the month, 10 am to 1 pm.")]])], { anchor: "whats-on", bg: { type: "color", color: "var(--b-surface)" } }),
+      section([heading("Find us", 2, { textAlign: "center" }), makeNode("contact", { email: "hello@example.com", phone: "+00 000 000 000", address: "The Community Hall, 1 Example Street", hours: "Mon to Fri 9 am to 5 pm" })], { align: "center" }),
+    ]);
+    return finish(name, seed, [home, contact], navHeader(name, "Get involved", contact.id), footerNode(name), "A friendly local community group.");
+  },
+};
+
+export const TEMPLATES: TemplateDefinition[] = [blank, portfolio, studio, freelancer, business, landing, linkinbio, event, launch, community];
 
 export function getTemplate(id: string): TemplateDefinition | undefined {
   return TEMPLATES.find((t) => t.id === id);

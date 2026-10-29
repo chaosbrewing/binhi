@@ -62,5 +62,6 @@ export const I = {
   sun: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z|M12 1v2|M12 21v2|M4.2 4.2l1.4 1.4|M18.4 18.4l1.4 1.4|M1 12h2|M21 12h2|M4.2 19.8l1.4-1.4|M18.4 5.6l1.4-1.4"),
   moon: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"),
   more: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z|M19 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z|M5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"),
+  star: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21.1 7 14.2 2 9.3l6.9-1z"),
   rocket: (p: SVGProps<SVGSVGElement> = {}) => base(p, "M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2 0-2.8a2 2 0 0 0-3 0z|M12 15l-3-3a22 22 0 0 1 2-3.9A12.6 12.6 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z|M9 12H4s.6-3.3 2-4c1.6-.9 5 0 5 0|M12 15v5s3.3-.6 4-2c.9-1.6 0-5 0-5"),
 };

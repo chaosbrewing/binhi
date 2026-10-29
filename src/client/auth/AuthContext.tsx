@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, type User } from "../api.js";
+import { clearPrefs } from "../templates/prefs.js";
 
 interface AuthState {
   user: User | null;
@@ -31,9 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [refresh]);
   const logout = useCallback(async () => {
+    const id = user?.id;
     await api.logout();
+    if (id) clearPrefs(id);
     setUser(null);
-  }, []);
+  }, [user]);
   const value = useMemo(() => ({ user, loading, signupEnabled, refresh, setUser, logout }), [user, loading, signupEnabled, refresh, logout]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

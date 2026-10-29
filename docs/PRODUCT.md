@@ -28,7 +28,7 @@ operations and intelligence without a rebuild.
 | Feature | Problem | Outcome | Simplest implementation | Data | Success criterion | Privacy |
 | --- | --- | --- | --- | --- | --- | --- |
 | Accounts | Work must be private and durable | Sign up, return later | Email/password, session cookie | `binhi_users`, `binhi_sessions` | Reopen a site after sign-out/in | Password hashed (scrypt); deletion removes everything |
-| Templates | Blank pages intimidate | Start from a credible layout | 5 curated templates + blank, same registry | Document JSON | Every template renders responsively with replaced content | — |
+| Templates | Blank pages intimidate | Start from a credible layout | Template Library: 10 website starters and a curated set of Design Studio templates, searchable by format, category and style, with Brand Kit preview and private personal templates (see `docs/TEMPLATE_LIBRARY.md`; extension of the original charter row, pending founder confirmation) | Document JSON; website revisions | Every template passes its full journey: preview, create, edit, reopen, export or publish | — |
 | Canvas editing | Property forms are slow | Direct manipulation | iframe canvas on the shared renderer + overlay | Operations | Select, move, resize, edit text without losing content | — |
 | Structured + freeform layout | Freeform breaks on phones; grids feel rigid | Choose per container | `layout.mode` flow/free with bounded placement | Node layout/placement | Mobile never overflows; freeform scales or stacks | — |
 | Responsive overrides | Desktop designs collapse on mobile | Per-breakpoint styles | Desktop base + tablet/mobile overrides in CSS media queries | `responsive`, `placement.tablet/mobile` | Preview equals published output | — |

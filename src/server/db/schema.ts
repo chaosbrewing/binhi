@@ -49,6 +49,9 @@ export const sites = pgTable(
     /** Public slug under /s/<slug>/. Unique across BINHI. */
     slug: text("slug").notNull(),
     templateId: text("template_id").notNull(),
+    /** Template Library provenance: which shared template (and version) this site was created from. Null for sites not made from a library template. */
+    sourceTemplateId: text("source_template_id"),
+    sourceTemplateVersion: integer("source_template_version"),
     /** Current draft document (canonical). */
     document: jsonb("document").notNull(),
     /** Monotonic draft revision; every applied batch increments it. */
@@ -228,6 +231,14 @@ export const projects = pgTable(
     schemaVersion: integer("schema_version").notNull().default(1),
     /** Optimistic concurrency: clients send the revision they loaded; a mismatch is a 409. */
     revision: integer("revision").notNull().default(0),
+    /** Template Library provenance: `tpl.*` for a shared template, `personal:<project id>` for one of the owner's own. Null otherwise. */
+    sourceTemplateId: text("source_template_id"),
+    sourceTemplateVersion: integer("source_template_version"),
+    /** Personal-template details; used only by `design-template` projects and never part of the document or its revision. */
+    description: text("description"),
+    category: text("category"),
+    tags: jsonb("tags").$type<string[]>(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -244,6 +255,17 @@ export const assetUsages = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({ pk: uniqueIndex("binhi_asset_usages_pk").on(t.assetId, t.projectId), projectIdx: index("binhi_asset_usages_project_idx").on(t.projectId) }),
+);
+
+/** A person's favorite shared templates. Explicit, owner-only, removed with the account. Browsing and recents are not stored. */
+export const templateFavorites = pgTable(
+  "binhi_template_favorites",
+  {
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    templateId: text("template_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({ pk: uniqueIndex("binhi_template_favorites_pk").on(t.userId, t.templateId) }),
 );
 
 export const brandKits = pgTable(
