@@ -10,13 +10,14 @@ gate, decisions) and `docs/TEMPLATE_LIBRARY.md` (how it works).
 | Question | Answer | Why |
 |---|---|---|
 | Is the feature ready for **review and merge** into `main`? | **YES, after auth (PR #4) is on `main`** | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
-| Is it ready to be **published** to production? | **NOT YET** | The production database and live HTTP were not verified from this sandbox; the founder must run `npm run db:check` first. This change adds **no migration**, so the production schema risk is nil, but the unverified baseline from the icon release checklist still stands. |
+| Is it ready to be **published** to production? | **NOT YET** | The production database and live HTTP were not verified from this sandbox; the founder must run `npm run db:check` first. This change now adds **one additive migration (`0004`)** that has only ever run on disposable test databases; applying it to production needs a backup and its own founder approval (§7). The unverified baseline from the icon release checklist also still stands. |
 
 Founder answers (2026-10-28 and 2026-10-29) are recorded in §12. Done: D1 (workflow
-PDF supplied and audited), D5 (fonts), art-direction approval, merge order (auth
-first). Still open before merge: PR #4 must land on `main` first (its base is a
-Replit branch, §7); the D2 migration waits on that. The workflow v2.1 approvals in
-§14 were given on 2026-10-29.
+PDF supplied and audited), D2 (migration `0004` written and tested on disposable
+databases), D5 (fonts), art-direction approval, merge order (auth first, and auth
+is now merged into `main`), and the workflow v2.1 approvals in §14. Still open: the
+Phase 4 approval for the migration work (new since the §14 approval, which covered
+`c0de6dd`), and production approval, which has not been requested.
 
 ## 2. Acceptance criteria (directive §25)
 
@@ -31,7 +32,7 @@ Replit branch, §7); the D2 migration waits on that. The workflow v2.1 approvals
 | 7 | Projects reopen without loss | met | journey (reload, layer count, edited text) |
 | 8 | Shared templates remain unchanged | met | journey and integration compare the template before and after |
 | 9 | Brand Kit works on supported types | **met for BINHI templates (designs and websites)**; not available for personal templates | `template-brand.test.ts` (8), integration (5), journey (real-pixel preview, apply, revision 1, restore) |
-| 10 | Users create and reuse private templates | **met, with a name only** | integration (5), journey; description/category/tags/archive need decision D2 |
+| 10 | Users create and reuse private templates | **met, with description, category, tags and archive** (migration `0004`) | integration (5 + 6 for details), journey |
 | 11 | Dependencies remain resolvable | met | validator requires every dependency to resolve; shipped templates have none outside Website/Design |
 | 12 | Unsupported editors are not falsely advertised | met | validator blocks them; API lists only usable templates; UI shows "soon" with the reason; journey asserts zero cards |
 | 13 | All released templates are genuinely editable | met | journey per template |
@@ -82,10 +83,12 @@ depend on PR #2/#3 or on assets that do not exist.
 | Check | Result |
 |---|---|
 | `npm run typecheck` | pass |
-| `vitest run` (real Postgres) | **28 files, 252 tests pass** (`main` @ `73e6092`: 21 files, 149; the Stage 2 merge added 2 more) |
-| Tests added by this work | 101: taxonomy/schema/lifecycle 28, search 15, catalog 8, brand 8, adapters 9, security 6, integration 27 |
+| `vitest run` (real Postgres) | **30 files, 305 tests pass** (`main` with auth, `0dd7c39`: 23 files, 189) |
+| Tests added by this work | 116: taxonomy/schema/lifecycle/approvals 29, search 15, catalog 9, brand 8, adapters 9, security 6, integration 40 (provenance, favorites, personal details, account deletion), migration check 1 |
 | `npm run templates:assets:check` | pass (62 templates: content, lock, previews agree) |
-| `npm run test:e2e:templates` | **pass: 75 checks, 62 templates** |
+| `npm run test:e2e:templates` | **pass: 77 checks, 62 templates** (adds favorites following the account to a new browser, the one-time hand-over of old browser-only favorites, personal details, archive and restore) |
+| Previous build against the new schema | **pass:** `main` (`0dd7c39`, without this change) ran its whole suite, 23 files and 189 tests, against a database already migrated to `0004` |
+| `npm run db:compat` | `0004` reported "review required (annotated)" for the new table's unique index and foreign key only; no drop, rename, type change or required column |
 | `npm run test:e2e` (website journey) | pass, 13 steps |
 | `npm run test:e2e:studio` | pass, 21 checks (covers Phase 1 designs, photo, library, brand kits, projects, account isolation and deletion) |
 | Build | pass |
@@ -132,16 +135,33 @@ contracts.
 
 ## 7. Migration, compatibility and conflicts
 
-* **No migration, no schema change, no change to existing tables.**
-  `git diff origin/main -- migrations src/server/db` is empty. Provenance is in
-  the audit log; favorites and recents are browser-local. A future migration is
-  decision D2.
+* **One additive migration, `migrations/0004_binhi_template_library.sql`**
+  (founder-approved D2). It adds only nullable columns and one new table, and drops,
+  renames or rewrites nothing:
+  * `binhi_sites` and `binhi_projects`: `source_template_id`, `source_template_version`
+    (provenance, so a project records which template it came from).
+  * `binhi_projects`: `description`, `category`, `tags`, `archived_at` (details of a
+    personal template, kept outside the document and its revision).
+  * New `binhi_template_favorites` (user, template id, time), unique per pair, with a
+    cascade on the user and an explicit delete on account deletion.
+  `npm run db:compat` reports it as "review required (annotated)" only for the new
+  table's unique index and foreign key, which cannot reject data because the table
+  starts empty; the migration carries the reasoned review marker. It was generated
+  by `drizzle-kit`, applied only to disposable databases by the test suite and the
+  browser journeys, and **never applied to production**. Production startup skips
+  migrations; Replit Publish applies schema changes, so applying `0004` is a
+  separate step that needs a backup and the founder's approval.
 * **Old builds:** documents created from templates are ordinary Website and Design
-  documents (no new fields), so a previous build opens them unchanged. The old
-  `/api/templates` endpoint and the six legacy website template ids keep working
-  (`sites.template_id` still stores the legacy id).
-* **Merge order (founder, 2026-10-29): auth first.** PR #4 (social sign-in) must
-  land before this branch. Findings from reading the repositories, not assumed:
+  documents (no new fields), so a previous build opens them unchanged. An old build
+  also runs against the new schema: every new column is nullable and unused by it,
+  and it never touches the new table. The old `/api/templates` endpoint and the six
+  legacy website template ids keep working (`sites.template_id` still stores the
+  legacy id).
+* **Merge order (founder, 2026-10-29): auth first. Done:** PR #4 (social sign-in)
+  was merged into `main` (merge commit `0dd7c39`) on the founder's instruction, with
+  its five baseline commits, after one conflict-free-in-code merge of `main` into its
+  branch; this branch has since merged `main` (five keep-both conflicts) and
+  re-passed every check. What I found before doing it, kept for the record:
   * PR #4's base is `replit/auth-baseline-2026-10-26`, **not `main`**, and its
     branch is 18 commits behind `main` (it forked from the old Phase 1 PR). It
     needs retargeting or updating onto current `main` before it can merge there;
@@ -169,9 +189,8 @@ contracts.
     native-crypto verifier security review, provider branding and lifecycle review,
     migration and backup approval, and a separate release authorisation. Providers
     default to disabled.
-  * The D2 migration will be written on top of `0003`, after auth is on `main`.
-    Writing it earlier would number it against a history this branch does not
-    contain.
+  * The D2 migration is written on top of `0003` as `0004`, now that auth is on
+    `main`.
 * **PRs #2 and #3** (icons) change `design.ts`, `DesignEditor.tsx` and
   `renderDesign.ts`; this branch changes none of them, so they should merge
   cleanly, and icons can be added to templates only after #2/#3 land and the
@@ -199,18 +218,23 @@ real network, low-end phones, a catalog far larger than 62.
 
 ## 9. Rollback
 
-Because there is no migration and no schema change, rollback is: redeploy the
-previous build. Projects created from templates stay valid ordinary projects.
-The `/templates` route and the new `/api/template-library/*` routes disappear
-with the build; the old `/api/templates` and `/sites/new` picker are unchanged.
-Favorites and recents in browsers become unused data. Reverting the merge commit
-is sufficient; there is nothing to restore in the database.
+Rollback is: redeploy the previous build. Projects created from templates stay
+valid ordinary projects. The `/templates` route and the new
+`/api/template-library/*` routes disappear with the build; the old
+`/api/templates` and `/sites/new` picker are unchanged. Because every `0004`
+change is additive and unused by the previous build, **leave the new columns and
+table in place**: dropping them would delete provenance, personal-template details
+and favorites, and nothing needs them removed. Favorites and personal-template
+details stay in the database, unused, until the new build is restored; recents in
+browsers become unused data. Reverting this branch's merge commit is sufficient for
+the code. Before applying `0004` to production, take a backup (the founder's
+checklist), so a restore is possible if anything unexpected appears.
 
 ## 10. Not implemented (so nobody assumes it is)
 
-* Server-side favorites/recents, personal template description, category, tags,
-  archive state, public sharing, paid or premium templates, and popularity or
-  trending (no data exists; none is shown).
+* Server-side recents (they deliberately stay in the browser), public sharing of
+  personal templates, paid or premium templates, and popularity or trending (no
+  data exists; none is shown).
 * A filter for exact dimensions (orientation and size are shown instead) and a
   "Free" filter (everything is free).
 * Brand Kit on personal templates; image slots; icons or Elements 300 in templates.
@@ -239,9 +263,9 @@ yes did, and did not, authorise:
 | # | Question | Result |
 |---|---|---|
 | 1 | D1: provide `chaos_origins_workflow_v2_1.pdf` | **Done 2026-10-29.** PDF supplied, read in full and audited: `docs/TEMPLATE_LIBRARY_BASELINE.md` section 1. Open items it found: Phase 1, 2, 4 and 7 exit approvals are not recorded (decision 6 below), and release notes and a monitoring plan were missing (drafted in section 13). |
-| 2 | D2: approve one additive migration (provenance column, personal-template metadata, server-side favorites), authored after PR #4's order is settled | **Approved, waiting on a merge.** The order is now settled (auth first), but PR #4 is not on `main` yet, so a `0004` migration cannot be written against the real history. Will start once auth is on `main`. Applying any migration to production stays a separate approval. |
+| 2 | D2: approve one additive migration (provenance column, personal-template metadata, server-side favorites), authored after PR #4's order is settled | **Done in code, not applied anywhere real.** `0004` written on top of auth, tested on disposable databases, and shown compatible with the previous build (§4, §7). Applying it to production stays a separate approval and needs a backup. |
 | 3 | D5: load or self-host the design fonts | **Done.** Self-hosted (§3, §11, `public/fonts/README.md`). Re-measured every template with the real fonts: no overflow. Thumbnails regenerated. All journeys, axe and tests pass. |
-| 4 | Merge order: #4 (auth), then #2/#3 (icons), then this branch, or this branch first? | **Answered 2026-10-29: "Merge auth first."** Recorded in section 7. Read as an order, not as an instruction to merge PR #4: I have not merged it. |
+| 4 | Merge order: #4 (auth), then #2/#3 (icons), then this branch, or this branch first? | **Answered 2026-10-29: "Merge auth first."** Then authorised in writing to retarget and merge PR #4 and fold in its five baseline commits. Done: merged into `main` as `0dd7c39`. |
 | 5 | Approve the 62 templates' art direction | **Recorded.** `docs/TEMPLATE_APPROVALS.json`; inventory shows 62 approved. This is approval of the art direction only. It is not authority to merge or publish. |
 
 Not authorised so far, and not done: merging PR #13 or PR #4, publishing, any
@@ -277,11 +301,21 @@ Monitoring after release, using only what exists (no new infrastructure):
 
 | # | Question | Answer |
 |---|---|---|
-| 1 | Merge PR #4 (auth) once it is retargeted to `main` | **Yes, with the condition unmet.** PR #4 is still based on `replit/auth-baseline-2026-10-26` (checked 2026-10-29). Nothing was merged, retargeted or pushed to its branch. See §7 and the open decision there |
+| 1 | Merge PR #4 (auth) once it is retargeted to `main` | **Yes. The condition was then met by a second written authorisation and PR #4 was merged (`0dd7c39`).** At the time of the first yes it was still based on `replit/auth-baseline-2026-10-26` (checked 2026-10-29) and I did not act. See §7 |
 | 2 | Directive counts as the Phase 1 approval (concept) | Yes |
 | 3 | Directive counts as the Phase 2 approval (scope) | Yes |
 | 4 | Phase 4 requirements are met | Yes, as of head `c0de6dd` |
 | 5 | Phase 7 communications (UI copy and docs) | Yes, as of head `c0de6dd` |
 
+Second written authorisation (founder, 2026-10-29: "Yes and yes"): (a) push a
+non-force merge of `main` onto PR #4's branch, retarget it to `main`, mark it ready
+and merge it; (b) fold its five baseline commits into `main`. Both done (`c8faaf7`,
+then `0dd7c39`).
+
 Each approval covers what existed at `c0de6dd`; changed or new material needs its
 own approval. Approvals are the founder's words, not tooling output.
+
+**Owed now (new since `c0de6dd`), YES/NO:**
+1. Phase 4: approve that the `0004` migration work meets its requirements (§7)?
+2. Phase 7: approve the new interface copy (Template details dialog, Archive and
+   Restore, "Show archived", favorites hand-over)?

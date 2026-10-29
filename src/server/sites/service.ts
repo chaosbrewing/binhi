@@ -78,7 +78,7 @@ export class SiteService {
     const id = newId("site");
     const now = new Date();
     await this.db.transaction(async (tx) => {
-      await tx.insert(sites).values({ id, ownerId, name, slug, templateId: input.templateId, document, revision: 0, createdAt: now, updatedAt: now });
+      await tx.insert(sites).values({ id, ownerId, name, slug, templateId: input.templateId, ...(input.source ? { sourceTemplateId: input.source.canonicalId, sourceTemplateVersion: input.source.version } : {}), document, revision: 0, createdAt: now, updatedAt: now });
       await tx.insert(siteRevisions).values({ id: newId("rev"), siteId: id, revision: 0, document, kind: "template", label: `Created from ${getTemplate(input.templateId)!.name}`, summary: [], createdBy: ownerId });
     });
     await audit(this.db, { actorId: ownerId, siteId: id, action: "site.created", details: { templateId: input.templateId, ...(input.source ? { source: input.source } : {}) }, ip });

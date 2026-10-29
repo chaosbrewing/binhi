@@ -1,7 +1,7 @@
 {
   "generatedBy": "e2e/templates.ts",
   "note": "Written only by a passing run of the template library journey. A stage appears here only after the browser journey proved it for that template and content fingerprint. 'approved' appears only where the founder's recorded approval (docs/TEMPLATE_APPROVALS.json) matches the content fingerprint proven here; tooling never decides it.",
-  "generatedAgainstCommit": "7bdecf1bdf36b55c742c15a71fe290276a0015bc",
+  "generatedAgainstCommit": "070ea9a05c27596e186c618393b1b2c2603d8cba",
   "counts": {
     "planned": 0,
     "implemented": 0,

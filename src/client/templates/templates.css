@@ -88,6 +88,9 @@
 .tpl-card-title { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .tpl-card-title h3 { font-size: 15px; margin: 0; overflow-wrap: anywhere; }
 .tpl-meta, .tpl-tools { margin: 0; font-size: 12px; color: var(--text-muted); }
+.tpl-meta { overflow-wrap: anywhere; }
+.tpl-desc { margin: 0; font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
+.tpl-archived-toggle { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; }
 .tpl-tools { display: flex; align-items: center; gap: 8px; }
 .tpl-fav { color: var(--text-muted); min-width: 40px; min-height: 40px; }
 .tpl-fav.is-on { color: var(--tpl-fav-ink); }

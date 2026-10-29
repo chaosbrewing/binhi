@@ -15,3 +15,4 @@ export * from "./inventory.js";
 export { parseDesignContent, type ParsedDesignContent } from "./catalog/designs/content.js";
 export * from "./brand.js";
 export * from "./adapters.js";
+export * from "./personal.js";

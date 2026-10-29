@@ -5,7 +5,7 @@ import { api, signup, testApp, TINY_PNG, type Session } from "../helpers.js";
 import { Design } from "../../src/core/templates/library/catalog/designs/dsl.js";
 import { designTemplate, siteTemplate } from "../template-fixtures.js";
 import { DesignDocument, createDesignDocument, makeLayer } from "../../src/core/creative/index.js";
-import { auditLog, projects, sites, siteRevisions } from "../../src/server/db/schema.js";
+import { auditLog, projects, sites, siteRevisions, templateFavorites } from "../../src/server/db/schema.js";
 import { TemplateLibraryService } from "../../src/server/templates/library.js";
 
 /** A complete, valid fixture design (not shipped content). */
@@ -359,6 +359,147 @@ describe("template library API: personal templates", () => {
 
   it("requires sign-in", async () => {
     expect((await api(b.app, null).post(`/api/template-library/mine/${templateId}/use`, {})).statusCode).toBe(401);
+  });
+});
+
+describe("template library API: stored provenance", () => {
+  it("records the source template and version on the project itself, not only in the audit log", async () => {
+    const design = (await api(b.app, alice).post("/api/template-library/templates/tpl.design.quote-card/use", {})).json().result;
+    const row = (await b.db.select().from(projects).where(eq(projects.id, design.id)))[0]!;
+    expect(row).toMatchObject({ sourceTemplateId: "tpl.design.quote-card", sourceTemplateVersion: 1 });
+    const site = (await api(b.app, alice).post("/api/template-library/templates/tpl.site.portfolio/use", {})).json().result;
+    const siteRow = (await b.db.select().from(sites).where(eq(sites.id, site.id)))[0]!;
+    expect(siteRow).toMatchObject({ sourceTemplateId: "tpl.site.portfolio", sourceTemplateVersion: 1 });
+  });
+
+  it("marks a copy of a personal template as coming from it, and leaves other projects with no source", async () => {
+    const tplId = (await api(b.app, alice).post("/api/projects", { kind: "design-template", name: "Provenance layout", document: quoteDoc() })).json().project.id;
+    const used = (await api(b.app, alice).post(`/api/template-library/mine/${tplId}/use`, {})).json().result;
+    const row = (await b.db.select().from(projects).where(eq(projects.id, used.id)))[0]!;
+    expect(row.sourceTemplateId).toBe(`personal:${tplId}`);
+    expect(row.sourceTemplateVersion).toBe(0);
+    const plain = (await api(b.app, alice).post("/api/projects", { kind: "design", name: "Plain", document: quoteDoc() })).json().project;
+    const plainRow = (await b.db.select().from(projects).where(eq(projects.id, plain.id)))[0]!;
+    expect(plainRow.sourceTemplateId).toBeNull();
+    expect(plainRow.sourceTemplateVersion).toBeNull();
+  });
+});
+
+describe("template library API: favorites", () => {
+  it("requires sign-in", async () => {
+    expect((await api(b.app, null).get("/api/template-library/favorites")).statusCode).toBe(401);
+    expect((await api(b.app, null).put("/api/template-library/favorites/tpl.design.quote-card")).statusCode).toBe(401);
+    expect((await api(b.app, null).del("/api/template-library/favorites/tpl.design.quote-card")).statusCode).toBe(401);
+  });
+
+  it("adds, lists newest first and removes, and repeating either is harmless", async () => {
+    const s = await signup(b.app);
+    expect((await api(b.app, s).get("/api/template-library/favorites")).json().ids).toEqual([]);
+    expect((await api(b.app, s).put("/api/template-library/favorites/tpl.design.quote-card")).statusCode).toBe(200);
+    expect((await api(b.app, s).put("/api/template-library/favorites/tpl.design.quote-card")).statusCode).toBe(200);
+    expect((await api(b.app, s).put("/api/template-library/favorites/tpl.site.portfolio")).statusCode).toBe(200);
+    expect((await api(b.app, s).get("/api/template-library/favorites")).json().ids).toEqual(["tpl.site.portfolio", "tpl.design.quote-card"]);
+    expect((await api(b.app, s).del("/api/template-library/favorites/tpl.design.quote-card")).statusCode).toBe(200);
+    expect((await api(b.app, s).del("/api/template-library/favorites/tpl.design.quote-card")).statusCode).toBe(200);
+    expect((await api(b.app, s).get("/api/template-library/favorites")).json().ids).toEqual(["tpl.site.portfolio"]);
+  });
+
+  it("only accepts templates that exist, and keeps one account's favorites private from another", async () => {
+    const s = await signup(b.app);
+    const other = await signup(b.app);
+    expect((await api(b.app, s).put("/api/template-library/favorites/tpl.design.does-not-exist")).statusCode).toBe(404);
+    expect((await api(b.app, s).put("/api/template-library/favorites/tpl.design.quote-card")).statusCode).toBe(200);
+    expect((await api(b.app, other).get("/api/template-library/favorites")).json().ids).toEqual([]);
+    expect((await api(b.app, other).del("/api/template-library/favorites/tpl.design.quote-card")).statusCode).toBe(200);
+    expect((await api(b.app, s).get("/api/template-library/favorites")).json().ids).toEqual(["tpl.design.quote-card"]);
+  });
+
+  it("stops at the limit but still lets an existing favorite be re-saved", async () => {
+    const s = await signup(b.app);
+    await b.db.insert(templateFavorites).values(Array.from({ length: 200 }, (_, i) => ({ userId: s.user.id, templateId: i === 0 ? "tpl.design.quote-card" : `tpl.retired.${i}` })));
+    const over = await api(b.app, s).put("/api/template-library/favorites/tpl.site.portfolio");
+    expect(over.statusCode).toBe(400);
+    expect(over.json().error.message).toMatch(/up to 200 favorites/);
+    expect((await api(b.app, s).put("/api/template-library/favorites/tpl.design.quote-card")).statusCode).toBe(200);
+    // Removing one makes room.
+    await api(b.app, s).del("/api/template-library/favorites/tpl.retired.1");
+    expect((await api(b.app, s).put("/api/template-library/favorites/tpl.site.portfolio")).statusCode).toBe(200);
+  });
+
+  it("is removed with the account", async () => {
+    const s = await signup(b.app, undefined, "delete-me-favorites-now");
+    await api(b.app, s).put("/api/template-library/favorites/tpl.design.quote-card");
+    expect((await b.db.select().from(templateFavorites).where(eq(templateFavorites.userId, s.user.id))).length).toBe(1);
+    expect((await api(b.app, s).del("/api/auth/account", { password: "delete-me-favorites-now" })).statusCode).toBe(200);
+    expect((await b.db.select().from(templateFavorites).where(eq(templateFavorites.userId, s.user.id))).length).toBe(0);
+  });
+});
+
+describe("template library API: personal template details", () => {
+  let tplId = "";
+  let designId = "";
+  beforeAll(async () => {
+    tplId = (await api(b.app, alice).post("/api/projects", { kind: "design-template", name: "Detailed layout", document: quoteDoc() })).json().project.id;
+    designId = (await api(b.app, alice).post("/api/projects", { kind: "design", name: "Not a template", document: quoteDoc() })).json().project.id;
+  });
+
+  it("starts with empty details", async () => {
+    const p = (await api(b.app, alice).get(`/api/projects/${tplId}`)).json().project;
+    expect(p).toMatchObject({ description: null, category: null, tags: [], archived: false });
+  });
+
+  it("sets description, category and tags without touching the design or its revision", async () => {
+    const before = (await api(b.app, alice).get(`/api/projects/${tplId}`)).json().project;
+    const res = await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { description: "  A calm quote layout  ", category: "social-media", tags: ["Quote", "  Brand Voice ", "quote"] });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().project).toMatchObject({ id: tplId, description: "A calm quote layout", category: "social-media", tags: ["quote", "brand-voice"], archived: false });
+    const after = (await api(b.app, alice).get(`/api/projects/${tplId}`)).json().project;
+    expect(after.document).toEqual(before.document);
+    expect(after.revision).toBe(before.revision);
+    // The same details show up in the project list.
+    const listed = (await api(b.app, alice).get("/api/projects?kind=design-template")).json().projects.find((p: { id: string }) => p.id === tplId);
+    expect(listed).toMatchObject({ description: "A calm quote layout", category: "social-media", tags: ["quote", "brand-voice"] });
+  });
+
+  it("changes only the fields sent, and null or empty clears them", async () => {
+    await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { description: "Keep me" });
+    const kept = (await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { archived: false })).json().project;
+    expect(kept.description).toBe("Keep me");
+    expect(kept.category).toBe("social-media");
+    const cleared = (await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { description: null, category: null, tags: [] })).json().project;
+    expect(cleared).toMatchObject({ description: null, category: null, tags: [] });
+  });
+
+  it("archives and restores, and a copy starts un-archived but keeps the details", async () => {
+    await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { description: "Shared look", category: "business-essentials", tags: ["brand"] });
+    expect((await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { archived: true })).json().project.archived).toBe(true);
+    const copy = (await api(b.app, alice).post(`/api/projects/${tplId}/duplicate`, { name: "Detailed layout copy" })).json().project;
+    expect(copy).toMatchObject({ kind: "design-template", description: "Shared look", category: "business-essentials", tags: ["brand"], archived: false });
+    expect((await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { archived: false })).json().project.archived).toBe(false);
+  });
+
+  it("rejects anything that is not a plain, valid detail", async () => {
+    const bad: unknown[] = [
+      { category: "not-a-category" },
+      { description: "x".repeat(281) },
+      { description: "two\nlines" },
+      { tags: Array.from({ length: 9 }, (_, i) => `t${i}`) },
+      { tags: ["x".repeat(31)] },
+      { tags: ["!!!"] },
+      { archived: "yes" },
+      { name: "sneaky" },
+      { document: {} },
+      { revision: 3 },
+    ];
+    for (const body of bad) expect((await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, body)).statusCode, JSON.stringify(body)).toBe(400);
+  });
+
+  it("is owner-only and only for personal templates", async () => {
+    expect((await api(b.app, bob).patch(`/api/template-library/mine/${tplId}`, { description: "mine now" })).statusCode).toBe(404);
+    expect((await api(b.app, alice).patch(`/api/template-library/mine/${designId}`, { description: "not a template" })).statusCode).toBe(404);
+    expect((await api(b.app, null).patch(`/api/template-library/mine/${tplId}`, { description: "x" })).statusCode).toBe(401);
+    const p = (await api(b.app, alice).get(`/api/projects/${tplId}`)).json().project;
+    expect(p.description).not.toBe("mine now");
   });
 });
 

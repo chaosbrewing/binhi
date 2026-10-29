@@ -174,6 +174,17 @@ export interface ProjectSummary {
   createdAt: string;
   updatedAt: string;
   meta: { width?: number; height?: number; sourceAssetId?: string; layers?: number };
+  /** Personal-template details (empty for other kinds). */
+  description: string | null;
+  category: string | null;
+  tags: string[];
+  archived: boolean;
+}
+export interface PersonalTemplatePatch {
+  description?: string | null;
+  category?: string | null;
+  tags?: string[] | null;
+  archived?: boolean;
 }
 export interface ProjectDetail<D = DesignDocument | PhotoProjectDocument> extends ProjectSummary {
   document: D;
@@ -208,6 +219,10 @@ export const api = {
   templateCards: (ids: string[]) => request<{ items: TemplateCard[] }>("POST", "/api/template-library/cards", { ids }),
   templateDetail: (id: string) => request<{ template: TemplateDetail }>("GET", `/api/template-library/templates/${encodeURIComponent(id)}`),
   templateDocument: (id: string) => request<{ document: DesignDocument; brand: BrandBindings }>("GET", `/api/template-library/templates/${encodeURIComponent(id)}/document`),
+  templateFavorites: () => request<{ ids: string[] }>("GET", "/api/template-library/favorites"),
+  addTemplateFavorite: (id: string) => request<{ ok: true }>("PUT", `/api/template-library/favorites/${encodeURIComponent(id)}`),
+  removeTemplateFavorite: (id: string) => request<{ ok: true }>("DELETE", `/api/template-library/favorites/${encodeURIComponent(id)}`),
+  updatePersonalTemplate: (projectId: string, patch: PersonalTemplatePatch) => request<{ project: ProjectSummary }>("PATCH", `/api/template-library/mine/${projectId}`, patch),
   usePersonalTemplate: (projectId: string, name?: string) => request<{ result: TemplateUseResult }>("POST", `/api/template-library/mine/${projectId}/use`, name ? { name } : {}),
   useTemplate: (id: string, input: { name?: string; brandKitId?: string } = {}) => request<{ result: TemplateUseResult }>("POST", `/api/template-library/templates/${encodeURIComponent(id)}/use`, input),
   sites: () => request<{ sites: SiteSummary[] }>("GET", "/api/sites"),

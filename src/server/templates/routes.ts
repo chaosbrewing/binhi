@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { AuthUser } from "../auth/session.js";
 import { RateLimiter } from "../security/rateLimit.js";
 import { tooMany } from "../security/errors.js";
-import { COLOR_FAMILIES, EDITOR_IDS, FORMAT_IDS, ORIENTATIONS, STYLE_IDS } from "../../core/templates/library/index.js";
+import { COLOR_FAMILIES, EDITOR_IDS, FORMAT_IDS, ORIENTATIONS, PersonalMetaPatch, STYLE_IDS } from "../../core/templates/library/index.js";
 import type { TemplateLibraryService } from "./library.js";
 
 interface Deps {
@@ -32,6 +32,7 @@ const Query = z.object({
 /** Template Library API. Everything requires a signed-in user; nothing here mutates a shared template. */
 export function registerTemplateLibraryRoutes(app: FastifyInstance, deps: Deps): void {
   const useLimiter = new RateLimiter(30, 10 * 60 * 1000);
+  const writeLimiter = new RateLimiter(120, 10 * 60 * 1000);
 
   app.get("/api/template-library/taxonomy", async (req, reply) => {
     deps.requireUser(req);
@@ -49,6 +50,27 @@ export function registerTemplateLibraryRoutes(app: FastifyInstance, deps: Deps):
     const user = deps.requireUser(req);
     const { ids } = z.object({ ids: z.array(z.string().min(1).max(80)).max(48) }).parse(req.body ?? {});
     return { items: deps.library.byIds(ids, user.id) };
+  });
+
+  // Favorites are explicit, owner-only and removed with the account. Recents and browsing are never sent here.
+  app.get("/api/template-library/favorites", async (req, reply) => {
+    const user = deps.requireUser(req);
+    reply.header("Cache-Control", "private, no-store");
+    return { ids: await deps.library.favorites(user.id) };
+  });
+  app.put("/api/template-library/favorites/:id", async (req) => {
+    const user = deps.requireUser(req);
+    if (!writeLimiter.check(`tpl-write:${user.id}`)) throw tooMany("You are changing favorites very quickly. Please wait a moment.");
+    const { id } = TemplateRef.parse(req.params);
+    await deps.library.addFavorite(user.id, id);
+    return { ok: true };
+  });
+  app.delete("/api/template-library/favorites/:id", async (req) => {
+    const user = deps.requireUser(req);
+    if (!writeLimiter.check(`tpl-write:${user.id}`)) throw tooMany("You are changing favorites very quickly. Please wait a moment.");
+    const { id } = TemplateRef.parse(req.params);
+    await deps.library.removeFavorite(user.id, id);
+    return { ok: true };
   });
 
   app.get("/api/template-library/templates/:id", async (req) => {
@@ -81,6 +103,15 @@ export function registerTemplateLibraryRoutes(app: FastifyInstance, deps: Deps):
   app.get("/api/template-library/templates/:id/preview/:slug/", previewHandler);
 
   // The caller's own saved design templates (ownership is checked by the project service).
+  // Description, category, tags and archive state of the caller's own saved template.
+  app.patch("/api/template-library/mine/:projectId", async (req) => {
+    const user = deps.requireUser(req);
+    if (!writeLimiter.check(`tpl-write:${user.id}`)) throw tooMany("You are making changes very quickly. Please wait a moment.");
+    const { projectId } = z.object({ projectId: z.string().min(1).max(40) }).parse(req.params);
+    const patch = PersonalMetaPatch.parse(req.body ?? {});
+    return { project: await deps.library.updatePersonal(user.id, projectId, patch, req.ip) };
+  });
+
   app.post("/api/template-library/mine/:projectId/use", async (req) => {
     const user = deps.requireUser(req);
     if (!useLimiter.check(`tpl-use:${user.id}`)) throw tooMany("You are creating projects very quickly. Please wait a moment.");

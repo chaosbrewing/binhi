@@ -215,6 +215,7 @@ export async function buildApp(deps: AppDeps): Promise<BinhiApp> {
     }
     for (const p of await projectSvc.list(user.id)) await projectSvc.softDelete(user.id, p.id, req.ip);
     for (const k of await brandKitSvc.list(user.id)) await brandKitSvc.softDelete(user.id, k.id, req.ip);
+    await templateLibrarySvc.deleteAllFavorites(user.id);
     for (const a of await librarySvc.list(user.id)) await librarySvc.delete(user.id, a.id, { force: true }, req.ip);
     await db.update(users).set({ deletedAt: new Date(), email: `deleted-${user.id}@deleted.invalid`, passwordHash: "deleted" }).where(eq(users.id, user.id));
     await sessionsSvc.revokeAllForUser(user.id);

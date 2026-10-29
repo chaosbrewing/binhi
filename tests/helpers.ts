@@ -63,6 +63,7 @@ export function api(app: FastifyInstance, session: Session | null) {
   return {
     get: (url: string, extra: { headers?: Record<string, string> } = {}) => app.inject({ method: "GET", url, headers: { ...headers, ...(extra.headers ?? {}) } }),
     post: (url: string, payload?: unknown, extra: { headers?: Record<string, string> } = {}) => app.inject({ method: "POST", url, headers: { ...headers, ...(extra.headers ?? {}) }, payload: payload as InjectOptions["payload"] }),
+    put: (url: string, payload?: unknown) => app.inject({ method: "PUT", url, headers, payload: payload as InjectOptions["payload"] }),
     patch: (url: string, payload?: unknown) => app.inject({ method: "PATCH", url, headers, payload: payload as InjectOptions["payload"] }),
     del: (url: string, payload?: unknown) => app.inject({ method: "DELETE", url, headers, payload: payload as InjectOptions["payload"] }),
   };

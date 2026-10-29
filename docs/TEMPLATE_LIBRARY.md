@@ -136,10 +136,15 @@ tags, category and description, with a small alias table ("ig" → instagram,
 "cv" → resume, "leaflet" → flyer) and plural/prefix folding. It uses no model
 and no user activity. Filters live in the URL, so they survive reload and back.
 
-Favorites and recently used are stored **only in the browser**, keyed by account
-id, and removed on sign-out and account deletion. Nothing about browsing is sent
-to the server. Server-side favorites would need a database table and are
-**planned** (decision D2).
+**Favorites** are saved in the account (`binhi_template_favorites`), because the
+person chose them: they follow the account to any browser, up to 200, owner-only,
+and are deleted with the account (accounts are anonymised rather than dropped, so
+the deletion handler removes them explicitly; a test covers it). **Recently used**
+stays only in the browser, keyed by account id, and is removed on sign-out and
+account deletion: what a person looks at is not sent to the server. Favorites saved
+by the earlier, browser-only version are handed over once the next time the
+Templates page opens, then forgotten locally; templates that no longer exist are
+dropped.
 
 ## 6. Previews and generated assets
 
@@ -165,9 +170,10 @@ personal templates):
 2. optionally loads a Brand Kit (404 unless it belongs to the caller);
 3. creates a **new project** via `SiteService`/`ProjectService` with a deep copy,
    so the shared template is never referenced or modified;
-4. writes an audit record `template.used` with template id, version and kind
-   (and the kit id). This is the provenance record until a project column exists
-   (decision D2).
+4. records provenance on the project itself (`source_template_id` and
+   `source_template_version` on `binhi_sites` or `binhi_projects`; `personal:<id>`
+   for a copy of one of your own templates) and also writes an audit record
+   `template.used` with template id, version and kind (and the kit id).
 
 Rate limit: 30 template uses per account per 10 minutes.
 
@@ -192,9 +198,13 @@ creating the project again without the kit.
 
 A personal template is a private project of kind `design-template`. Users can
 save one from the Design Studio, see a thumbnail drawn from its document, use it,
-rename it, duplicate it and delete it; the owner check is server-side for every
-action. **Not available yet** (needs a database column, decision D2): a
-description, category, tags, an archive state, brand bindings on personal
+rename it, duplicate it, describe it (a one-line description up to 280 characters,
+a category from the 30, up to 8 tags), archive and restore it, and delete it. The
+owner check is server-side for every action. Details are stored beside the design,
+never inside it, so changing them never changes the design's revision; a duplicate
+keeps them and starts un-archived. Details are plain text, validated by one shared
+schema (`personal.ts`) that rejects unknown fields and control characters, and tags
+are stored as lowercase slugs. **Not available:** brand bindings on personal
 templates, and public sharing.
 
 ## 10. Security and privacy
@@ -212,7 +222,7 @@ templates, and public sharing.
 * There is no template import or community submission yet. When there is, it must
   be treated as untrusted content and go through the same strict contracts
   (`creator.kind = "community"` cannot be published today).
-* Browsing, favorites and recents are not sent to the server.
+* Browsing and recents are not sent to the server. Favorites are, because a person saves them on purpose; they are owner-only and deleted with the account. Description, category and tags of a personal template are visible only to its owner.
 
 ## 11. Performance
 

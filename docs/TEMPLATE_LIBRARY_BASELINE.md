@@ -25,10 +25,10 @@ APPROVAL, VERIFIED, COMPLETED. Evidence is in `docs/TEMPLATE_LIBRARY_RELEASE.md`
 | Phase 1 Evaluation, exit: founder approves concept | VERIFIED | Founder approved on 2026-10-29 ("Yes to all", answering: treat the directive as the Phase 1 approval) |
 | Phase 2 Planning and MVP, exit: founder approves scope | VERIFIED | Founder approved on 2026-10-29 (same answer, for the scope) |
 | Phase 3 UX and Design, exit: design passes review | VERIFIED | Founder approved the art direction of the 62 templates (2026-10-28, `docs/TEMPLATE_APPROVALS.json`); axe-core, keyboard and phone-width checks pass; loading, empty, error and "soon" states exist |
-| Phase 4 Engineering, exit: approved requirements met | VERIFIED | Founder approved on 2026-10-29 that requirements are met, as of head `c0de6dd`. No migration (controlled-migration rule trivially met). Later changes, including the D2 migration, need their own Phase 4 approval |
+| Phase 4 Engineering, exit: approved requirements met | VERIFIED for `c0de6dd`; **AWAITING APPROVAL** for the `0004` migration work | Founder approved on 2026-10-29 that requirements are met, as of head `c0de6dd`. The D2 migration, its services and UI came after that approval and need their own: they are additive (nullable columns, one new table), compat-checked, run only on disposable databases, and shown compatible with the previous build |
 | Phase 5 Quality Assurance, exit: required tests pass, critical blockers resolved | VERIFIED | Commands, outcomes and CI runs recorded in the release report; no critical blocker open. Passing tests are not claimed as production readiness |
 | Phase 6 Release and Feedback | **NOT STARTED** | Needs explicit production approval. Rollback is documented. Release notes and a monitoring plan were missing; drafted in the release report. Configuration, secrets and backups are verified only at release time with `npm run db:check`, which has not been run |
-| Phase 7 Product Language, exit: communications approved | VERIFIED | UI copy and docs were scanned for jargon and inflated claims: none found. Founder approved the communications on 2026-10-29, as of head `c0de6dd`. New or changed copy needs approval again |
+| Phase 7 Product Language, exit: communications approved | VERIFIED for `c0de6dd`; **AWAITING APPROVAL** for new copy | UI copy and docs were scanned for jargon and inflated claims: none found. Founder approved the communications on 2026-10-29, as of head `c0de6dd`. New copy since then (Template details dialog, Archive / Restore, "Show archived", favorites handling) needs approval |
 | §3 Execution protocol: records retrieved, approvals obtained at gates, authorised scope only, outcomes verified, decisions recorded | VERIFIED | Decisions D1 to D5 and the founder's answers are recorded; nothing merged, published or applied to production |
 | §4 Governance: authorisation for destructive, financial, security-sensitive and production actions; never fabricate access, tests or approvals | VERIFIED | None taken. Approvals are recorded only from the founder's own words and bound to content fingerprints |
 | §5 Default response contract (Objective, Current State, Execution Plan, Verification, Risks and Blockers, Decisions Required (Yes/No), Next Action) | IN PROGRESS | Used from 2026-10-29. Earlier reports followed the directive's own longer format, which listed these headings under other names |
@@ -41,9 +41,9 @@ APPROVAL, VERIFIED, COMPLETED. Evidence is in `docs/TEMPLATE_LIBRARY_RELEASE.md`
 | Owner | Founder |
 | Version | v1.0 (template manifest v1) |
 | Phase | 1 to 5 and 7 approved or verified; 6 (release) not started |
-| Overall state | VERIFIED, not released: waits on auth (PR #4) landing on `main`, then merge approval, then production approval |
+| Overall state | AWAITING APPROVAL: Phase 4 and 7 approvals for the migration work; then merge approval; then production approval. Auth (PR #4) is already on `main` |
 | Branch / PR | `claude/binhi-template-library`, PR #13 (draft) |
-| Dependencies | PR #4 (auth) merges first, by founder order; icons (#2, #3) are independent |
+| Dependencies | PR #4 (auth) merged first, by founder order (`0dd7c39`); icons (#2, #3) are independent |
 | Open risks | see `docs/TEMPLATE_LIBRARY_RELEASE.md` section 11 |
 
 ## 2. Four-Question Gate (recorded before implementation)
@@ -184,7 +184,7 @@ taxonomy with zero public templates.
 
 | Risk | Impact | Mitigation | Owner |
 |---|---|---|---|
-| Migration number collision with PR #4 | Broken migration chain at merge | Keep M1–M2 migration-free; regenerate our migration after #4's order is decided | Founder (D2) |
+| Migration number collision with PR #4 | Broken migration chain at merge | Resolved: auth merged first, this branch merged `main`, and the migration is `0004` on top of `0003` | Founder (D2) |
 | Design schema collisions with PR #2/#3 | Merge conflicts, broken icon dependency | No design-schema change in v1.0 without D3; no icon dependency | Founder (D3) |
 | Workflow PDF missing | Governance gaps | Resolved 2026-10-29: PDF supplied and audited (section 1) | Founder (D1) |
 | Replit workspace behind main | Stale deploy base | Sync only after approved merge | Founder |
@@ -194,7 +194,8 @@ taxonomy with zero public templates.
 ## 8. Decisions required (YES/NO)
 
 * **D1.** Provide `chaos_origins_workflow_v2_1.pdf`. **Resolved 2026-10-29:** supplied and audited (section 1).
-* **D2.** Approve one additive migration (a nullable `template_ref` column on `binhi_projects` for provenance, a small metadata column for personal templates, and server-side favorites/recents tables), authored after the order of PR #4 versus this work is decided? Default while open: no migration; provenance lives in the audit log, favorites/recents stay in the browser, personal templates have a name only. *Still open; nothing was blocked by it.*
+* **D2.** Approve one additive migration (a nullable `template_ref` column on `binhi_projects` for provenance, a small metadata column for personal templates, and server-side favorites/recents tables), authored after the order of PR #4 versus this work is decided? Default while open: no migration; provenance lives in the audit log, favorites/recents stay in the browser, personal templates have a name only. *(Was open; nothing was blocked by it.)*
+  **Resolved 2026-10-29:** approved; implemented as `migrations/0004_binhi_template_library.sql` (provenance columns, personal-template details, `binhi_template_favorites`). Recents deliberately stay browser-only. See the release report §7.
 * **D3.** Keep v1.0 free of any design-schema change and of icon dependencies, with image placeholders as labelled frames? **Applied as the default** (recommended YES); no design-schema change was made.
 * **D4.** Accept that the first release lists templates only for Websites and Design Studio output, with Photo, Forms, Documents, Presentations, Email and Video as documented contracts only? **Applied as the default** (recommended YES).
 * **D5 (new).** The Design Studio never loads the web fonts its font list names, so design text falls back to system fonts on most devices (published websites do load Google Fonts). Approve loading the design fonts in the Design Studio (the app's CSP already allows `fonts.googleapis.com`), or self-hosting the OFL font files? Until then templates are authored to survive fallback fonts and avoid `Inter`.

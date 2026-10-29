@@ -1,4 +1,6 @@
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
+import { projects, templateFavorites } from "../db/schema.js";
 import { audit } from "../audit.js";
 import { badRequest, notFound } from "../security/errors.js";
 import type { DesignDocument } from "../../core/creative/design.js";
@@ -26,6 +28,9 @@ import {
   STYLE_LABEL,
   editorCanOpenTemplates,
   evaluateAvailability,
+  PERSONAL_LIMITS,
+  uniqueTags,
+  type PersonalMetaPatch,
   searchTemplates,
   toCard,
   validateCatalog,
@@ -34,7 +39,7 @@ import {
   type TemplateCard,
   type TemplateQuery,
 } from "../../core/templates/library/index.js";
-import type { ProjectService } from "../creative/projects.js";
+import type { ProjectService, ProjectSummary } from "../creative/projects.js";
 import type { SiteService } from "../sites/service.js";
 import type { BrandKitService } from "../creative/brandKits.js";
 
@@ -190,6 +195,48 @@ export class TemplateLibraryService {
     return renderPage(doc, page.id, { mode: "preview", baseHref: `/api/template-library/templates/${m.id}/preview/`, formAction: () => "#" });
   }
 
+  /** The caller's favorite shared templates, newest first. Stored only because the person chose to favorite them. */
+  async favorites(userId: string): Promise<string[]> {
+    const rows = await this.deps.db.select({ id: templateFavorites.templateId }).from(templateFavorites).where(eq(templateFavorites.userId, userId)).orderBy(desc(templateFavorites.createdAt));
+    return rows.map((r) => r.id);
+  }
+
+  async addFavorite(userId: string, templateId: string): Promise<void> {
+    if (!this.find(templateId)) throw notFound("Template not found");
+    const have = await this.deps.db.select({ n: sql<number>`count(*)::int` }).from(templateFavorites).where(eq(templateFavorites.userId, userId));
+    const already = await this.deps.db.select({ id: templateFavorites.templateId }).from(templateFavorites).where(and(eq(templateFavorites.userId, userId), eq(templateFavorites.templateId, templateId))).limit(1);
+    if (!already[0] && (have[0]?.n ?? 0) >= PERSONAL_LIMITS.favorites) throw badRequest(`You can have up to ${PERSONAL_LIMITS.favorites} favorites. Remove one to add another.`);
+    await this.deps.db.insert(templateFavorites).values({ userId, templateId }).onConflictDoNothing();
+  }
+
+  /** Part of account deletion: accounts are anonymised rather than removed, so the database cascade alone would leave these behind. */
+  async deleteAllFavorites(userId: string): Promise<void> {
+    await this.deps.db.delete(templateFavorites).where(eq(templateFavorites.userId, userId));
+  }
+
+  /** Removing something that is not a favorite is fine: the result is the same. */
+  async removeFavorite(userId: string, templateId: string): Promise<void> {
+    await this.deps.db.delete(templateFavorites).where(and(eq(templateFavorites.userId, userId), eq(templateFavorites.templateId, templateId)));
+  }
+
+  /**
+   * Description, category, tags and archive state of one of the caller's own
+   * saved templates. This never touches the design, so it does not change its
+   * revision; another account's template is simply not found.
+   */
+  async updatePersonal(ownerId: string, projectId: string, patch: PersonalMetaPatch, ip?: string): Promise<ProjectSummary> {
+    const row = await this.deps.projects.getOwned(ownerId, projectId);
+    if (row.kind !== "design-template") throw notFound("Template not found");
+    const set: Partial<typeof projects.$inferInsert> = { updatedAt: new Date() };
+    if (patch.description !== undefined) set.description = patch.description === null || patch.description === "" ? null : patch.description;
+    if (patch.category !== undefined) set.category = patch.category;
+    if (patch.tags !== undefined) set.tags = patch.tags === null || patch.tags.length === 0 ? null : uniqueTags(patch.tags);
+    if (patch.archived !== undefined) set.archivedAt = patch.archived ? (row.archivedAt ?? new Date()) : null;
+    await this.deps.db.update(projects).set(set).where(and(eq(projects.id, projectId), eq(projects.ownerId, ownerId)));
+    await audit(this.deps.db, { actorId: ownerId, action: "template.personal.updated", details: { projectId, fields: Object.keys(patch) }, ip });
+    return this.deps.projects.summary(ownerId, projectId);
+  }
+
   /**
    * Create a new design from one of the caller's own saved templates. The
    * template stays untouched, the new project is independent, and the use is
@@ -200,7 +247,7 @@ export class TemplateLibraryService {
     if (source.kind !== "design-template") throw notFound("Template not found");
     const name = (input.name ?? source.name).trim().slice(0, 80);
     if (!name) throw badRequest("Give your project a name");
-    const project = await this.deps.projects.duplicate(ownerId, projectId, { kind: "design", name }, ip);
+    const project = await this.deps.projects.duplicate(ownerId, projectId, { kind: "design", name, source: { templateId: `personal:${projectId}`, version: source.revision } }, ip);
     await audit(this.deps.db, { actorId: ownerId, action: "template.used", details: { templateId: `personal:${projectId}`, version: source.revision, kind: "design", personal: true, projectId: project.id }, ip });
     return { kind: "design", id: project.id, path: `/studio/design/${project.id}` };
   }
@@ -236,7 +283,7 @@ export class TemplateLibraryService {
       const content = this.designContent(id);
       const applied = kit ? applyBrandKitToDesign(content, kit.document) : null;
       const document = JSON.parse(JSON.stringify(applied ? applied.document : content.document));
-      const project = await this.deps.projects.create(ownerId, { kind: "design", name, document }, ip);
+      const project = await this.deps.projects.create(ownerId, { kind: "design", name, document, source: { templateId: m.id, version: m.version } }, ip);
       await audit(this.deps.db, { actorId: ownerId, action: "template.used", details: { templateId: m.id, version: m.version, kind: "design", projectId: project.id, ...(kit ? { brandKitId: kit.id } : {}) }, ip });
       return { kind: "design", id: project.id, path: `/studio/design/${project.id}`, ...(applied && kit ? { brand: { kitName: kit.name, changes: applied.changes.length, adjustments: applied.adjustments, logoPlaced: applied.logoPlaced } } : {}) };
     }

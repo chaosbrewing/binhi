@@ -2,7 +2,7 @@
  * Template Library journey. Disposable test database only; never remote.
  *
  * Part 1 checks discovery: search, format-first filters, unavailable-format
- * honesty, URL-persisted filters, favorites (local, per account), keyboard
+ * honesty, URL-persisted filters, favorites (saved in the account), keyboard
  * access and phone width.
  *
  * Part 2 runs the FULL user journey for EVERY template in the shipped
@@ -352,7 +352,7 @@ try {
   await page.getByText("No templates match.").waitFor();
   record("search, format, style filters, empty state and URL persistence work");
 
-  // Favorites are local to this browser and account.
+  // Favorites are saved in the account.
   await page.goto(`${base}/templates?format=websites`);
   const firstCard = cards(page).getByRole("listitem").first();
   const firstName = ((await firstCard.getByRole("heading").textContent()) ?? "").trim();
@@ -362,6 +362,29 @@ try {
   await page.getByRole("heading", { name: "Your favorites" }).waitFor();
   await page.getByRole("list", { name: "Favorite templates" }).getByRole("heading", { name: firstName, exact: true }).waitFor();
   record("favorites persist across reloads");
+
+  // They live in the account, not the browser: a brand-new browser sees them after signing in, and
+  // favorites saved by the earlier browser-only version are handed over once, then forgotten locally.
+  const owner = cleanup[0]!;
+  const me = await ctx.request.get(`${base}/api/auth/me`).then((r) => r.json());
+  const savedIds: string[] = (await ctx.request.get(`${base}/api/template-library/favorites`).then((r) => r.json())).ids;
+  assert.equal(savedIds.length, 1, "the favorite is stored on the server");
+  const legacyId = CATALOG.find((m) => m.editor === "design" && m.id !== savedIds[0])!.id;
+  const fresh = await browser!.newContext({ viewport: { width: 1366, height: 900 } });
+  assert.equal((await fresh.request.post(`${base}/api/auth/login`, { headers: H, data: { email: owner.email, password } })).status(), 200);
+  const legacyKey = `binhi.templates.v1.${me.user.id}`;
+  await fresh.addInitScript(([k, id]) => { if (!localStorage.getItem(k)) localStorage.setItem(k, JSON.stringify({ favorites: [id], recents: [] })); }, [legacyKey, legacyId] as const);
+  const fpage = await fresh.newPage();
+  fpage.setDefaultTimeout(20_000);
+  await fpage.goto(`${base}/templates`);
+  await fpage.getByRole("heading", { name: "Your favorites" }).waitFor();
+  await fpage.getByRole("list", { name: "Favorite templates" }).getByRole("heading", { name: firstName, exact: true }).waitFor();
+  await fpage.waitForFunction((k) => { const raw = localStorage.getItem(k); return raw !== null && !("favorites" in JSON.parse(raw)); }, legacyKey);
+  const merged: string[] = (await fresh.request.get(`${base}/api/template-library/favorites`).then((r) => r.json())).ids;
+  assert.deepEqual([...merged].sort(), [savedIds[0]!, legacyId].sort(), "the old browser-only favorite was handed over, nothing else changed");
+  await fresh.close();
+  await ctx.request.delete(`${base}/api/template-library/favorites/${legacyId}`, { headers: H });
+  record("favorites are saved in the account and follow it to a new browser; old browser-only favorites are handed over once");
 
   // Keyboard: Enter opens the preview, Escape closes it and returns focus.
   await page.goto(`${base}/templates?format=websites`);
@@ -464,6 +487,30 @@ try {
   await page.getByLabel("Template name", { exact: true }).fill("Renamed layout");
   await page.getByRole("button", { name: "Save name" }).click();
   await mine.getByRole("heading", { name: "Renamed layout", exact: true }).waitFor();
+  // Details and archive: description, category and tags, without touching the design or its revision.
+  const detailsOf = (name: string) => mine.getByRole("listitem").filter({ has: page.getByRole("heading", { name, exact: true }) });
+  const mineId = (await ctx.request.get(`${base}/api/projects?kind=design-template`).then((r) => r.json())).projects.find((p: { name: string }) => p.name === "Renamed layout").id as string;
+  const revisionBefore = (await ctx.request.get(`${base}/api/projects/${mineId}`).then((r) => r.json())).project.revision;
+  await detailsOf("Renamed layout").getByRole("button", { name: "Details for template Renamed layout" }).click();
+  await page.getByRole("dialog").getByLabel("Description").fill("Launch announcement layout");
+  await page.getByRole("dialog").getByLabel("Category").selectOption("social-media");
+  await page.getByRole("dialog").getByLabel("Tags").fill("Brand, launch, brand");
+  await page.getByRole("dialog").getByRole("button", { name: "Save details" }).click();
+  await detailsOf("Renamed layout").getByText("Launch announcement layout").waitFor();
+  await detailsOf("Renamed layout").getByText(/#brand · #launch/).waitFor();
+  const saved = (await ctx.request.get(`${base}/api/projects/${mineId}`).then((r) => r.json())).project;
+  assert.deepEqual(saved.tags, ["brand", "launch"], "tags are normalised and de-duplicated");
+  assert.equal(saved.revision, revisionBefore, "details never change the design's revision");
+  assert.equal((await ctx2.request.patch(`${base}/api/template-library/mine/${mineId}`, { headers: H, data: { description: "not yours" } })).status(), 404, "another account cannot change the details");
+  await detailsOf("Renamed layout").getByRole("button", { name: "Archive template Renamed layout" }).click();
+  await mine.getByRole("heading", { name: "Renamed layout", exact: true }).waitFor({ state: "detached" });
+  await page.getByLabel(/Show archived/).check();
+  await detailsOf("Renamed layout").getByText("Archived", { exact: true }).waitFor();
+  await detailsOf("Renamed layout").getByRole("button", { name: "Restore template Renamed layout" }).click();
+  await page.getByLabel(/Show archived/).waitFor({ state: "detached" });
+  await detailsOf("Renamed layout").getByText("Private", { exact: true }).waitFor();
+  record("personal templates: description, category and tags saved without changing the design; archive and restore");
+
   await mine.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Renamed layout", exact: true }) }).getByRole("button", { name: "Duplicate template Renamed layout" }).click();
   await mine.getByRole("heading", { name: "Renamed layout copy", exact: true }).waitFor();
   await mine.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Renamed layout copy", exact: true }) }).getByRole("button", { name: "Delete template Renamed layout copy" }).click();

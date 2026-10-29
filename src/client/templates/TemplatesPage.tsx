@@ -6,7 +6,7 @@ import { useToast } from "../components/Toast.js";
 import { I } from "../components/Icons.js";
 import { createDesignDocument } from "../../core/creative/index.js";
 import { StudioShell } from "../studio/StudioShell.js";
-import { loadPrefs, pushRecent, toggleFavorite, type TemplatePrefs } from "./prefs.js";
+import { clearLegacyFavorites, legacyFavorites, loadRecents, pushRecent, type TemplatePrefs } from "./prefs.js";
 import { PersonalTemplates } from "./PersonalTemplates.js";
 import { TemplateCardView } from "./TemplateCardView.js";
 import { TemplatePreview } from "./TemplatePreview.js";
@@ -24,7 +24,7 @@ interface Filters { q: string; format: string; category: string; style: string; 
 /**
  * Templates: one place to find a starting point for any output BINHI can
  * really produce. Format first, then category and style. Search and filters
- * run on the server; favorites and recents stay in this browser.
+ * run on the server. Favorites are saved in the account; recents stay in this browser.
  */
 export function TemplatesPage() {
   const { user } = useAuth();
@@ -41,7 +41,7 @@ export function TemplatesPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [prefs, setPrefs] = useState<TemplatePrefs>(() => (user ? loadPrefs(user.id) : { favorites: [], recents: [] }));
+  const [prefs, setPrefs] = useState<TemplatePrefs>(() => ({ favorites: [], recents: user ? loadRecents(user.id) : [] }));
   const [favoriteCards, setFavoriteCards] = useState<TemplateCard[]>([]);
   const [recentCards, setRecentCards] = useState<TemplateCard[]>([]);
   const [featured, setFeatured] = useState<TemplateCard[]>([]);
@@ -113,9 +113,37 @@ export function TemplatesPage() {
     return () => { alive = false; };
   }, [prefs]);
 
+  // Favorites live in the account. Ones saved by the earlier browser-only version are handed over once, oldest first so the newest stay on top.
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    (async () => {
+      const old = legacyFavorites(user.id);
+      let handedOver = true;
+      for (const id of [...old].reverse()) {
+        try {
+          await api.addTemplateFavorite(id);
+        } catch (e) {
+          // A template that no longer exists is simply dropped; anything else (offline, limit) keeps the old copy for next time.
+          if (!(e instanceof ApiError && e.status === 404)) handedOver = false;
+        }
+      }
+      if (old.length && handedOver) clearLegacyFavorites(user.id);
+      const { ids } = await api.templateFavorites();
+      if (alive) setPrefs((p) => ({ ...p, favorites: ids }));
+    })().catch(() => alive && toast("Could not load your favorites", "error"));
+    return () => { alive = false; };
+  }, [user?.id]);
+
   const onFavorite = (card: TemplateCard) => {
     if (!user) return;
-    setPrefs((p) => toggleFavorite(user.id, p, card.id));
+    const on = !prefs.favorites.includes(card.id);
+    const apply = (turnOn: boolean) => setPrefs((p) => ({ ...p, favorites: turnOn ? [card.id, ...p.favorites.filter((f) => f !== card.id)] : p.favorites.filter((f) => f !== card.id) }));
+    apply(on);
+    (on ? api.addTemplateFavorite(card.id) : api.removeTemplateFavorite(card.id)).catch((e) => {
+      apply(!on);
+      toast(e instanceof ApiError ? e.message : "Could not save your favorite", "error");
+    });
   };
   const onUsed = (card: TemplateCard) => {
     if (user) pushRecent(user.id, card.id);
@@ -245,7 +273,7 @@ export function TemplatesPage() {
               </section>
             )}
 
-            <PersonalTemplates templates={mine} setTemplates={setMine} />
+            <PersonalTemplates templates={mine} setTemplates={setMine} categories={taxonomy?.categories ?? []} />
           </>
         )}
 
