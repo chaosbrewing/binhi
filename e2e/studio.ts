@@ -109,23 +109,43 @@ try {
 
   /* ---------------------------------------------------------------- dashboard */
   await page.goto(base);
-  await page.getByRole("heading", { name: "Pick up where you need to work" }).waitFor();
-  const destinations = ["My Projects", "Website Builder", "Design Studio", "Photo Editor", "Image Compressor", "File Converter, planned, not available yet", "Form Builder, planned, not available yet", "Templates", "Brand Kits", "Asset Library"];
-  for (const name of destinations) assert.equal(await page.locator(".studio-module-grid").getByRole("link", { name, exact: true }).count(), 1, name);
-  assert.equal(await page.locator(".studio-module .module-available").count(), 8);
-  assert.equal(await page.locator(".studio-module .module-soon").count(), 2);
-  await page.getByRole("link", { name: "Studio owned destination" }).waitFor();
+  await page.getByRole("heading", { name: "What will you create today?" }).waitFor();
+  const primaryNav = page.getByRole("navigation", { name: "Primary navigation" });
+  for (const group of ["Workspace", "Create", "Resources"]) {
+    await primaryNav.getByText(group, { exact: true }).waitFor();
+  }
+  const navigationLabels = [
+    "Today", "Projects", "Recent", "Website Builder", "Design Studio", "Photo Editor",
+    "Form Creator", "PDF Editor", "File Converter", "Image Compressor", "Templates",
+    "Brand Kits", "Assets", "Settings",
+  ];
+  for (const name of navigationLabels) {
+    assert.equal(await primaryNav.getByRole("link", { name: new RegExp(`^${name}(?: Planned)?$`) }).count(), 1, name);
+  }
+  assert.equal(await primaryNav.getByText("Planned", { exact: true }).count(), 3);
+  assert.equal(await primaryNav.getByText("Video Editor", { exact: true }).count(), 0);
+  assert.equal(await page.locator(".studio-home-grid .studio-home-card").count(), 9);
+  assert.equal(await page.locator(".studio-home-grid .studio-side-soon").count(), 3);
   await page.screenshot({ path: `${output}/01-home.png`, fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "dashboard fits a phone width");
+  const mobileMenu = page.getByRole("button", { name: "Open navigation menu" });
+  await mobileMenu.click();
+  assert.equal(await mobileMenu.getAttribute("aria-expanded"), "true");
+  await page.keyboard.press("Escape");
+  assert.equal(await mobileMenu.getAttribute("aria-expanded"), "false");
   await page.setViewportSize({ width: 1366, height: 900 });
-  for (const slug of ["convert", "forms"]) {
+  const collapseSidebar = page.getByRole("button", { name: "Collapse sidebar" });
+  await collapseSidebar.click();
+  await page.getByRole("button", { name: "Expand sidebar" }).waitFor();
+  for (const slug of ["convert", "forms", "pdf"]) {
     await page.goto(`${base}/studio/${slug}`);
     await page.getByText("Planned, not available yet", { exact: true }).waitFor();
   }
   await page.goto(`${base}/websites`);
   await page.getByRole("heading", { name: "Your websites", exact: true }).waitFor();
-  record("dashboard lists ten destinations with honest availability; planned tools stay planned");
+  await page.getByRole("heading", { name: "Studio owned destination", exact: true }).waitFor();
+  record("Today exposes the approved navigation and nine capabilities; planned tools stay planned");
 
   /* -------------------------------------------------------------------- photo */
   await page.goto(`${base}/studio/photo`);
@@ -311,6 +331,38 @@ try {
   assert.equal(siteAssets.assets[0].folder, "From asset library");
   assert.equal((await ctx.request.get(`${base}${siteAssets.assets[0].url}`)).status(), 200);
   await page.keyboard.press("Escape");
+  await page.getByLabel("Add PNG, JPEG or static WebP images to your library").setInputFiles([
+    { name: "Alpha-unused.png", mimeType: "image/png", buffer: source },
+    { name: "Zulu-unused.png", mimeType: "image/png", buffer: source },
+  ]);
+  await page.getByText("2 files added to your library", { exact: false }).waitFor();
+  await page.getByLabel("Search").fill("test gradient");
+  await page.getByRole("button", { name: /Verified-photo\.png/ }).waitFor();
+  assert.equal(await page.getByRole("list", { name: "Library files" }).getByRole("listitem").count(), 1);
+  await page.getByLabel("Search").fill("no-such-library-match");
+  await page.getByRole("heading", { name: 'No matches for "no-such-library-match"' }).waitFor();
+  await page.getByLabel("Search").fill("");
+  await page.getByLabel("Filter").selectOption("unused");
+  const unusedCards = page.getByRole("list", { name: "Library files" }).getByRole("listitem");
+  await unusedCards.nth(1).waitFor();
+  assert.equal(await unusedCards.count(), 2);
+  await page.getByLabel("Sort").selectOption("name-desc");
+  const namesDesc = (await page.locator('ul[aria-label="Library files"] strong').allTextContents()).map((name) => name.trim());
+  assert.deepEqual(namesDesc.slice(0, 2), ["Zulu-unused.png", "Alpha-unused.png"]);
+  await page.getByLabel("Sort").selectOption("name-asc");
+  const namesAsc = (await page.locator('ul[aria-label="Library files"] strong').allTextContents()).map((name) => name.trim());
+  assert.deepEqual(namesAsc.slice(0, 2), ["Alpha-unused.png", "Zulu-unused.png"]);
+  await page.getByLabel("Search").fill("alpha");
+  await page.getByRole("button", { name: /Alpha-unused\.png/ }).waitFor();
+  await page.goto(`${base}/studio/design`);
+  await page.getByRole("heading", { name: "Start a fixed-size design" }).waitFor();
+  await page.goto(`${base}/library`);
+  await page.getByRole("heading", { name: "Your private images" }).waitFor();
+  await page.getByRole("button", { name: /Verified-photo\.png/ }).waitFor();
+  assert.equal(await page.getByLabel("Search").inputValue(), "");
+  assert.equal(await page.getByLabel("Filter").inputValue(), "all");
+  assert.equal(await page.getByLabel("Sort").inputValue(), "recent");
+  record("asset library search, usage filters and sorting work; controls reset after navigation");
   await page.screenshot({ path: `${output}/04-library.png`, fullPage: true });
   record("asset library shows usage, edits metadata and copies to public website media only on request");
 
@@ -417,6 +469,21 @@ try {
   const projectCards = page.getByRole("list", { name: "Projects" }).getByRole("listitem");
   await projectCards.nth(4).waitFor();
   assert.equal(await projectCards.count(), 5, "1 website + 1 photo + 2 designs + 1 template");
+  await page.getByLabel("Search").fill("studio-owned-destination");
+  await page.getByRole("list", { name: "Projects" }).getByRole("heading", { name: "Studio owned destination" }).waitFor();
+  assert.equal(await page.getByRole("list", { name: "Projects" }).getByRole("listitem").count(), 1);
+  await page.getByLabel("Search").fill("no-such-project-match");
+  await page.getByRole("heading", { name: 'No matches for "no-such-project-match"' }).waitFor();
+  await page.getByLabel("Search").fill("");
+  await projectCards.nth(4).waitFor();
+  await page.getByLabel("Sort").selectOption("name-asc");
+  const projectNamesAsc = (await page.locator('ul[aria-label="Projects"] h2').allTextContents()).map((name) => name.trim());
+  const expectedProjectNamesAsc = [...projectNamesAsc].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  assert.deepEqual(projectNamesAsc, expectedProjectNamesAsc);
+  await page.getByLabel("Sort").selectOption("name-desc");
+  const projectNamesDesc = (await page.locator('ul[aria-label="Projects"] h2').allTextContents()).map((name) => name.trim());
+  assert.deepEqual(projectNamesDesc, [...expectedProjectNamesAsc].reverse());
+  record("project search, empty-state and sort controls narrow and reorder results");
   await page.getByRole("tab", { name: /^Templates/ }).click();
   await projectCards.nth(1).waitFor({ state: "detached" });
   assert.equal(await projectCards.count(), 1);
@@ -425,8 +492,9 @@ try {
   await page.getByRole("button", { name: "Delete project" }).click();
   await page.getByText("was deleted").waitFor();
   const libraryAfter = await ctx.request.get(`${base}/api/library`).then(r => r.json());
-  assert.equal(libraryAfter.assets.length, 1, "the original stays in the library");
-  assert.ok(!libraryAfter.assets[0].usedBy.some((u: { id: string }) => u.id === photoProjectId));
+  const original = libraryAfter.assets.find((asset: { id: string }) => asset.id === library.assets[0].id);
+  assert.ok(original, "the original stays in the library");
+  assert.ok(!original.usedBy.some((u: { id: string }) => u.id === photoProjectId));
   record("My Projects merges websites and creative projects; deleting a project keeps its library original");
   assert.deepEqual(pageErrors, []);
 

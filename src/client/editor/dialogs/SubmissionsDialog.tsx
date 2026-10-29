@@ -3,7 +3,7 @@ import { Modal } from "../../components/Modal.js";
 import { api, ApiError, type Submission } from "../../api.js";
 import { useSel } from "../context.js";
 import { useToast } from "../../components/Toast.js";
-import { relative } from "../../dashboard/Dashboard.js";
+import { relative } from "../../utils/relativeTime.js";
 import { I } from "../../components/Icons.js";
 
 export function SubmissionsDialog({ onClose }: { onClose: () => void }) {

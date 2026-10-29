@@ -43,6 +43,12 @@ export function registerCreativeRoutes(app: FastifyInstance, deps: Deps): void {
     return { asset };
   });
 
+  app.post("/api/library/batch", async (req) => {
+    const user = deps.requireUser(req);
+    const body = z.object({ action: z.literal("delete"), assetIds: z.array(Id).min(1).max(200), force: z.boolean().optional() }).parse(req.body ?? {});
+    return { result: await deps.library.deleteMany(user.id, body.assetIds, { force: body.force }, req.ip) };
+  });
+
   app.get("/api/library/:assetId", async (req) => {
     const user = deps.requireUser(req);
     const { assetId } = z.object({ assetId: Id }).parse(req.params);

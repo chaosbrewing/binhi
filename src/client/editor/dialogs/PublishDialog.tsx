@@ -3,7 +3,7 @@ import { Modal } from "../../components/Modal.js";
 import { api, ApiError, type PublicationSummary } from "../../api.js";
 import { useStore, useSel } from "../context.js";
 import { useToast } from "../../components/Toast.js";
-import { relative } from "../../dashboard/Dashboard.js";
+import { relative } from "../../utils/relativeTime.js";
 import { I } from "../../components/Icons.js";
 import type { ValidationIssue } from "../../../core/index.js";
 

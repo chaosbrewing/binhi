@@ -4,7 +4,7 @@ import { api, ApiError, type ProjectSummary, type TemplateSummary } from "../api
 import { ConfirmDialog } from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { I } from "../components/Icons.js";
-import { relative } from "../dashboard/Dashboard.js";
+import { relative } from "../utils/relativeTime.js";
 import { StudioShell } from "./StudioShell.js";
 
 /**
@@ -64,7 +64,7 @@ export function TemplatesPage() {
             <h1>Start faster, your way</h1>
             <p className="muted">Website starters come with BINHI. Design templates are yours: save any design as a template and reuse it as often as you like.</p>
           </div>
-          <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Studio</Link>
+          <Link to="/" className="btn btn-ghost"><span aria-hidden="true">←</span> Today</Link>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
 

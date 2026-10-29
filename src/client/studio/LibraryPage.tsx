@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api, ApiError, type LibraryAsset, type SiteSummary } from "../api.js";
 import { ConfirmDialog, Modal } from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
@@ -7,6 +7,8 @@ import { I } from "../components/Icons.js";
 import { inspectRaster, PHOTO_LIMITS } from "../../core/media/photo.js";
 import { StudioShell } from "./StudioShell.js";
 import { PROJECT_KIND_LABEL } from "./destinations.js";
+import { applyLibraryViewState, parseLibraryViewState, type LibraryViewState } from "./viewState.js";
+import { clampVisibleCount, LIST_PAGE_SIZE, nextVisibleCount, visibleSlice } from "./listPagination.js";
 
 export const bytesLabel = (bytes: number) => (bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KiB` : `${(bytes / (1024 * 1024)).toFixed(2)} MiB`);
 
@@ -16,23 +18,41 @@ export async function checkLibraryFile(file: File): Promise<void> {
   inspectRaster(new Uint8Array(await file.arrayBuffer()));
 }
 
+export function libraryResultsLiveMessage({ assets, error, busy }: { assets: LibraryAsset[] | null; error: string | null; busy: boolean }): string {
+  if (error) return "Could not load your asset library.";
+  if (busy) return "Uploading images to your asset library.";
+  if (assets === null) return "Loading your asset library.";
+  if (assets.length === 0) return "No images in your asset library yet.";
+  return `${assets.length} image${assets.length === 1 ? "" : "s"} in your asset library.`;
+}
+
 export function LibraryPage() {
   const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewState = parseLibraryViewState(searchParams);
   const input = useRef<HTMLInputElement>(null);
   const [assets, setAssets] = useState<LibraryAsset[] | null>(null);
   const [sites, setSites] = useState<SiteSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [selected, setSelected] = useState<LibraryAsset | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<LibraryAsset | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<{ count: number; used: number } | null>(null);
   const [alt, setAlt] = useState("");
   const [tags, setTags] = useState("");
   const [siteId, setSiteId] = useState("");
+  const [visibleCount, setVisibleCount] = useState(LIST_PAGE_SIZE);
 
   const load = async () => {
     try {
       const [lib, s] = await Promise.all([api.library(), api.sites()]);
       setAssets(lib.assets);
+      setSelectedIds((prev) => {
+        const valid = new Set(lib.assets.map((a) => a.id));
+        return prev.filter((id) => valid.has(id));
+      });
       setSites(s.sites);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not load your asset library");
@@ -105,7 +125,94 @@ export function LibraryPage() {
     }
   };
 
+  const selectedAssets = assets?.filter((a) => selectedIds.includes(a.id)) ?? [];
+  const selectedUsedCount = selectedAssets.filter((a) => a.usedBy.length > 0).length;
+
+  const toggleSelected = (assetId: string) => {
+    setSelectedIds((prev) => (prev.includes(assetId) ? prev.filter((id) => id !== assetId) : [...prev, assetId]));
+  };
+
+  const toggleAll = () => {
+    const filteredIds = filteredAssets.map((asset) => asset.id);
+    if (!filteredIds.length) return;
+    setSelectedIds((prev) => {
+      const allSelected = filteredIds.every((id) => prev.includes(id));
+      if (allSelected) return prev.filter((id) => !filteredIds.includes(id));
+      return [...new Set([...prev, ...filteredIds])];
+    });
+  };
+
+  const removeSelected = async (force: boolean) => {
+    const ids = selectedIds;
+    if (!ids.length) return;
+    setBulkConfirm(null);
+    setBulkBusy(true);
+    try {
+      const { result } = await api.bulkDeleteLibraryAssets(ids, force);
+      if (selected && result.deletedIds.includes(selected.id)) setSelected(null);
+      setSelectedIds((prev) => prev.filter((id) => !result.deletedIds.includes(id)));
+      if (result.deletedIds.length) toast(`${result.deletedIds.length} file${result.deletedIds.length === 1 ? "" : "s"} deleted`, "success");
+      if (result.skippedUsed.length) toast(`${result.skippedUsed.length} selected file${result.skippedUsed.length === 1 ? "" : "s"} still in use and not deleted`, "error");
+      if (!result.deletedIds.length && !result.skippedUsed.length) toast("Selected files were already removed", "error");
+      void load();
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Could not delete selected files", "error");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   const total = assets?.reduce((sum, a) => sum + a.byteSize, 0) ?? 0;
+  const updateViewState = (patch: Partial<LibraryViewState>, replace = false) => {
+    const next = applyLibraryViewState(searchParams, { ...viewState, ...patch });
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace });
+  };
+  const byName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true });
+  const searchNeedle = viewState.search.toLowerCase();
+  const filteredAssets = (assets ?? [])
+    .filter((a) => {
+      switch (viewState.filter) {
+        case "used":
+          return a.usedBy.length > 0;
+        case "unused":
+          return a.usedBy.length === 0;
+        case "photo-original":
+          return a.origin === "photo-original";
+        case "upload":
+          return a.origin !== "photo-original";
+        default:
+          return true;
+      }
+    })
+    .filter((a) => {
+      if (!searchNeedle) return true;
+      return `${a.filename} ${a.alt} ${a.tags}`.toLowerCase().includes(searchNeedle);
+    })
+    .sort((a, b) => {
+      switch (viewState.sort) {
+        case "oldest":
+          return a.createdAt.localeCompare(b.createdAt);
+        case "name-asc":
+          return byName(a.filename, b.filename);
+        case "name-desc":
+          return byName(b.filename, a.filename);
+        case "largest":
+          return b.byteSize - a.byteSize;
+        case "smallest":
+          return a.byteSize - b.byteSize;
+        default:
+          return b.createdAt.localeCompare(a.createdAt);
+      }
+    });
+  const visibleAssets = visibleSlice(filteredAssets, visibleCount);
+  const canLoadMore = visibleAssets.length < filteredAssets.length;
+  const filteredSelectedCount = filteredAssets.filter((asset) => selectedIds.includes(asset.id)).length;
+  const allFilteredSelected = filteredAssets.length > 0 && filteredSelectedCount === filteredAssets.length;
+
+  useEffect(() => {
+    setVisibleCount((current) => clampVisibleCount(current, filteredAssets.length));
+  }, [filteredAssets.length]);
 
   return (
     <StudioShell>
@@ -118,41 +225,102 @@ export function LibraryPage() {
           </div>
           <div className="photo-actions">
             <label className="btn btn-primary photo-drop-label" htmlFor="library-file"><I.plus /> Add images</label>
-            <input ref={input} id="library-file" className="photo-file-input" type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(e) => void upload(e)} aria-label="Add PNG, JPEG or static WebP images to your library" />
+            <input ref={input} id="library-file" className="photo-file-input" type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={busy || bulkBusy} onChange={(e) => void upload(e)} aria-label="Add PNG, JPEG or static WebP images to your library" aria-describedby="library-summary library-live-status" />
           </div>
         </div>
-        <p className="small muted">{assets ? `${assets.length} file${assets.length === 1 ? "" : "s"} · ${bytesLabel(total)} of 300 MiB` : ""} · PNG, JPEG and static WebP up to 8 MiB and 16 megapixels each.</p>
+        <div className="studio-controls" aria-label="Library view controls">
+          <label className="field-block grow" htmlFor="library-search">
+            Search
+            <input
+              id="library-search"
+              type="search"
+              value={viewState.search}
+              placeholder="Filename, alt text or tag"
+              onChange={(e) => updateViewState({ search: e.target.value }, true)}
+            />
+          </label>
+          <label className="field-block" htmlFor="library-filter">
+            Filter
+            <select id="library-filter" value={viewState.filter} onChange={(e) => updateViewState({ filter: e.target.value as LibraryViewState["filter"] })}>
+              <option value="all">All files</option>
+              <option value="used">Used in projects</option>
+              <option value="unused">Unused</option>
+              <option value="photo-original">Photo originals</option>
+              <option value="upload">Uploads only</option>
+            </select>
+          </label>
+          <label className="field-block" htmlFor="library-sort">
+            Sort
+            <select id="library-sort" value={viewState.sort} onChange={(e) => updateViewState({ sort: e.target.value as LibraryViewState["sort"] })}>
+              <option value="recent">Recently added</option>
+              <option value="oldest">Oldest first</option>
+              <option value="name-asc">Filename A–Z</option>
+              <option value="name-desc">Filename Z–A</option>
+              <option value="largest">Largest first</option>
+              <option value="smallest">Smallest first</option>
+            </select>
+          </label>
+        </div>
+        <p id="library-summary" className="small muted">
+          {assets ? `${assets.length} file${assets.length === 1 ? "" : "s"} · ${bytesLabel(total)} of 300 MiB` : ""}
+          {assets && filteredAssets.length !== assets.length ? ` · ${filteredAssets.length} matching` : ""}
+          {" · PNG, JPEG and static WebP up to 8 MiB and 16 megapixels each."}
+        </p>
+        <p id="library-live-status" className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{libraryResultsLiveMessage({ assets, error, busy })}</p>
         {error && <p className="form-error" role="alert">{error}</p>}
         {busy && <p className="muted" role="status">Uploading…</p>}
+        {bulkBusy && <p className="muted" role="status">Applying bulk action…</p>}
         {assets === null && !error && <p className="muted" role="status">Loading your library…</p>}
-        {assets && assets.length === 0 && (
+        {assets && filteredAssets.length === 0 && (
           <div className="empty-state">
-            <h2>No images yet</h2>
-            <p className="muted">Add photos, logos and graphics here once and reuse them in every tool.</p>
-            <button className="btn btn-primary" onClick={() => input.current?.click()}>Add your first image</button>
+            <h2>{assets.length === 0 ? "No images yet" : viewState.search ? `No matches for "${viewState.search}"` : "No files match this view"}</h2>
+            <p className="muted">{assets.length === 0 ? "Add photos, logos and graphics here once and reuse them in every tool." : "Try changing the search text, filter or sort options."}</p>
+            {assets.length === 0 && <button type="button" className="btn btn-primary" onClick={() => input.current?.click()}>Add your first image</button>}
           </div>
         )}
         {assets && assets.length > 0 && (
-          <ul className="library-grid" aria-label="Library files">
-            {assets.map((a) => (
-              <li key={a.id}>
-                <button type="button" className="library-card" onClick={() => open(a)} aria-label={`${a.filename}, ${a.width} by ${a.height}, ${a.usedBy.length} use${a.usedBy.length === 1 ? "" : "s"}`}>
-                  <span className="library-thumb"><img src={a.url} alt={a.alt} loading="lazy" /></span>
-                  <span className="library-meta">
-                    <strong>{a.filename}</strong>
-                    <span className="small muted">{a.width} × {a.height} · {bytesLabel(a.byteSize)}</span>
-                    <span className="small muted">{a.usedBy.length ? `Used in ${a.usedBy.length} project${a.usedBy.length === 1 ? "" : "s"}` : "Not used yet"}{a.origin === "photo-original" ? " · photo original" : ""}</span>
-                  </span>
+          <>
+            <div className="library-bulk-actions" role="toolbar" aria-label="Bulk actions">
+              <button type="button" className="btn btn-sm" onClick={toggleAll}>{allFilteredSelected ? "Clear selection" : "Select all"}</button>
+              <span className="small muted">{selectedIds.length ? `${selectedIds.length} selected` : "No files selected"}</span>
+              {selectedUsedCount > 0 && <span className="small muted">{selectedUsedCount} selected file{selectedUsedCount === 1 ? "" : "s"} in use</span>}
+              <button type="button" className="btn btn-danger-text btn-ghost" disabled={!selectedIds.length || bulkBusy} onClick={() => setBulkConfirm({ count: selectedIds.length, used: selectedUsedCount })}><I.trash /> Delete selected</button>
+            </div>
+            <ul className="library-grid" aria-label="Library files">
+              {visibleAssets.map((a) => {
+                const isSelected = selectedIds.includes(a.id);
+                return (
+                  <li key={a.id} className="library-item">
+                    <label className="library-select-toggle">
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelected(a.id)} aria-label={`Select ${a.filename}`} />
+                    </label>
+                    <button type="button" className={`library-card${isSelected ? " selected" : ""}`} onClick={() => open(a)} aria-label={`${a.filename}, ${a.width} by ${a.height}, ${a.usedBy.length} use${a.usedBy.length === 1 ? "" : "s"}`}>
+                      <span className="library-thumb"><img src={a.url} alt={a.alt} loading="lazy" /></span>
+                      <span className="library-meta">
+                        <strong>{a.filename}</strong>
+                        <span className="small muted">{a.width} × {a.height} · {bytesLabel(a.byteSize)}</span>
+                        <span className="small muted">{a.usedBy.length ? `Used in ${a.usedBy.length} project${a.usedBy.length === 1 ? "" : "s"}` : "Not used yet"}{a.origin === "photo-original" ? " · photo original" : ""}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="list-pagination" aria-live="polite">
+              <p className="small muted">Showing {visibleAssets.length} of {filteredAssets.length} matching files</p>
+              {canLoadMore && (
+                <button type="button" className="btn" onClick={() => setVisibleCount((current) => nextVisibleCount(current, filteredAssets.length))}>
+                  <I.plus /> Load {Math.min(LIST_PAGE_SIZE, filteredAssets.length - visibleAssets.length)} more
                 </button>
-              </li>
-            ))}
-          </ul>
+              )}
+            </div>
+          </>
         )}
       </main>
       {selected && (
         <Modal title={selected.filename} onClose={() => setSelected(null)} wide footer={<>
-          <button className="btn btn-danger-text btn-ghost" onClick={() => setConfirm(selected)}><I.trash /> Delete</button>
-          <button className="btn btn-primary" onClick={() => void saveMeta()}>Save details</button>
+          <button type="button" className="btn btn-danger-text btn-ghost" onClick={() => setConfirm(selected)}><I.trash /> Delete</button>
+          <button type="button" className="btn btn-primary" onClick={() => void saveMeta()}>Save details</button>
         </>}>
           <div className="library-detail">
             <div className="library-detail-preview"><img src={selected.url} alt={selected.alt || selected.filename} /></div>
@@ -173,7 +341,7 @@ export function LibraryPage() {
                       <option value="">Choose a website…</option>
                       {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
-                    <button className="btn" disabled={!siteId} onClick={() => void copyToSite()}>Copy</button>
+                    <button type="button" className="btn" disabled={!siteId} onClick={() => void copyToSite()}>Copy</button>
                   </div>
                 </div>
               )}
@@ -189,6 +357,16 @@ export function LibraryPage() {
           danger
           onConfirm={() => void remove(confirm, confirm.usedBy.length > 0)}
           onCancel={() => setConfirm(null)}
+        />
+      )}
+      {bulkConfirm && (
+        <ConfirmDialog
+          title={`Delete ${bulkConfirm.count} selected file${bulkConfirm.count === 1 ? "" : "s"}?`}
+          message={bulkConfirm.used ? <>This selection contains <strong>{bulkConfirm.used}</strong> file{bulkConfirm.used === 1 ? "" : "s"} currently used in projects. Deleting anyway will make those projects show missing images. This cannot be undone.</> : <>The selected files are removed from your library. This cannot be undone.</>}
+          confirmLabel={bulkConfirm.used ? "Delete anyway" : "Delete files"}
+          danger
+          onConfirm={() => void removeSelected(bulkConfirm.used > 0)}
+          onCancel={() => setBulkConfirm(null)}
         />
       )}
     </StudioShell>

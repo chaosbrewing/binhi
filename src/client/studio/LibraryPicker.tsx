@@ -4,6 +4,14 @@ import { Modal } from "../components/Modal.js";
 import { I } from "../components/Icons.js";
 import { checkLibraryFile, bytesLabel } from "./LibraryPage.js";
 
+export function libraryPickerLiveMessage({ assets, error, busy }: { assets: LibraryAsset[] | null; error: string | null; busy: boolean }): string {
+  if (error) return "Could not load your library images.";
+  if (busy) return "Uploading image to your library.";
+  if (assets === null) return "Loading your library images.";
+  if (assets.length === 0) return "No images in your library yet.";
+  return `${assets.length} image${assets.length === 1 ? "" : "s"} available in your library.`;
+}
+
 /** Choose an image from the private asset library, or add one first. Used by the Design Studio and Brand Kits. */
 export function LibraryPicker({ title = "Choose an image", onPick, onClose }: { title?: string; onPick: (asset: LibraryAsset) => void; onClose: () => void }) {
   const input = useRef<HTMLInputElement>(null);
@@ -36,9 +44,10 @@ export function LibraryPicker({ title = "Choose an image", onPick, onClose }: { 
   return (
     <Modal title={title} onClose={onClose} wide footer={<>
       <label className="btn photo-drop-label" htmlFor="picker-file"><I.plus /> Add new image</label>
-      <input ref={input} id="picker-file" className="photo-file-input" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(e) => void upload(e)} aria-label="Add a PNG, JPEG or static WebP image to your library" />
-      <button className="btn" onClick={onClose}>Cancel</button>
+      <input ref={input} id="picker-file" className="photo-file-input" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(e) => void upload(e)} aria-label="Add a PNG, JPEG or static WebP image to your library" aria-describedby="library-picker-live-status" />
+      <button type="button" className="btn" onClick={onClose}>Cancel</button>
     </>}>
+      <p id="library-picker-live-status" className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{libraryPickerLiveMessage({ assets, error, busy })}</p>
       {error && <p className="form-error" role="alert">{error}</p>}
       {busy && <p className="muted" role="status">Uploading…</p>}
       {assets === null && !error && <p className="muted" role="status">Loading your library…</p>}

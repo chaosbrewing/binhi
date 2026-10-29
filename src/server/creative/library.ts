@@ -27,6 +27,12 @@ export interface LibraryAssetRecord {
   usedBy: { id: string; name: string; kind: string }[];
 }
 
+export interface LibraryBulkDeleteResult {
+  deletedIds: string[];
+  skippedUsed: { id: string; filename: string; usedBy: number }[];
+  missingIds: string[];
+}
+
 export const LIBRARY_LIMITS = {
   maxAssetsPerOwner: 500,
   maxBytesPerOwner: 300 * 1024 * 1024,
@@ -171,6 +177,48 @@ export class LibraryService {
     await this.db.delete(assetUsages).where(eq(assetUsages.assetId, assetId));
     await this.storage.delete(row.storageKey);
     await audit(this.db, { actorId: ownerId, action: "library.deleted", details: { id: assetId, forced: !!opts.force, usedBy: usage.length }, ip });
+  }
+
+  async deleteMany(ownerId: string, assetIds: string[], opts: { force?: boolean } = {}, ip?: string): Promise<LibraryBulkDeleteResult> {
+    const unique = Array.from(new Set(assetIds));
+    if (!unique.length) return { deletedIds: [], skippedUsed: [], missingIds: [] };
+    const rows = await this.db
+      .select({ id: libraryAssets.id, filename: libraryAssets.filename, storageKey: libraryAssets.storageKey })
+      .from(libraryAssets)
+      .where(and(eq(libraryAssets.ownerId, ownerId), isNull(libraryAssets.deletedAt), inArray(libraryAssets.id, unique)));
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const missingIds = unique.filter((id) => !byId.has(id));
+    if (!rows.length) {
+      await audit(this.db, { actorId: ownerId, action: "library.bulk_deleted", details: { requested: unique.length, deleted: 0, forced: !!opts.force, skippedUsed: 0, missing: missingIds.length }, ip });
+      return { deletedIds: [], skippedUsed: [], missingIds };
+    }
+
+    const usageRows = await this.db
+      .select({ assetId: assetUsages.assetId, usedBy: sql<number>`count(*)::int` })
+      .from(assetUsages)
+      .innerJoin(projects, eq(projects.id, assetUsages.projectId))
+      .where(and(inArray(assetUsages.assetId, rows.map((r) => r.id)), isNull(projects.deletedAt)))
+      .groupBy(assetUsages.assetId);
+    const usageByAsset = new Map(usageRows.map((u) => [u.assetId, Number(u.usedBy)]));
+    const skippedUsed = !opts.force
+      ? rows
+          .map((r) => ({ id: r.id, filename: r.filename, usedBy: usageByAsset.get(r.id) ?? 0 }))
+          .filter((r) => r.usedBy > 0)
+      : [];
+    const deletable = opts.force ? rows : rows.filter((r) => (usageByAsset.get(r.id) ?? 0) === 0);
+    if (deletable.length) {
+      const ids = deletable.map((r) => r.id);
+      await this.db.update(libraryAssets).set({ deletedAt: new Date() }).where(inArray(libraryAssets.id, ids));
+      await this.db.delete(assetUsages).where(inArray(assetUsages.assetId, ids));
+      await Promise.all(deletable.map((r) => this.storage.delete(r.storageKey)));
+    }
+    await audit(this.db, {
+      actorId: ownerId,
+      action: "library.bulk_deleted",
+      details: { requested: unique.length, deleted: deletable.length, forced: !!opts.force, skippedUsed: skippedUsed.length, missing: missingIds.length },
+      ip,
+    });
+    return { deletedIds: deletable.map((r) => r.id), skippedUsed, missingIds };
   }
 
   /** Explicitly publish a private library file into a website's (public) media library. */

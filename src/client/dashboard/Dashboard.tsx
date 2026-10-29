@@ -7,6 +7,8 @@ import { ConfirmDialog } from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { I } from "../components/Icons.js";
 import { ThemeToggle } from "../components/ThemeToggle.js";
+import { relative } from "../utils/relativeTime.js";
+import { PublicationBadge } from "./PublicationBadge.js";
 
 export function Dashboard() {
   const { user, logout } = useAuth();
@@ -43,7 +45,7 @@ export function Dashboard() {
       <header className="shell-header">
         <Logo />
         <nav className="shell-nav" aria-label="Account">
-          <Link to="/" className="btn btn-ghost">Studio home</Link>
+          <Link to="/" className="btn btn-ghost">Today</Link>
           <ThemeToggle />
           <Link to="/account" className="btn btn-ghost">{user?.displayName}</Link>
           <button className="btn btn-ghost" onClick={() => void logout().then(() => nav("/signin"))}>Sign out</button>
@@ -99,25 +101,3 @@ export function Dashboard() {
   );
 }
 
-export function PublicationBadge({ site }: { site: { publication: SiteSummary["publication"]; livePublicationId: string | null; revision: number } }) {
-  const p = site.publication;
-  if (site.livePublicationId && p?.isLive) {
-    const stale = p.revision < site.revision;
-    return <span className={`badge ${stale ? "badge-warn" : "badge-ok"}`}>{stale ? "Live · unpublished changes" : "Live"}</span>;
-  }
-  if (p?.state === "failed") return <span className="badge badge-danger">Last publish failed</span>;
-  if (p && ["pending", "building", "deploying"].includes(p.state)) return <span className="badge badge-warn">Publishing…</span>;
-  return <span className="badge">Draft</span>;
-}
-
-export function relative(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.round(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m} min ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h} h ago`;
-  const d = Math.round(h / 24);
-  if (d < 30) return `${d} d ago`;
-  return new Date(iso).toLocaleDateString();
-}
