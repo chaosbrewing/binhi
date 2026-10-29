@@ -9,14 +9,14 @@ gate, decisions) and `docs/TEMPLATE_LIBRARY.md` (how it works).
 
 | Question | Answer | Why |
 |---|---|---|
-| Is the feature ready for **review and merge** into `main`? | **YES, after auth (PR #4) is on `main` and the §14 approvals** | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
+| Is the feature ready for **review and merge** into `main`? | **YES, after auth (PR #4) is on `main`** | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
 | Is it ready to be **published** to production? | **NOT YET** | The production database and live HTTP were not verified from this sandbox; the founder must run `npm run db:check` first. This change adds **no migration**, so the production schema risk is nil, but the unverified baseline from the icon release checklist still stands. |
 
 Founder answers (2026-10-28 and 2026-10-29) are recorded in §12. Done: D1 (workflow
 PDF supplied and audited), D5 (fonts), art-direction approval, merge order (auth
 first). Still open before merge: PR #4 must land on `main` first (its base is a
-Replit branch, §7); the D2 migration waits on that; and the workflow v2.1 phase
-approvals in §14.
+Replit branch, §7); the D2 migration waits on that. The workflow v2.1 approvals in
+§14 were given on 2026-10-29.
 
 ## 2. Acceptance criteria (directive §25)
 
@@ -153,6 +153,22 @@ contracts.
     `tests/helpers.ts`, `package.json`, `docs/TESTING.md`), all small and
     textual. After auth merges, this branch will merge `main` and resolve them,
     then re-run every check.
+  * **Trial of auth on current `main`** (scratch copy, nothing pushed): one
+    conflict, `package.json` (two script lines, keep both). The merged result passes
+    typecheck, 189 tests, the build, the website journey (15 steps), the studio
+    journey (21 checks) and the synthetic auth journey (7 checks). The migrations
+    are additive.
+  * **What retargeting PR #4 to `main` also brings in:** its base branch carries 5
+    commits that are not on `main` (founder and Replit Agent: e2e coverage for the
+    signup-to-publish journey, `docs/RELEASE_READINESS.md` and `docs/TESTING.md`
+    edits, agent metadata). The PR's own text says it deliberately kept them out
+    and requires a founder integration review before any retarget or merge.
+  * **Production schema:** merging to `main` does not change the production
+    database: production startup skips migrations and Replit Publish applies
+    schema changes. PR #4 also lists items still required before enabling it:
+    native-crypto verifier security review, provider branding and lifecycle review,
+    migration and backup approval, and a separate release authorisation. Providers
+    default to disabled.
   * The D2 migration will be written on top of `0003`, after auth is on `main`.
     Writing it earlier would number it against a history this branch does not
     contain.
@@ -232,10 +248,7 @@ Not authorised so far, and not done: merging PR #13 or PR #4, publishing, any
 production database change, any change to production secrets or deployment
 settings. `npm run db:check` is still required before any publish.
 
-Decision 6 (new, from the v2.1 audit): the workflow requires a founder approval
-at the exit of Phase 1 (concept), Phase 2 (scope), Phase 4 (requirements met) and
-Phase 7 (communications). See section 14 for the questions.
-
+Decision 6 (from the v2.1 audit) was answered "Yes to all" on 2026-10-29: see §14.
 ## 13. Release notes (draft) and monitoring plan (workflow v2.1 Phase 6)
 
 Not approved, not published. Plain-language draft for when production release is
@@ -260,9 +273,15 @@ Monitoring after release, using only what exists (no new infrastructure):
 * No client analytics or tracking is added; browsing, favorites and recents stay
   in the browser.
 
-## 14. Workflow v2.1 approvals still owed (YES/NO)
+## 14. Workflow v2.1 approvals (founder, 2026-10-29: "Yes to all")
 
-1. Treat your directive as the Phase 1 approval of the concept?
-2. Treat your directive as the Phase 2 approval of the scope?
-3. Approve, at PR review, that Phase 4 requirements are met?
-4. Approve, at PR review, the Phase 7 communications (UI copy and docs)?
+| # | Question | Answer |
+|---|---|---|
+| 1 | Merge PR #4 (auth) once it is retargeted to `main` | **Yes, with the condition unmet.** PR #4 is still based on `replit/auth-baseline-2026-10-26` (checked 2026-10-29). Nothing was merged, retargeted or pushed to its branch. See §7 and the open decision there |
+| 2 | Directive counts as the Phase 1 approval (concept) | Yes |
+| 3 | Directive counts as the Phase 2 approval (scope) | Yes |
+| 4 | Phase 4 requirements are met | Yes, as of head `c0de6dd` |
+| 5 | Phase 7 communications (UI copy and docs) | Yes, as of head `c0de6dd` |
+
+Each approval covers what existed at `c0de6dd`; changed or new material needs its
+own approval. Approvals are the founder's words, not tooling output.
