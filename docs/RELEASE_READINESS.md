@@ -1,17 +1,16 @@
 # BINHI v0.1 — release readiness report
 
-Date: 2026-10-24 · Scope: standalone BINHI in the Replit development workspace and published runtime
+Date: 2026-10-25 · Scope: standalone BINHI in the Replit development workspace and published runtime
 
 ## Verdict
 
-**BINHI is published, and development/production database separation is
-verified read-only.** The workspace uses `heliumdb`; the production database
-reports `neondb`. The published health endpoint reports `production` and
-successfully queries its database, while the deployment uses Replit's managed
-`DATABASE_URL` with no `BINHI_DATABASE_URL` override. Both databases have the
-12 expected BINHI tables. The full remote primary journey
-(`npm run test:e2e:remote`) remains to be run before claiming complete
-production readiness; see *Deployment status*.
+**BINHI is published, and the published signup-to-publish journey passed on
+2026-10-25.** The seven-check remote smoke test and the 15-step remote browser
+journey passed against `https://binhi.replit.app`; temporary accounts and
+sites were deleted, and their public URLs returned 410. Development/production
+database separation is also verified read-only: the workspace uses
+`heliumdb`, the production database reports `neondb`, and the published health
+endpoint reports `production` and successfully queries its database.
 
 ## Deployment status
 
@@ -23,7 +22,7 @@ production readiness; see *Deployment status*.
 | Secrets | Configure distinct workspace and deployment `BINHI_SESSION_SECRET` values; the server refuses to boot in production with the example value. |
 | Production schema handling | **Configured**: development migrations run in non-production; production startup refuses migrations and relies on Replit Publish's schema diff. Migration compatibility scan and current-baseline assessment are recorded below. |
 | Published-domain configuration | **Verified**: Replit deployment metadata reports `https://binhi.replit.app`; the production health endpoint responds there. |
-| Complete journey against a deployed instance | **Not run against the published domain.** The same journey passes locally in 13 steps, including sign-up, canvas editing, autosave, revision restore, publish, anonymous desktop + mobile access, unpublish and cleanup. |
+| Complete journey against a deployed instance | **Passed on 2026-10-25** at `https://binhi.replit.app`: 15 browser steps covered keyboard and mouse sign-up/editing, publish, anonymous desktop/mobile viewing, unpublish, and account/site cleanup. |
 
 ## Verification evidence
 
@@ -41,8 +40,10 @@ Replit-managed `DATABASE_URL`; no `BINHI_DATABASE_URL` override is configured.
 The workspace does not provide a shell inside the published container, so
 `npm run db:check` itself could not be run there. Production separation was
 instead confirmed with the live health endpoint, deployment configuration,
-and read-only production database metadata. No production records were read or
-changed, and no DDL or migrations were run.
+and read-only production database metadata. No application records were read
+through database tooling, and no DDL or migrations were run. Separately, the
+remote browser journey created and deleted its temporary production account
+and site; the site's public URL returned 410 after cleanup.
 
 ### Schema compatibility and rollback limits
 
@@ -66,6 +67,8 @@ links.
 | Production build | `npm run build` | **Passed**; client and server compiled |
 | Development database check | `npm run db:check` | **Connected read-only to Replit workspace database (`helium` / `heliumdb`); 12 BINHI tables** |
 | Published runtime health | `curl https://binhi.replit.app/api/health` | **Passed**; returned `env: production`, `ok: true`; the app's database probe succeeded. |
+| Published-domain smoke test | `node scripts/smoke.mjs https://binhi.replit.app` | **Passed 7/7 on 2026-10-25**; health (`env=production`, signup enabled), editor shell, unknown-site response/CSP, runtime asset, CSRF guard, auth guard, and secure headers. |
+| Published browser journey | `BINHI_E2E_BASE=https://binhi.replit.app npm run test:e2e:remote` | **Passed 15/15 steps on 2026-10-25**; keyboard-only and mouse-driven sign-up/editing, concurrent-editor conflict recovery, autosave/history/undo, publish, anonymous responsive multi-page viewing, unpublish (410), and account/site cleanup (410). The first attempt stopped before browser launch because the local Playwright Chromium binary was absent; after installing the matching browser, the rerun passed. No published-app test failure was observed. |
 | Production database metadata | Read-only Replit production query | **Database `neondb`; all 12 expected BINHI tables exist.** No application records were queried. |
 | Published database separation | Deployment configuration + published health + read-only production metadata | **Confirmed**: production resolves Replit-managed `DATABASE_URL` (no `BINHI_DATABASE_URL` override); production database is `neondb`, distinct from workspace `heliumdb`. The published container shell was unavailable, so `npm run db:check` itself was not run there. |
 | Production DDL guard | `tests/unit/migrations.test.ts` and startup condition | **Unit tests verify the migration runner refuses production; app startup skips it**. Replit Publish owns production schema changes. |
@@ -125,10 +128,7 @@ Screenshots from the journey are produced under `e2e/screenshots/`
    is still to be run. The *published* output has heading/alt checks built in.
 7. **Collaboration** — single editor per site is assumed; concurrent edits are
    detected (409) and resolved by choice, not merged.
-8. **Remote release journey** — deployment and database separation are
-   verified, but the full remote journey has not been run against the
-   published domain.
-9. **Standalone repository** — `chaosbrewing/binhi` does not exist yet; the
+8. **Standalone repository** — `chaosbrewing/binhi` does not exist yet; the
    export is prepared and verified, creation needs an owner.
 
 ## Owner actions required (in order)
@@ -136,12 +136,10 @@ Screenshots from the journey are produced under `e2e/screenshots/`
 1. Confirm workspace and deployment `BINHI_SESSION_SECRET` values are distinct.
    Keep `BINHI_DATABASE_URL` unset so Replit supplies the environment-specific
    managed database.
-2. Run `node scripts/smoke.mjs https://binhi.replit.app` and
-   `BINHI_E2E_BASE=https://<published-domain> npm run test:e2e:remote`.
-3. Decide whether sign-ups stay open (`BINHI_ALLOW_SIGNUP`).
-4. Approve the BINHI brand treatment used in the editor (green seed mark) or
+2. Decide whether sign-ups stay open (`BINHI_ALLOW_SIGNUP`).
+3. Approve the BINHI brand treatment used in the editor (green seed mark) or
    supply the approved sector icon derivative.
-5. If the separate standalone repository is still part of the handoff, complete
+4. If the separate standalone repository is still part of the handoff, complete
    its reviewed transfer separately; it is not a prerequisite to this
    workspace's Replit Publish flow.
 

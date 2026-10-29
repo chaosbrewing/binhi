@@ -1,0 +1,1 @@
+ALTER TABLE "binhi_auth_identities" ADD COLUMN "revocation_ciphertext" text;

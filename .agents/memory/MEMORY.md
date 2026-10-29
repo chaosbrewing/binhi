@@ -1,3 +1,4 @@
 - [Imported toolchain constraints](toolchain-constraints.md) — the package firewall can block legacy test tooling; preserve security enforcement when updating compatible tooling.
 - [Playwright on Replit Nix](playwright-nix.md) — Chromium may need the Nix-store GBM library added to its loader path even when the package is installed.
 - [Creative studio boundaries](creative-studio-boundaries.md) — expand without replacing websites; private originals must not silently enter public website media.
+- [Raw PostgreSQL JSON](raw-postgres-json.md) — Drizzle-wrapped postgres-js connections may require explicit JSON.stringify plus a jsonb cast in raw SQL.
