@@ -1,24 +1,38 @@
 # BINHI product charter
 
+> **Direction amended (founder decisions D05 and D21, 2026-10-29/30):** BINHI is
+> a creative design studio that includes website building. The first certified
+> version is the website builder plus the studio set already built (photo
+> editor, design studio, image compressor, brand kits, media and project
+> management). Video editor, PDF editor, file converter and a standalone form
+> creator are **not** approved for it (still undecided). This charter below
+> describes the v0.1 website builder; it has not been rewritten for the wider
+> studio. See the ORIGIN repository's `docs/FOUNDER_DECISION_LOG.md`.
+
 ## Four-question gate
 
-**What chaos does BINHI organise?**
+Authoritative wording: CHAOS ORIGINS Application Development Workflow v2.1,
+section 1. The answers below were written for the v0.1 website builder. Answers
+for the wider studio direction are **not yet written** and need founder approval
+(Phase 1).
+
+**What chaos does this organize?**
 The mess between "I need a website" and "there is a website": scattered
 copy, images, half-finished page builders, hosting confusion and the fear of
 breaking something. BINHI keeps everything about one website in one place
 (pages, design, media, history, publishing) and makes each change reversible.
 
-**What meaningful experience does it create?**
+**What meaning does it create?**
 A person with no code skills composes a real, responsive, multi-page website
 by direct manipulation, sees exactly what visitors will see, and publishes
 to a working address with one button. They can always go back.
 
-**Who specifically benefits?**
+**Who is it for?**
 Artists, photographers, freelancers, small businesses, personal-portfolio
 owners and non-technical founders who know Canva-style tools and expect
 Wix-style site structure.
 
-**Why would they choose BINHI?**
+**Why should people care?**
 It is simpler than a developer tool, more structured than a design tool,
 honest about state (saved, published, failed), and it grows into ORIGIN's
 operations and intelligence without a rebuild.
@@ -27,7 +41,7 @@ operations and intelligence without a rebuild.
 
 | Feature | Problem | Outcome | Simplest implementation | Data | Success criterion | Privacy |
 | --- | --- | --- | --- | --- | --- | --- |
-| Accounts | Work must be private and durable | Sign up, return later | Email/password, session cookie | `binhi_users`, `binhi_sessions` | Reopen a site after sign-out/in | Password hashed (scrypt); deletion removes everything |
+| Accounts | Work must be private and durable | Sign up, return later | Email/password, session cookie | `binhi_users`, `binhi_sessions` | Reopen a site after sign-out/in | Password hashed (scrypt). Account deletion revokes sessions, unpublishes and soft-deletes sites, projects and brand kits, removes library assets through the library delete path (whether stored bytes are purged is unverified), and anonymises the account email. Sites, projects and brand kits are soft-deleted, not purged; secure deletion is not yet verified |
 | Templates | Blank pages intimidate | Start from a credible layout | 5 curated templates + blank, same registry | Document JSON | Every template renders responsively with replaced content | — |
 | Canvas editing | Property forms are slow | Direct manipulation | iframe canvas on the shared renderer + overlay | Operations | Select, move, resize, edit text without losing content | — |
 | Structured + freeform layout | Freeform breaks on phones; grids feel rigid | Choose per container | `layout.mode` flow/free with bounded placement | Node layout/placement | Mobile never overflows; freeform scales or stacks | — |
