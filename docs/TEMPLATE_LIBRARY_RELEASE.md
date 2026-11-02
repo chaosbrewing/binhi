@@ -9,15 +9,15 @@ gate, decisions) and `docs/TEMPLATE_LIBRARY.md` (how it works).
 
 | Question | Answer | Why |
 |---|---|---|
-| Is the feature ready for **review and merge** into `main`? | **YES, after auth (PR #4) is on `main`** | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
+| Is the feature ready for **founder merge approval**? | **YES** (pre-merge review of 2026-11-02, §16; a YES is not permission to merge) | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
 | Is it ready to be **published** to production? | **NOT YET** | The production database and live HTTP were not verified from this sandbox; the founder must run `npm run db:check` first. This change now adds **one additive migration (`0004`)** that has only ever run on disposable test databases; applying it to production needs a backup and its own founder approval (§7). The unverified baseline from the icon release checklist also still stands. |
 
-Founder answers (2026-10-28 and 2026-10-29) are recorded in §12. Done: D1 (workflow
-PDF supplied and audited), D2 (migration `0004` written and tested on disposable
-databases), D5 (fonts), art-direction approval, merge order (auth first, and auth
-is now merged into `main`), and the workflow v2.1 approvals in §14. Still open: the
-Phase 4 approval for the migration work (new since the §14 approval, which covered
-`c0de6dd`), and production approval, which has not been requested.
+Founder decisions are recorded in one place: §14 (register). As of 2026-11-02 they
+include **D-BINHI-TPL-P4** (engineering requirements for migration `0004`) and
+**D-BINHI-TPL-P7** (Template Library product language), both YES at head `50daec1`.
+Neither authorises merging, applying `0004` to production, publishing or changing
+production configuration. Merge approval, and then a separately controlled
+production database and deployment review, are still ahead (§15).
 
 ## 2. Acceptance criteria (directive §25)
 
@@ -41,7 +41,7 @@ Phase 4 approval for the migration work (new since the §14 approval, which cove
 | 16 | Existing functionality passes regression | met | §4 |
 | 17 | CI passes | **met** on head `67364ae` (run 29): both jobs green, the template journey in 6 min 40 s | `.github/workflows/ci.yml`: "Typecheck, test, build, browser journey" and the new parallel "Template library journey (every catalog template)" |
 | 18 | Documentation describes actual capabilities | met | `docs/TEMPLATE_LIBRARY*.md`; limits stated |
-| 19 | The PR passes review | pending | a draft PR is opened; review is the founder's |
+| 19 | The PR passes review | **pre-merge review done 2026-11-02** (§16, recommendation YES); founder merge approval pending | draft PR #13; no open review discussions |
 | 20 | Production deployment separately authorised and verified | **not done, out of scope** | |
 
 ## 3. Catalog results
@@ -315,7 +315,161 @@ then `0dd7c39`).
 Each approval covers what existed at `c0de6dd`; changed or new material needs its
 own approval. Approvals are the founder's words, not tooling output.
 
-**Owed now (new since `c0de6dd`), YES/NO:**
-1. Phase 4: approve that the `0004` migration work meets its requirements (§7)?
-2. Phase 7: approve the new interface copy (Template details dialog, Archive and
-   Restore, "Show archived", favorites hand-over)?
+### Decision register (the single register for this feature)
+
+| Decision | Value | Scope | Date | Authority | PR | Approved reference commit |
+|---|---|---|---|---|---|---|
+| D-BINHI-TPL-P4 | **YES** | Phase 4 (Engineering): requirements for migration `migrations/0004_binhi_template_library.sql` | 2026-11-02 | Founder, written directive | #13 | `50daec13324e1fc32dd95fcf76fb0940c43749ba` |
+| D-BINHI-TPL-P7 | **YES** | Phase 7 (Product language): Template Library interface wording | 2026-11-02 | Founder, written directive | #13 | `50daec13324e1fc32dd95fcf76fb0940c43749ba` |
+
+**D-BINHI-TPL-P4: exact scope.** The additive migration design; the nullable
+provenance columns and personal-template detail columns; the new template-favorites
+table; compatibility with existing documents; the migration compatibility testing;
+backward-compatible application behaviour; the documented rollback strategy. It is
+an engineering gate only.
+
+**D-BINHI-TPL-P7: exact scope.** The new interface wording: "Template details",
+"Archive", "Restore", "Show archived", and the related personal-template details and
+saved-state messaging, as implemented at `50daec1`. A later material change to that
+copy needs review.
+
+**Explicit exclusions (both decisions).** Neither authorises: merging PR #13;
+running production migrations; modifying production data; publishing through Replit;
+changing production configuration; deploying new functionality; any destructive
+action. Every existing implementation and release hold stays in force.
+
+**Related implementation evidence.** §4 (verification and run IDs), §7 (migration,
+compatibility), §9 (rollback), §16 (the 2026-11-02 pre-merge review, including its
+findings).
+
+**Remaining release gates.** (1) Founder merge approval of PR #13. (2) Separately
+controlled production database and deployment review (§15): `npm run db:check`,
+backup, Replit Publish schema-diff review, rollback and post-deployment
+verification. (3) Explicit production approval. (4) Any later change to the approved
+copy or the migration needs its own review.
+
+Recorded by Claude Code on 2026-11-02 from the founder's written directive. The
+decisions are the founder's words, not tooling output; this record does not modify
+migration SQL or any approved implementation.
+
+## 15. Production release checklist (prepared, NOT executed, NOT authorised)
+
+Nothing below has been run against production, and this review did not connect to
+production or query its state: no production credentials exist in this environment,
+and the development database is never used as a stand-in for the production
+baseline. Every item is owned by the founder or by a step the founder authorises
+separately. Procedure source: `docs/RELEASE.md` (production schema changes happen
+only through Replit Publish; never run `db:migrate` or DDL against production).
+
+| # | Prerequisite | Status | Who and how |
+|---|---|---|---|
+| 1 | Current production application version recorded | NOT STARTED | Founder: note the live Replit deployment and the `main` commit it was built from. Not verified here |
+| 2 | `npm run db:check` against the authorised production environment | NOT STARTED | Founder, in a deployment shell. It prints host and database name without secrets and the `binhi_%` table count; confirm production and development databases differ |
+| 3 | Existing `binhi_%` table inventory | NOT STARTED | From the `db:check` output. Expected before `0004`: the tables of migrations `0000` to `0003`; `binhi_template_favorites` must not yet exist |
+| 4 | Existing production migration history | NOT STARTED | Founder: confirm `drizzle.binhi_migrations` state (Replit Publish manages production schema; do not assume it equals the development history) |
+| 5 | Backup / restore-point mechanism identified | NOT STARTED | Replit point-in-time database restore, subject to the account's retention window (`docs/RELEASE.md`). A restore does not roll application code back |
+| 6 | Restorable backup taken and verified | NOT STARTED | Only after separate authorisation |
+| 7 | Replit Publish's proposed schema diff inspected | NOT STARTED | Founder, in the Publish UI |
+| 8 | Diff contains only the expected changes | NOT STARTED | Expected, exactly: new table `binhi_template_favorites` (`user_id`, `template_id`, `created_at`; unique index on `user_id, template_id`; foreign key to `binhi_users` with `ON DELETE CASCADE`); on `binhi_projects` add nullable `source_template_id`, `source_template_version`, `description`, `category`, `tags`, `archived_at`; on `binhi_sites` add nullable `source_template_id`, `source_template_version`. **Stop if the diff shows any drop, any rename prompt, any NOT NULL column, any change to another table or any data change** |
+| 9 | Production secrets and configuration reviewed, values not exposed | NOT STARTED | Founder: `BINHI_SESSION_SECRET` set and different from the workspace's; `BINHI_PUBLIC_URL`; no new variable is introduced by this release. Social sign-in providers stay disabled |
+| 10 | Application rollback and post-deployment verification prepared | PREPARED | Rollback: §9 (redeploy the previous build; leave the new columns and table in place). Verification: `node scripts/smoke.mjs <published URL>`, `BINHI_E2E_BASE=<URL> npm run test:e2e:remote` (website journey; it deletes its own account), then by hand on a test account: open Templates, use one website and one design template, favorite one, open Template details on a personal template, archive and restore it, delete the test account. `npm run test:e2e:templates` refuses to run against a remote server by design |
+
+Release order after merge approval: back up (6) → diff review (7, 8) → publish →
+post-deployment verification (10) → record the published URL and `db:check` outputs
+in `docs/RELEASE_READINESS.md`. Any failed step stops the release.
+
+## 16. Pre-merge review, 2026-11-02 (head `50daec1`)
+
+**Repository state (Gate 0, fetched fresh).** PR #13 open and draft; head
+`50daec13324e1fc32dd95fcf76fb0940c43749ba`, equal to the approved reference (no
+commit after it before this record); base `main` at `0dd7c39`; GitHub reports it
+cleanly mergeable. No review threads, review comments or reviews. Other open PRs:
+#14 (based on an older `main`), #2, #3 (icons, base is the plan branch); none changes
+`migrations/`, so the chain is `0000` to `0003` on `main` plus this branch's `0004`.
+`main` has not moved since the PR #4 merge. No production operation was performed by
+this work; production state was not inspected (§15).
+
+**Phase 4 reconciliation (the actual SQL, read line by line).**
+
+| Requirement | Result |
+|---|---|
+| Only the approved schema additions | met: 1 new table, 8 added columns (6 on `binhi_projects`, 2 on `binhi_sites`), 1 unique index, 1 foreign key; the schema snapshot diff against `0003` shows exactly these |
+| No table removed, no column renamed | met: no `DROP`, `RENAME`, `TRUNCATE` anywhere in the file |
+| No unexpected required fields | met: every added column is nullable with no default; `NOT NULL` appears only inside the new empty table |
+| No rewrite of existing user records | met: no `UPDATE`, `INSERT` or `DELETE FROM`; the only `DELETE` text is the cascade rule on the new foreign key |
+| Ownership boundaries unchanged; favorites ownership enforced | met: favorites are keyed to the signed-in user on every call, tested across two accounts; personal-template details are owner-only (404 otherwise) |
+| Account deletion | met, and a defect was found and fixed during development: accounts are anonymised, not dropped, so the cascade alone never fires; the deletion handler removes favorites explicitly; tested |
+| Ordering after `0003` | met: journal index 4 after 3, `when` strictly increasing, snapshot `prevId` equals `0003`'s id |
+| Older builds remain compatible | met: re-run 2026-11-02, `main` (`0dd7c39`, without this change) ran its whole suite, 23 files and 189 tests, against a database with all five migrations applied |
+| Rollback does not drop anything automatically | met: §9 says to leave the columns and table in place |
+
+Application compatibility: existing websites, designs and their revisions are
+untouched by the migration (no row is rewritten) and by the application (details are
+stored beside the document and never change its revision, tested); provenance is
+stored on the project; favorites are account-specific; archived templates restore;
+no existing user data is removed. Evidence: the 305-test suite and the browser
+journeys in §4.
+
+**Phase 7 reconciliation (the implemented wording, read from the code and, for error
+messages, executed).** The approved terms are implemented as written: "Template
+details", "Description", "Category" ("No category"), "Tags", "Save details", "Archive",
+"Restore", "Show archived (n)", an "Archived" badge in place of "Private", and the
+messages "Template details saved", "“…” archived", "“…” restored". Accessibility
+labels are specific ("Archive template X", "Restore template X", "Details for
+template X"; the tags field is described by its help text). The delete confirmation
+reads "Delete template … ? Designs already created from it are not affected. This
+cannot be undone.", so it does not suggest that independent projects are deleted.
+
+Findings. None changes the approved implementation; each is reported for the founder's
+decision, because changing approved wording needs renewed Phase 7 review.
+
+* **F7-1 (clarity).** The meaning of Archive is not stated in the interface. Delete
+  states its consequence; Archive does not say "hidden from this list, not deleted,
+  restore any time". It is conveyed only by the labels, the "Archived" badge and
+  "Show archived". Nothing is lost by archiving, so the risk is low.
+* **F7-2 (wording).** Three error messages a person can reach show developer wording
+  (executed 2026-11-02): a tag over 30 characters shows
+  `tags.0: String must contain at most 30 character(s)`; a tag with no letters or
+  numbers shows `tags.0: Tags need at least one letter or number`; nine tags shows
+  `tags: Array must contain at most 8 element(s)`. The other validation messages are
+  not reachable from the interface (the description input is length-limited; the
+  category is a list).
+* **F7-3 (cosmetic).** The delete dialog title uses straight quotes
+  (`Delete template "X"?`) where the toasts use curly quotes.
+
+**Verification (fresh, 2026-11-02, on `50daec1`).**
+
+| Check | Result |
+|---|---|
+| `npm run typecheck` | pass |
+| `vitest run` (real Postgres) | 30 files, 305 tests pass |
+| `npm run db:compat` | exit 0; `0004` listed as "review required (annotated)" (new table's unique index and foreign key only); `0001` and `0002` as before |
+| `npm run build` | pass |
+| `npm run templates:assets:check` | pass: 62 templates |
+| Previous build against schema `0004` | pass: 23 files, 189 tests |
+| `npm run test:e2e` (website) | 15 steps pass |
+| `npm run test:e2e:studio` | 21 checks pass |
+| `npm run test:e2e:auth` (synthetic; providers disabled) | 7 checks pass |
+| `npm run test:e2e:templates` | 77 checks, 62 templates pass (taxonomy, search and filters, previews, instantiation, save and reopen, Brand Kit, personal templates, favorites, details, archive and restore, account isolation, axe-core, phone width) |
+| `npm run test:e2e:home-responsive` | pass (mobile, tablet, desktop) |
+| GitHub Actions, run `40808838925` on `50daec1` | success: job `123234107179` (typecheck, test, build, browser journeys) and job `123234107658` (every catalog template) |
+
+Account deletion and account isolation are covered by the integration tests in the
+305 and by the template journey. The journeys ran against disposable local databases
+only.
+
+**Security and data findings.** None new. Favorites and personal-template details are
+owner-only and plain text; nothing sensitive is stored or logged by this change; no
+secret, credential or production value appears in the repository or this review.
+
+**Governance state.** Phase 4 approval recorded (D-BINHI-TPL-P4). Phase 7 approval
+recorded (D-BINHI-TPL-P7). Outstanding: founder merge approval; the separately
+controlled production review (§15); a decision on F7-1 to F7-3. Production holds:
+all in force.
+
+**Recommendation: YES, ready for founder merge approval.** The approved
+implementation matches its approved scope, the migration is additive and compatible
+with the previous build, every check passed fresh, CI is green, and there are no
+open review discussions. This is not permission to merge. The founder may prefer to
+decide F7-1 and F7-2 before merging; fixing them is a small copy change that would
+need its own Phase 7 review and a new CI run.

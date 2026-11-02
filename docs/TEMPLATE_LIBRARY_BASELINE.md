@@ -25,10 +25,10 @@ APPROVAL, VERIFIED, COMPLETED. Evidence is in `docs/TEMPLATE_LIBRARY_RELEASE.md`
 | Phase 1 Evaluation, exit: founder approves concept | VERIFIED | Founder approved on 2026-10-29 ("Yes to all", answering: treat the directive as the Phase 1 approval) |
 | Phase 2 Planning and MVP, exit: founder approves scope | VERIFIED | Founder approved on 2026-10-29 (same answer, for the scope) |
 | Phase 3 UX and Design, exit: design passes review | VERIFIED | Founder approved the art direction of the 62 templates (2026-10-28, `docs/TEMPLATE_APPROVALS.json`); axe-core, keyboard and phone-width checks pass; loading, empty, error and "soon" states exist |
-| Phase 4 Engineering, exit: approved requirements met | VERIFIED for `c0de6dd`; **AWAITING APPROVAL** for the `0004` migration work | Founder approved on 2026-10-29 that requirements are met, as of head `c0de6dd`. The D2 migration, its services and UI came after that approval and need their own: they are additive (nullable columns, one new table), compat-checked, run only on disposable databases, and shown compatible with the previous build |
+| Phase 4 Engineering, exit: approved requirements met | VERIFIED | Founder approved on 2026-10-29 as of `c0de6dd`, and on 2026-11-02 for the `0004` migration work as of `50daec1` (D-BINHI-TPL-P4, register in `docs/TEMPLATE_LIBRARY_RELEASE.md` section 14). Not an approval to apply it to production |
 | Phase 5 Quality Assurance, exit: required tests pass, critical blockers resolved | VERIFIED | Commands, outcomes and CI runs recorded in the release report; no critical blocker open. Passing tests are not claimed as production readiness |
 | Phase 6 Release and Feedback | **NOT STARTED** | Needs explicit production approval. Rollback is documented. Release notes and a monitoring plan were missing; drafted in the release report. Configuration, secrets and backups are verified only at release time with `npm run db:check`, which has not been run |
-| Phase 7 Product Language, exit: communications approved | VERIFIED for `c0de6dd`; **AWAITING APPROVAL** for new copy | UI copy and docs were scanned for jargon and inflated claims: none found. Founder approved the communications on 2026-10-29, as of head `c0de6dd`. New copy since then (Template details dialog, Archive / Restore, "Show archived", favorites handling) needs approval |
+| Phase 7 Product Language, exit: communications approved | VERIFIED | Founder approved on 2026-10-29 as of `c0de6dd`, and on 2026-11-02 for the new Template Library wording as of `50daec1` (D-BINHI-TPL-P7). Three wording findings (F7-1 to F7-3) are reported in the release report section 16 for the founder's decision |
 | §3 Execution protocol: records retrieved, approvals obtained at gates, authorised scope only, outcomes verified, decisions recorded | VERIFIED | Decisions D1 to D5 and the founder's answers are recorded; nothing merged, published or applied to production |
 | §4 Governance: authorisation for destructive, financial, security-sensitive and production actions; never fabricate access, tests or approvals | VERIFIED | None taken. Approvals are recorded only from the founder's own words and bound to content fingerprints |
 | §5 Default response contract (Objective, Current State, Execution Plan, Verification, Risks and Blockers, Decisions Required (Yes/No), Next Action) | IN PROGRESS | Used from 2026-10-29. Earlier reports followed the directive's own longer format, which listed these headings under other names |
@@ -41,7 +41,7 @@ APPROVAL, VERIFIED, COMPLETED. Evidence is in `docs/TEMPLATE_LIBRARY_RELEASE.md`
 | Owner | Founder |
 | Version | v1.0 (template manifest v1) |
 | Phase | 1 to 5 and 7 approved or verified; 6 (release) not started |
-| Overall state | AWAITING APPROVAL: Phase 4 and 7 approvals for the migration work; then merge approval; then production approval. Auth (PR #4) is already on `main` |
+| Overall state | VERIFIED, not released: merge approval is the next gate, then the controlled production review (release report section 15), then production approval |
 | Branch / PR | `claude/binhi-template-library`, PR #13 (draft) |
 | Dependencies | PR #4 (auth) merged first, by founder order (`0dd7c39`); icons (#2, #3) are independent |
 | Open risks | see `docs/TEMPLATE_LIBRARY_RELEASE.md` section 11 |
