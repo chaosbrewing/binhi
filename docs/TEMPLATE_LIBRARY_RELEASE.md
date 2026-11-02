@@ -9,7 +9,7 @@ gate, decisions) and `docs/TEMPLATE_LIBRARY.md` (how it works).
 
 | Question | Answer | Why |
 |---|---|---|
-| Is the feature ready for **founder merge approval**? | **YES** (pre-merge review of 2026-11-02, §16; a YES is not permission to merge) | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
+| Is the feature ready for **founder merge approval**? | **YES** (pre-merge review of 2026-11-02, §16). **Founder decision: NO, keep on hold** (D-BINHI-TPL-MERGE-013, §14) | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
 | Is it ready to be **published** to production? | **NOT YET** | The production database and live HTTP were not verified from this sandbox; the founder must run `npm run db:check` first. This change now adds **one additive migration (`0004`)** that has only ever run on disposable test databases; applying it to production needs a backup and its own founder approval (§7). The unverified baseline from the icon release checklist also still stands. |
 
 Founder decisions are recorded in one place: §14 (register). As of 2026-11-02 they
@@ -321,6 +321,7 @@ own approval. Approvals are the founder's words, not tooling output.
 |---|---|---|---|---|---|---|
 | D-BINHI-TPL-P4 | **YES** | Phase 4 (Engineering): requirements for migration `migrations/0004_binhi_template_library.sql` | 2026-11-02 | Founder, written directive | #13 | `50daec13324e1fc32dd95fcf76fb0940c43749ba` |
 | D-BINHI-TPL-P7 | **YES** | Phase 7 (Product language): Template Library interface wording | 2026-11-02 | Founder, written directive | #13 | `50daec13324e1fc32dd95fcf76fb0940c43749ba` |
+| D-BINHI-TPL-MERGE-013 | **NO** | Merge PR #13 | 2026-11-02 | Founder, written decision | #13 | `5f536c4542293bd717bfbaa867496159e3d4f61d` |
 
 **D-BINHI-TPL-P4: exact scope.** The additive migration design; the nullable
 provenance columns and personal-template detail columns; the new template-favorites
@@ -348,7 +349,23 @@ backup, Replit Publish schema-diff review, rollback and post-deployment
 verification. (3) Explicit production approval. (4) Any later change to the approved
 copy or the migration needs its own review.
 
-Recorded by Claude Code on 2026-11-02 from the founder's written directive. The
+**D-BINHI-TPL-MERGE-013: NO.** The founder's decision is to keep PR #13 unmerged
+at `5f536c4` and preserve every production restriction. The Phase 4 and Phase 7
+approvals above stand. Production migration and Replit deployment remain NOT
+AUTHORISED. What the founder did authorise: **planning** a narrowly scoped
+product-language follow-up for findings F7-1 and F7-2 (§16). That specification is
+`docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md`; implementing it needs a separate
+authorisation, and its wording needs its own Phase 7 approval.
+
+| Item | Status |
+|---|---|
+| Keep PR #13 unmerged | NO merge, founder confirmed |
+| Prepare the F7-1 / F7-2 follow-up specification | COMPLETED (`docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md`) |
+| Execute the follow-up code changes | AWAITING APPROVAL |
+| Approve the revised Phase 7 wording | NOT STARTED (needs the implemented wording and test evidence) |
+| Production migration or deployment | NOT AUTHORISED |
+
+Recorded by Claude Code on 2026-11-02 from the founder's written directives. The
 decisions are the founder's words, not tooling output; this record does not modify
 migration SQL or any approved implementation.
 
