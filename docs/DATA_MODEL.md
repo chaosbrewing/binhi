@@ -8,7 +8,7 @@ tracked in `drizzle.binhi_migrations`. Ownership is explicit on every reachable 
 | --- | --- | --- |
 | `binhi_users` | Accounts | `email` (unique), `password_hash` (scrypt), `deleted_at` |
 | `binhi_sessions` | Server-side sessions | `token_hash` (HMAC of the cookie token), `expires_at`, `last_seen_at` |
-| `binhi_sites` | One website | `owner_id`, `slug` (unique, public path), `document` (jsonb, canonical), `revision`, `live_publication_id`, `deleted_at` |
+| `binhi_sites` | One website | `owner_id`, `slug` (unique, public path), `document` (jsonb, canonical), `revision`, `source_template_id` / `source_template_version` (provenance, nullable), `live_publication_id`, `deleted_at` |
 | `binhi_site_revisions` | Immutable document snapshots | `(site_id, revision)` unique, `kind` (template/autosave/restore/publish/undo/redo), `summary` (op types), `document` |
 | `binhi_op_batches` | Idempotency for autosave | `(site_id, batch_id)` unique, `result_revision` |
 | `binhi_assets` | Media metadata | `site_id`, `mime_type`, `byte_size`, `width/height`, `alt`, `folder`, `storage`, `storage_key`, `sha256`, `deleted_at` |
@@ -18,8 +18,9 @@ tracked in `drizzle.binhi_migrations`. Ownership is explicit on every reachable 
 | `binhi_form_submissions` | Visitor form posts | `site_id`, `form_node_id`, `fields` (label → value) |
 | `binhi_audit_log` | Who did what | `actor_id`, `site_id`, `action`, `details`, `ip` |
 | `binhi_library_assets` | Private, account-level image library (Phase 1) | `owner_id`, `mime_type`, `width/height`, `alt`, `tags`, `origin` (upload / photo-original), `storage_key`, `sha256`, `deleted_at` |
-| `binhi_projects` | Creative projects with a per-kind document (Phase 1) | `owner_id`, `kind` (photo / design / design-template), `document` (jsonb, validated per kind), `revision`, `deleted_at` |
+| `binhi_projects` | Creative projects with a per-kind document (Phase 1) | `owner_id`, `kind` (photo / design / design-template), `document` (jsonb, validated per kind), `revision`, `source_template_id` / `source_template_version` (provenance, nullable), `description` / `category` / `tags` / `archived_at` (personal-template details, nullable, outside the document and its revision), `deleted_at` |
 | `binhi_asset_usages` | Which projects reference which library files (Phase 1) | `(asset_id, project_id)` unique; recomputed on every project save |
+| `binhi_template_favorites` | A person's favorite shared templates (Template Library) | `(user_id, template_id)` unique, `user_id` cascades; removed explicitly on account deletion because accounts are anonymised, not dropped |
 | `binhi_brand_kits` | Colours, fonts, logo and tagline per account (Phase 1) | `owner_id`, `document` (jsonb), `deleted_at` |
 
 ## The canonical document (`binhi_sites.document`)

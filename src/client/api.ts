@@ -1,4 +1,6 @@
 import type { SiteDocument, Operation, ValidationReport } from "../core/index.js";
+import type { TemplateCard } from "../core/templates/library/card.js";
+import type { BrandBindings } from "../core/templates/library/catalog/designs/types.js";
 import type { BrandKitDocument, DesignDocument, PhotoProjectDocument, ProjectKind } from "../core/creative/index.js";
 import type { AuthMethods, OAuthIntent, ProviderStatus, SocialProvider } from "../core/auth.js";
 
@@ -83,6 +85,38 @@ export interface TemplateSummary {
   description: string;
   swatch: [string, string, string];
 }
+export type { TemplateCard };
+export type { BrandBindings } from "../core/templates/library/catalog/designs/types.js";
+export interface TemplateUseResult {
+  kind: "website" | "design";
+  id: string;
+  path: string;
+  brand?: { kitName: string; changes: number; adjustments: string[]; logoPlaced: boolean };
+}
+export interface TemplateFormat { id: string; label: string; count: number; available: boolean; note: string | null }
+export interface TemplateCategoryInfo { id: string; number: number; name: string; formats: string[]; count: number; subcategories: { name: string }[] }
+export interface TemplateTaxonomy {
+  formats: TemplateFormat[];
+  categories: TemplateCategoryInfo[];
+  styles: { id: string; label: string; count: number }[];
+  orientations: string[];
+  colors: { id: string; label: string; count: number }[];
+  editors: { id: string; label: string; count: number }[];
+  collections: { id: string; title: string; description: string; templateIds: string[] }[];
+  total: number;
+}
+export interface TemplateFacets { formats: Record<string, number>; categories: Record<string, number>; styles: Record<string, number> }
+export interface TemplateList { items: TemplateCard[]; total: number; page: number; pageSize: number; facets: TemplateFacets }
+export interface TemplateDetail extends TemplateCard {
+  keywords: string[];
+  license: { id: string; attribution: string | null; notes: string };
+  requiredFeatures: string[];
+  dependencies: { fonts: string[]; icons: string[]; elements: string[]; bundledAssets: string[]; brandTokens: string[]; components: string[] };
+  brandTokens: string[];
+  availabilityNotes: string;
+  hasDocument: boolean;
+}
+export interface TemplateQueryParams { q?: string; format?: string; category?: string; style?: string; orientation?: string; color?: string; editor?: string; sort?: string; page?: number; pageSize?: number }
 export interface RevisionSummary {
   id: string;
   revision: number;
@@ -140,6 +174,17 @@ export interface ProjectSummary {
   createdAt: string;
   updatedAt: string;
   meta: { width?: number; height?: number; sourceAssetId?: string; layers?: number };
+  /** Personal-template details (empty for other kinds). */
+  description: string | null;
+  category: string | null;
+  tags: string[];
+  archived: boolean;
+}
+export interface PersonalTemplatePatch {
+  description?: string | null;
+  category?: string | null;
+  tags?: string[] | null;
+  archived?: boolean;
 }
 export interface ProjectDetail<D = DesignDocument | PhotoProjectDocument> extends ProjectSummary {
   document: D;
@@ -165,6 +210,21 @@ export const api = {
   logout: () => request<{ ok: true }>("POST", "/api/auth/logout"),
   deleteAccount: (password?: string) => request<{ ok: true }>("DELETE", "/api/auth/account", password ? { password } : undefined),
   templates: () => request<{ templates: TemplateSummary[] }>("GET", "/api/templates"),
+  templateTaxonomy: () => request<TemplateTaxonomy>("GET", "/api/template-library/taxonomy"),
+  templateList: (params: TemplateQueryParams) => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "" && v !== "all") qs.set(k, String(v));
+    return request<TemplateList>("GET", `/api/template-library/templates${qs.size ? `?${qs}` : ""}`);
+  },
+  templateCards: (ids: string[]) => request<{ items: TemplateCard[] }>("POST", "/api/template-library/cards", { ids }),
+  templateDetail: (id: string) => request<{ template: TemplateDetail }>("GET", `/api/template-library/templates/${encodeURIComponent(id)}`),
+  templateDocument: (id: string) => request<{ document: DesignDocument; brand: BrandBindings }>("GET", `/api/template-library/templates/${encodeURIComponent(id)}/document`),
+  templateFavorites: () => request<{ ids: string[] }>("GET", "/api/template-library/favorites"),
+  addTemplateFavorite: (id: string) => request<{ ok: true }>("PUT", `/api/template-library/favorites/${encodeURIComponent(id)}`),
+  removeTemplateFavorite: (id: string) => request<{ ok: true }>("DELETE", `/api/template-library/favorites/${encodeURIComponent(id)}`),
+  updatePersonalTemplate: (projectId: string, patch: PersonalTemplatePatch) => request<{ project: ProjectSummary }>("PATCH", `/api/template-library/mine/${projectId}`, patch),
+  usePersonalTemplate: (projectId: string, name?: string) => request<{ result: TemplateUseResult }>("POST", `/api/template-library/mine/${projectId}/use`, name ? { name } : {}),
+  useTemplate: (id: string, input: { name?: string; brandKitId?: string } = {}) => request<{ result: TemplateUseResult }>("POST", `/api/template-library/templates/${encodeURIComponent(id)}/use`, input),
   sites: () => request<{ sites: SiteSummary[] }>("GET", "/api/sites"),
   createSite: (name: string, templateId: string) => request<{ site: SiteDetail }>("POST", "/api/sites", { name, templateId }),
   site: (id: string) => request<{ site: SiteDetail }>("GET", `/api/sites/${id}`),

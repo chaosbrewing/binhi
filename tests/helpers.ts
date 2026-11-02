@@ -14,6 +14,8 @@ export interface TestAppOptions {
   truncate?: boolean;
   /** Replace the fetch used for publication verification (default: inject into this app). */
   fetchImpl?: typeof fetch;
+  /** Replace the shipped template catalog (test seam). */
+  templates?: import("../src/server/app.js").AppDeps["templates"];
 }
 
 export async function testApp(overrides: Record<string, string> = {}, options: TestAppOptions = {}): Promise<BinhiApp> {
@@ -34,7 +36,7 @@ export async function testApp(overrides: Record<string, string> = {}, options: T
     const res = await appRef!.inject({ method: "GET", url: url.pathname + url.search, headers: (init?.headers as Record<string, string>) ?? {} });
     return new Response(res.body, { status: res.statusCode, headers: res.headers as Record<string, string> });
   });
-  const built = await buildApp({ config, db, sql, fetchImpl, oidcFetchImpl: options.oidcFetchImpl });
+  const built = await buildApp({ config, db, sql, fetchImpl, oidcFetchImpl: options.oidcFetchImpl, templates: options.templates });
   appRef = built.app;
   const close = built.close;
   built.close = async () => {
@@ -61,6 +63,7 @@ export function api(app: FastifyInstance, session: Session | null) {
   return {
     get: (url: string, extra: { headers?: Record<string, string> } = {}) => app.inject({ method: "GET", url, headers: { ...headers, ...(extra.headers ?? {}) } }),
     post: (url: string, payload?: unknown, extra: { headers?: Record<string, string> } = {}) => app.inject({ method: "POST", url, headers: { ...headers, ...(extra.headers ?? {}) }, payload: payload as InjectOptions["payload"] }),
+    put: (url: string, payload?: unknown) => app.inject({ method: "PUT", url, headers, payload: payload as InjectOptions["payload"] }),
     patch: (url: string, payload?: unknown) => app.inject({ method: "PATCH", url, headers, payload: payload as InjectOptions["payload"] }),
     del: (url: string, payload?: unknown) => app.inject({ method: "DELETE", url, headers, payload: payload as InjectOptions["payload"] }),
   };

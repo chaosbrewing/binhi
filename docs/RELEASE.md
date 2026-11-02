@@ -87,6 +87,19 @@ Custom domains / tenant subdomains: not supported in v0.1. They require
 wildcard DNS, TLS issuance and host-based routing that Replit Autoscale does
 not provide out of the box; path-based URLs are the honest default.
 
+## Template Library schema change (migration 0004; owner approval needed before publishing)
+
+`migrations/0004_binhi_template_library.sql` is additive: one new table
+(`binhi_template_favorites`) and nullable columns only: `source_template_id` and
+`source_template_version` on `binhi_projects` and `binhi_sites`, and `description`,
+`category`, `tags`, `archived_at` on `binhi_projects`. Nothing is dropped, renamed
+or made required, and the previous build runs unchanged against the new schema
+(its whole test suite passes on a database at `0004`). It has only been applied to
+disposable test databases. Production receives it only through the Replit Publish
+schema diff, an owner action that needs a backup first; the expected diff and the
+full checklist are in `docs/TEMPLATE_LIBRARY_RELEASE.md` section 15. On rollback,
+leave the new columns and table in place.
+
 ## Phase 1 schema change (owner approval needed before publishing)
 
 `migrations/0001_binhi_creative_studio.sql` adds four tables

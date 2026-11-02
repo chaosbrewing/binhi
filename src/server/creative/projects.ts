@@ -17,6 +17,11 @@ export interface ProjectSummary {
   updatedAt: string;
   /** Small, kind-specific facts for list cards (no document payload). */
   meta: { width?: number; height?: number; sourceAssetId?: string; layers?: number };
+  /** Personal-template details; empty for every other kind. They are not part of the document or its revision. */
+  description: string | null;
+  category: string | null;
+  tags: string[];
+  archived: boolean;
 }
 
 export interface ProjectDetail extends ProjectSummary {
@@ -44,7 +49,17 @@ function toSummary(row: typeof projects.$inferSelect): ProjectSummary {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     meta: metaOf(row.kind, row.document),
+    description: row.description,
+    category: row.category,
+    tags: row.tags ?? [],
+    archived: row.archivedAt !== null,
   };
+}
+
+/** Where a project came from, recorded when it is created from a template. */
+export interface ProjectSource {
+  templateId: string;
+  version: number | null;
 }
 
 /**
@@ -70,12 +85,16 @@ export class ProjectService {
     return rows[0];
   }
 
+  async summary(ownerId: string, projectId: string): Promise<ProjectSummary> {
+    return toSummary(await this.getOwned(ownerId, projectId));
+  }
+
   async get(ownerId: string, projectId: string): Promise<ProjectDetail> {
     const row = await this.getOwned(ownerId, projectId);
     return { ...toSummary(row), document: row.document };
   }
 
-  async create(ownerId: string, input: { kind: ProjectKind; name: string; document: unknown }, ip?: string): Promise<ProjectDetail> {
+  async create(ownerId: string, input: { kind: ProjectKind; name: string; document: unknown; source?: ProjectSource; details?: { description: string | null; category: string | null; tags: string[] } }, ip?: string): Promise<ProjectDetail> {
     const name = input.name.trim().slice(0, 80);
     if (!name) throw badRequest("Give your project a name");
     const document = parseProjectDocument(input.kind, input.document);
@@ -83,18 +102,20 @@ export class ProjectService {
     if ((count[0]?.n ?? 0) >= MAX_PROJECTS_PER_OWNER) throw badRequest(`You can have up to ${MAX_PROJECTS_PER_OWNER} projects`);
     const id = newId("prj");
     const now = new Date();
-    await this.db.insert(projects).values({ id, ownerId, kind: input.kind, name, document, schemaVersion: document.schemaVersion, revision: 0, createdAt: now, updatedAt: now });
+    await this.db.insert(projects).values({ id, ownerId, kind: input.kind, name, document, schemaVersion: document.schemaVersion, revision: 0, ...(input.source ? { sourceTemplateId: input.source.templateId, sourceTemplateVersion: input.source.version } : {}), ...(input.details && input.kind === "design-template" ? { description: input.details.description, category: input.details.category, tags: input.details.tags } : {}), createdAt: now, updatedAt: now });
     await this.library.setUsages(ownerId, id, projectAssetIds(input.kind, document));
     await audit(this.db, { actorId: ownerId, action: "project.created", details: { id, kind: input.kind }, ip });
     return this.get(ownerId, id);
   }
 
   /** Copy a project (used for "use template" and "duplicate"); the copy starts at revision 0 with the requested kind. */
-  async duplicate(ownerId: string, projectId: string, input: { name?: string; kind?: ProjectKind }, ip?: string): Promise<ProjectDetail> {
+  async duplicate(ownerId: string, projectId: string, input: { name?: string; kind?: ProjectKind; source?: ProjectSource }, ip?: string): Promise<ProjectDetail> {
     const source = await this.getOwned(ownerId, projectId);
     const kind = input.kind ?? source.kind;
     if ((kind === "photo") !== (source.kind === "photo")) throw badRequest("A photo project cannot become a design");
-    return this.create(ownerId, { kind, name: input.name ?? `${source.name} copy`, document: source.document }, ip);
+    // A copy of a personal template keeps its description, category and tags (but starts un-archived).
+    const details = kind === "design-template" ? { description: source.description, category: source.category, tags: source.tags ?? [] } : undefined;
+    return this.create(ownerId, { kind, name: input.name ?? `${source.name} copy`, document: source.document, ...(input.source ? { source: input.source } : {}), ...(details ? { details } : {}) }, ip);
   }
 
   /**

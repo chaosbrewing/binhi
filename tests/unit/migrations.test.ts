@@ -21,7 +21,7 @@ describe("migration environment guard", () => {
 describe("migration compatibility check", () => {
   it("scans only incremental migrations and requires a reviewed annotation for flagged SQL", async () => {
     const results = await checkMigrationFiles();
-    expect(results.map((r) => r.file)).toEqual(["0001_binhi_creative_studio.sql", "0002_nervous_carlie_cooper.sql", "0003_awesome_the_enforcers.sql"]);
+    expect(results.map((r) => r.file)).toEqual(["0001_binhi_creative_studio.sql", "0002_nervous_carlie_cooper.sql", "0003_awesome_the_enforcers.sql", "0004_binhi_template_library.sql"]);
     for (const result of results) {
       // Foreign keys on brand-new tables are flagged by the generic rule; the migration carries a reasoned review marker.
       expect(result.findings.length === 0 || result.reviewed).toBe(true);

@@ -5,6 +5,7 @@ import type { AuthMethods, SocialProvider } from "../../core/auth.js";
 import { useAuth } from "../auth/AuthContext.js";
 import { OAuthCallbackNotice } from "../auth/OAuthCallbackNotice.js";
 import { Logo } from "../components/Logo.js";
+import { clearPrefs } from "../templates/prefs.js";
 import "../auth/social-auth.css";
 
 export function AccountPage() {
@@ -96,6 +97,7 @@ export function AccountPage() {
     setBusy(true);
     try {
       await api.deleteAccount(methods?.hasPassword ? password : undefined);
+      if (user) clearPrefs(user.id);
       setUser(null);
       nav("/signin", { replace: true });
     } catch (err) {
