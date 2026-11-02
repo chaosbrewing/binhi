@@ -9,8 +9,8 @@ gate, decisions) and `docs/TEMPLATE_LIBRARY.md` (how it works).
 
 | Question | Answer | Why |
 |---|---|---|
-| Is the feature ready for **founder merge approval**? | **YES** (pre-merge review of 2026-11-02, §16). **Founder decision: NO, keep on hold** (D-BINHI-TPL-MERGE-013, §14) | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
-| Is it ready to be **published** to production? | **NOT YET** | The production database and live HTTP were not verified from this sandbox; the founder must run `npm run db:check` first. This change now adds **one additive migration (`0004`)** that has only ever run on disposable test databases; applying it to production needs a backup and its own founder approval (§7). The unverified baseline from the icon release checklist also still stands. |
+| Is the feature ready for **founder merge approval**? | **Merged 2026-11-02** at `8cb182a`, merge commit `ab94d7a` (D-BINHI-TPL-MERGE-016, §14; the earlier MERGE-013 NO is superseded) | Every acceptance criterion that can be evidenced in a sandbox is evidenced; all journeys pass. |
+| Is it ready to be **published** to production? | **NOT YET**: merged is not released | The production database and live HTTP were not verified from this sandbox; the founder must run `npm run db:check` first. This change now adds **one additive migration (`0004`)** that has only ever run on disposable test databases; applying it to production needs a backup and its own founder approval (§7). The unverified baseline from the icon release checklist also still stands. |
 
 Founder decisions are recorded in one place: §14 (register). As of 2026-11-02 they
 include **D-BINHI-TPL-P4** (engineering requirements for migration `0004`) and
@@ -321,7 +321,10 @@ own approval. Approvals are the founder's words, not tooling output.
 |---|---|---|---|---|---|---|
 | D-BINHI-TPL-P4 | **YES** | Phase 4 (Engineering): requirements for migration `migrations/0004_binhi_template_library.sql` | 2026-11-02 | Founder, written directive | #13 | `50daec13324e1fc32dd95fcf76fb0940c43749ba` |
 | D-BINHI-TPL-P7 | **YES** | Phase 7 (Product language): Template Library interface wording | 2026-11-02 | Founder, written directive | #13 | `50daec13324e1fc32dd95fcf76fb0940c43749ba` |
-| D-BINHI-TPL-MERGE-013 | **NO** | Merge PR #13 | 2026-11-02 | Founder, written decision | #13 | `5f536c4542293bd717bfbaa867496159e3d4f61d` |
+| D-BINHI-TPL-MERGE-013 | **NO** | Merge PR #13 (historical; superseded by MERGE-016) | 2026-11-02 | Founder, written decision | #13 | `5f536c4542293bd717bfbaa867496159e3d4f61d` |
+| D-BINHI-TPL-CI-014 | **YES** | Test-only correction of the favorites timing race in `e2e/templates.ts` (3 lines; no product code) | 2026-11-02 | Founder, written directive | #13 | `8cb182ab208390a0cfa042f42b4b47c583da73ae` |
+| D-BINHI-TPL-F7-015 | **YES** | Isolated implementation of F7-1 (plain-language explanation of Archive and Restore) and F7-2 (human-readable tag-validation messages), with tests and a fresh Phase 7 review; merge of that follow-up NOT authorised | 2026-11-02 | Founder, written directive | follow-up PR from `claude/binhi-template-f7-copy` | baseline `8cb182ab208390a0cfa042f42b4b47c583da73ae` |
+| D-BINHI-TPL-MERGE-016 | **YES** | Merge PR #13 at exact head `8cb182a`, conditional on final current-head checks; supersedes MERGE-013 | 2026-11-02 | Founder, written directive | #13 | `8cb182ab208390a0cfa042f42b4b47c583da73ae` |
 
 **D-BINHI-TPL-P4: exact scope.** The additive migration design; the nullable
 provenance columns and personal-template detail columns; the new template-favorites
@@ -364,6 +367,28 @@ authorisation, and its wording needs its own Phase 7 approval.
 | Execute the follow-up code changes | AWAITING APPROVAL |
 | Approve the revised Phase 7 wording | NOT STARTED (needs the implemented wording and test evidence) |
 | Production migration or deployment | NOT AUTHORISED |
+
+**Namespace reconciliation (2026-11-02).** The founder's later directive proposed
+recording "D-BINHI-TPL-MERGE-013 = YES". That identifier already held the NO of the
+same day. Historical decisions are never overwritten or renumbered, so the YES is
+recorded as **D-BINHI-TPL-MERGE-016**, marked as superseding MERGE-013, and the
+MERGE-013 row keeps its NO. D-BINHI-TPL-CI-014 had been recorded only in the PR
+description; it is entered here for completeness. D-BINHI-TPL-F7-015 was free.
+
+**D-BINHI-TPL-MERGE-016: executed.** PR #13 was merged into `main` on 2026-11-02 at
+the exact approved head `8cb182a` (merge commit
+`ab94d7a0398fa2905199085674138025e17aa9f3`) after the final checks passed: head,
+base `0dd7c39`, CI run `41416534770` green on that head, no review threads, clean
+mergeability, `0004` still additive, and `ci.yml` the only workflow on push to
+`main` (tests and builds; no deploy, publish or migration step). The F7 baseline
+branch `claude/binhi-template-f7-copy` was pushed at the same head before merging.
+**A merged PR is not a release:** migration `0004` has not been applied to
+production; nothing is published or deployed; production configuration is
+unchanged (§15 remains NOT STARTED).
+
+**D-BINHI-TPL-F7-015: implemented, awaiting review.** See
+`docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md` for the final wording, tests and evidence.
+Its PR needs fresh Phase 7 approval; merging it is not authorised.
 
 Recorded by Claude Code on 2026-11-02 from the founder's written directives. The
 decisions are the founder's words, not tooling output; this record does not modify
@@ -440,6 +465,9 @@ cannot be undone.", so it does not suggest that independent projects are deleted
 Findings. None changes the approved implementation; each is reported for the founder's
 decision, because changing approved wording needs renewed Phase 7 review.
 
+* **Status 2026-11-02:** F7-1 and F7-2 are implemented on `claude/binhi-template-f7-copy`
+  under D-BINHI-TPL-F7-015 (`docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md`), awaiting fresh
+  Phase 7 review; F7-3 is not in that authorisation and is unchanged.
 * **F7-1 (clarity).** The meaning of Archive is not stated in the interface. Delete
   states its consequence; Archive does not say "hidden from this list, not deleted,
   restore any time". It is conveyed only by the labels, the "Archived" badge and
