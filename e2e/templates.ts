@@ -356,8 +356,11 @@ try {
   await page.goto(`${base}/templates?format=websites`);
   const firstCard = cards(page).getByRole("listitem").first();
   const firstName = ((await firstCard.getByRole("heading").textContent()) ?? "").trim();
+  // The button flips at once (optimistic); wait until the account has actually stored the favorite before leaving the page.
+  const favoriteSaved = page.waitForResponse((r) => r.request().method() === "PUT" && r.url().includes("/api/template-library/favorites/") && r.ok());
   await firstCard.getByRole("button", { name: new RegExp(`^Add ${firstName} to favorites`) }).click();
   await firstCard.getByRole("button", { name: new RegExp(`^Remove ${firstName} from favorites`) }).waitFor();
+  await favoriteSaved;
   await page.goto(`${base}/templates`);
   await page.getByRole("heading", { name: "Your favorites" }).waitFor();
   await page.getByRole("list", { name: "Favorite templates" }).getByRole("heading", { name: firstName, exact: true }).waitFor();
