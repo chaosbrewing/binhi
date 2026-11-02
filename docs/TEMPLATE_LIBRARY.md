@@ -200,7 +200,12 @@ A personal template is a private project of kind `design-template`. Users can
 save one from the Design Studio, see a thumbnail drawn from its document, use it,
 rename it, duplicate it, describe it (a one-line description up to 280 characters,
 a category from the 30, up to 8 tags), archive and restore it, and delete it. The
-owner check is server-side for every action. Details are stored beside the design,
+owner check is server-side for every action. The interface says what Archive does
+("Archiving hides this template from your active list. You can restore it anytime.",
+shown with the controls and read from every Archive button), and a detail that breaks
+a rule is explained inside the Template details dialog in plain words with the real
+limit, for example "Each tag must be 30 characters or fewer."; the dialog stays open
+with the person's input. Details are stored beside the design,
 never inside it, so changing them never changes the design's revision; a duplicate
 keeps them and starts un-archived. Details are plain text, validated by one shared
 schema (`personal.ts`) that rejects unknown fields and control characters, and tags

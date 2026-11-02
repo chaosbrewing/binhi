@@ -494,6 +494,19 @@ describe("template library API: personal template details", () => {
     for (const body of bad) expect((await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, body)).statusCode, JSON.stringify(body)).toBe(400);
   });
 
+  it("sends plain-language messages as issues, with the real limits, and keeps the global error format", async () => {
+    const longTag = await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { tags: ["x".repeat(31)] });
+    expect(longTag.statusCode).toBe(400);
+    expect(longTag.json().error.details[0].message).toBe("Each tag must be 30 characters or fewer.");
+    expect(longTag.json().error.message.startsWith("tags.0: ")).toBe(true);
+    const tooMany = await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { tags: Array.from({ length: 9 }, (_, i) => `t${i}`) });
+    expect(tooMany.json().error.details[0].message).toBe("You can add up to 8 tags.");
+    expect((await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { tags: [" "] })).json().error.details[0].message).toBe("Remove the empty tag.");
+    expect((await api(b.app, alice).patch(`/api/template-library/mine/${tplId}`, { tags: ["!!!"] })).json().error.details[0].message).toBe("Each tag needs at least one letter or number.");
+    // The same inputs are still rejected and nothing was stored.
+    expect((await api(b.app, alice).get(`/api/projects/${tplId}`)).json().project.tags).not.toContain("x".repeat(31));
+  });
+
   it("is owner-only and only for personal templates", async () => {
     expect((await api(b.app, bob).patch(`/api/template-library/mine/${tplId}`, { description: "mine now" })).statusCode).toBe(404);
     expect((await api(b.app, alice).patch(`/api/template-library/mine/${designId}`, { description: "not a template" })).statusCode).toBe(404);

@@ -14,21 +14,24 @@ export const CATEGORY_IDS: readonly string[] = CATEGORIES.map((c) => c.id);
 // No control characters (newlines included): a description is one short line of text.
 const NO_CONTROL = /^[^\u0000-\u001f\u007f]*$/;
 
+// Every message is written for the person typing, with the real limit in it, so a limit
+// can never disagree with its message. The server sends these as issue messages; the
+// browser shows the first one as it is.
 const Tag = z
   .string()
   .trim()
-  .min(1)
-  .max(PERSONAL_LIMITS.tagLength)
-  .regex(NO_CONTROL, "Tags cannot contain control characters")
+  .min(1, "Remove the empty tag.")
+  .max(PERSONAL_LIMITS.tagLength, `Each tag must be ${PERSONAL_LIMITS.tagLength} characters or fewer.`)
+  .regex(NO_CONTROL, "Tags cannot contain control characters.")
   .transform((t) => slugify(t))
-  .refine((t) => t.length > 0, "Tags need at least one letter or number");
+  .refine((t) => t.length > 0, "Each tag needs at least one letter or number.");
 
 /** What `PATCH /mine/:projectId` accepts. `null` clears a field. Anything else is rejected. */
 export const PersonalMetaPatch = z
   .object({
-    description: z.string().trim().max(PERSONAL_LIMITS.description).regex(NO_CONTROL, "The description cannot contain line breaks").nullable().optional(),
-    category: z.string().refine((id) => CATEGORY_IDS.includes(id), "Choose a category from the list").nullable().optional(),
-    tags: z.array(Tag).max(PERSONAL_LIMITS.tags).nullable().optional(),
+    description: z.string().trim().max(PERSONAL_LIMITS.description, `The description must be ${PERSONAL_LIMITS.description} characters or fewer.`).regex(NO_CONTROL, "The description cannot contain line breaks.").nullable().optional(),
+    category: z.string().refine((id) => CATEGORY_IDS.includes(id), "Choose a category from the list.").nullable().optional(),
+    tags: z.array(Tag).max(PERSONAL_LIMITS.tags, `You can add up to ${PERSONAL_LIMITS.tags} tags.`).nullable().optional(),
     archived: z.boolean().optional(),
   })
   .strict();
