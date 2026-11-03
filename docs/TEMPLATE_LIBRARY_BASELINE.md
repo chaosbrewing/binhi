@@ -41,7 +41,7 @@ APPROVAL, VERIFIED, COMPLETED. Evidence is in `docs/TEMPLATE_LIBRARY_RELEASE.md`
 | Owner | Founder |
 | Version | v1.0 (template manifest v1) |
 | Phase | 1 to 5 and 7 approved or verified; 6 (release) not started |
-| Overall state | COMPLETED to `main` (PR #13 merged 2026-11-02 at `8cb182a`, D-BINHI-TPL-MERGE-016); NOT RELEASED: production review (release report section 15) and production approval remain ahead; the F7-1 / F7-2 follow-up is implemented and AWAITING APPROVAL (Phase 7 review) |
+| Overall state | COMPLETED to `main`: PR #13 merged 2026-11-02 at `8cb182a` (D-BINHI-TPL-MERGE-016) and the F7-1 / F7-2 follow-up PR #15 merged 2026-11-03 at `b04b202` (D-BINHI-TPL-P7-017, D-BINHI-TPL-MERGE-018). NOT RELEASED: production review (release report section 15) and production approval remain ahead |
 | Branch / PR | `claude/binhi-template-library`, PR #13 (draft) |
 | Dependencies | PR #4 (auth) merged first, by founder order (`0dd7c39`); icons (#2, #3) are independent |
 | Open risks | see `docs/TEMPLATE_LIBRARY_RELEASE.md` section 11 |

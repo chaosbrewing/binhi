@@ -325,6 +325,8 @@ own approval. Approvals are the founder's words, not tooling output.
 | D-BINHI-TPL-CI-014 | **YES** | Test-only correction of the favorites timing race in `e2e/templates.ts` (3 lines; no product code) | 2026-11-02 | Founder, written directive | #13 | `8cb182ab208390a0cfa042f42b4b47c583da73ae` |
 | D-BINHI-TPL-F7-015 | **YES** | Isolated implementation of F7-1 (plain-language explanation of Archive and Restore) and F7-2 (human-readable tag-validation messages), with tests and a fresh Phase 7 review; merge of that follow-up NOT authorised | 2026-11-02 | Founder, written directive | follow-up PR from `claude/binhi-template-f7-copy` | baseline `8cb182ab208390a0cfa042f42b4b47c583da73ae` |
 | D-BINHI-TPL-MERGE-016 | **YES** | Merge PR #13 at exact head `8cb182a`, conditional on final current-head checks; supersedes MERGE-013 | 2026-11-02 | Founder, written directive | #13 | `8cb182ab208390a0cfa042f42b4b47c583da73ae` |
+| D-BINHI-TPL-P7-017 | **YES** | Phase 7: the final F7-1 / F7-2 wording in `docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md` §8 (Archive guidance and its accessibility description, archive and restore notifications, tag-validation messages, description and category wording, in-dialog error presentation, kept input). Covers PR #15 at `b04b202` only | 2026-11-03 | Founder, written directive | #15 | `b04b202b0f4f5c490d7e2b79630675411f2f0813` |
+| D-BINHI-TPL-MERGE-018 | **YES** | Merge PR #15 at exact head `b04b202`, conditional on current-head, CI, branch-protection and deployment-safety checks | 2026-11-03 | Founder, written directive | #15 | `b04b202b0f4f5c490d7e2b79630675411f2f0813` |
 
 **D-BINHI-TPL-P4: exact scope.** The additive migration design; the nullable
 provenance columns and personal-template detail columns; the new template-favorites
@@ -386,9 +388,23 @@ branch `claude/binhi-template-f7-copy` was pushed at the same head before mergin
 production; nothing is published or deployed; production configuration is
 unchanged (§15 remains NOT STARTED).
 
-**D-BINHI-TPL-F7-015: implemented, awaiting review.** See
-`docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md` for the final wording, tests and evidence.
-Its PR needs fresh Phase 7 approval; merging it is not authorised.
+**D-BINHI-TPL-F7-015: implemented; then approved and merged under P7-017 and
+MERGE-018.** See `docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md` for the final wording, tests
+and evidence.
+
+**D-BINHI-TPL-P7-017 and D-BINHI-TPL-MERGE-018: executed.** PR #15 was merged into
+`main` on 2026-11-03 at the exact approved head `b04b202` (merge commit
+`1dee1709b0ab86ef7ef1589e3d1460b66849a92a`, parents `ab94d7a` and `b04b202`)
+after the checks passed: exact head; base `ab94d7a`; CI run `41538920921` green on
+that head (jobs `125597774528`, `125597774877`); no review threads, reviews or
+comments; clean mergeability; no migration, server, configuration, workflow or
+dependency change in the diff; `ci.yml` the only automation on push to `main` and no
+other deploy or release configuration in the repository. Neither decision authorises
+production migration, publishing, deployment or configuration changes, which stay
+with §15. Both identifiers were free; nothing historical was overwritten or
+renumbered. These two entries were recorded after the merge, by a documentation-only
+change, because recording them on PR #15 before merging would have moved its
+approved head.
 
 Recorded by Claude Code on 2026-11-02 from the founder's written directives. The
 decisions are the founder's words, not tooling output; this record does not modify
@@ -465,9 +481,9 @@ cannot be undone.", so it does not suggest that independent projects are deleted
 Findings. None changes the approved implementation; each is reported for the founder's
 decision, because changing approved wording needs renewed Phase 7 review.
 
-* **Status 2026-11-02:** F7-1 and F7-2 are implemented on `claude/binhi-template-f7-copy`
-  under D-BINHI-TPL-F7-015 (`docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md`), awaiting fresh
-  Phase 7 review; F7-3 is not in that authorisation and is unchanged.
+* **Status 2026-11-03:** F7-1 and F7-2 are on `main` (PR #15 merged as `1dee170` under
+  D-BINHI-TPL-P7-017 and D-BINHI-TPL-MERGE-018; `docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md`).
+  F7-3 was not in that authorisation and is unchanged.
 * **F7-1 (clarity).** The meaning of Archive is not stated in the interface. Delete
   states its consequence; Archive does not say "hidden from this list, not deleted,
   restore any time". It is conveyed only by the labels, the "Archived" badge and
