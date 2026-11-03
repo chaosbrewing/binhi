@@ -1,10 +1,23 @@
 # Template Library follow-up F7: Archive clarity and friendly validation messages
 
-Status: **specification only, NOT STARTED.** Planning was authorised by the founder
-on 2026-11-02 (decision record in `docs/TEMPLATE_LIBRARY_RELEASE.md` §14). No code
-has been written. Executing this specification needs a separate founder
-authorisation, and the resulting wording needs its own Phase 7 approval before
-any merge. PR #13 stays on hold at `5f536c4` and is not modified by this work.
+Status: **IMPLEMENTED on `claude/binhi-template-f7-copy`, AWAITING APPROVAL (fresh
+Phase 7 review of the final wording). Merging it is NOT authorised.** Implementation
+was authorised by the founder on 2026-11-02 (D-BINHI-TPL-F7-015, register in
+`docs/TEMPLATE_LIBRARY_RELEASE.md` §14). Base: the approved head `8cb182a`, cut
+before PR #13 was merged, so the diff is exactly this follow-up. §8 lists the final
+wording as implemented, and §9 the evidence.
+
+## 0. Four-Question Gate (recorded before implementation, 2026-11-02)
+
+| Question | Answer |
+|---|---|
+| What chaos does this organise? | People were not told what archiving a template does, and a tag that broke a rule produced a developer message (`tags.0: String must contain at most 30 character(s)`) in a toast after the dialog closed. |
+| What meaning does it create? | Predictable template management (archive is hidden, not deleted, and reversible) and feedback a person can act on without leaving their input. |
+| Who is it for? | BINHI creators organising their saved templates and editing their details. |
+| Why should they care? | They can archive and restore with confidence and fix an invalid tag in place, in plain words. |
+
+No feature is added; validation rules, limits, permissions, schema and production
+behaviour are unchanged.
 
 Findings being addressed (from the pre-merge review, release report §16):
 
@@ -168,3 +181,53 @@ configuration. Expected size: under 60 changed lines in `personal.ts` and
 | Renewed Phase 7 approval of the actual wording, with test evidence | NOT STARTED |
 | Merge of the follow-up PR | NOT AUTHORISED |
 | PR #13 merge, production migration, Replit publish | NOT AUTHORISED (unchanged) |
+
+## 8. Final wording as implemented (for Phase 7 review)
+
+Every sentence a person can meet from this follow-up. Items marked *founder copy*
+are the founder's approved sentences verbatim; the rest is new and needs approval.
+
+| Where | Wording | Source |
+|---|---|---|
+| Line shown with the personal-template controls whenever at least one template exists; `id="tpl-archive-help"`, referenced by `aria-describedby` from every Archive button | Archiving hides this template from your active list. You can restore it anytime. | founder copy |
+| Toast after archiving | “X” archived. You can restore it anytime from “Show archived”. | new (was: “X” archived) |
+| Toast after restoring | “X” restored | unchanged |
+| Tag longer than 30 characters | Each tag must be 30 characters or fewer. | founder copy |
+| More than 8 tags | You can add up to 8 tags. | new; the number comes from `PERSONAL_LIMITS.tags` |
+| Tag empty after trimming (reachable by API only; the browser drops empty tags) | Remove the empty tag. | new |
+| Tag with no letter or number (for example `!!!`) | Each tag needs at least one letter or number. | reworded (was: Tags need at least one letter or number) |
+| Tag with a control character (API only) | Tags cannot contain control characters. | punctuation only |
+| Description longer than 280 characters (API only; the input is length-limited) | The description must be 280 characters or fewer. | new |
+| Description with a line break (API only) | The description cannot contain line breaks. | punctuation only |
+| Unknown category (API only; the control is a list) | Choose a category from the list. | punctuation only |
+
+Deliberate choices: every message is a full sentence ending in a period, matching the
+founder's approved sentence, so the reachable messages read consistently inside one
+dialog. Numbers are interpolated from `PERSONAL_LIMITS`, never typed twice. The
+message is shown inside the Template details dialog, under the fields, in an element
+with `role="alert"`, the dialog stays open, the person's input is kept, editing the
+tags clears it, and no toast is raised for a validation problem. Every other failure
+(offline, not found, rate limit) keeps its existing toast. The server's global error
+format (`path: message`) is untouched; an integration test proves it still carries
+the `tags.0: ` prefix while the dialog shows only the message. F7-3 (curly quotes in
+the delete title) is not part of this authorisation and is unchanged.
+
+## 9. Evidence
+
+Filled in by the implementation commit and the follow-up PR: see the PR description
+for the exact commands, counts and CI run on the follow-up head. Files changed by
+the follow-up: `src/core/templates/library/personal.ts` (messages only),
+`src/client/templates/PersonalTemplates.tsx`, `src/client/templates/templates.css`,
+`tests/unit/template-personal.test.ts` (new), `tests/integration/template-library.test.ts`,
+`e2e/templates.ts`, and documentation. No migration, schema, authentication,
+favorites-persistence, ownership or revision change.
+
+## 10. Separate product concern, recorded and not fixed here
+
+If a person favorites a template and leaves the page before the request has reached
+the server (network latency rather than server latency), the favorite can be lost
+silently; the button had already flipped. The e2e race fixed under D-BINHI-TPL-CI-014
+was the test's reload reading before a slow server finished, where the server still
+stored the favorite. `keepalive` on the request was tried against a slow server and
+made no difference there, and the network-latency case was not reproducible in the
+test harness. This is outside the F7 scope and stays open for a separate decision.

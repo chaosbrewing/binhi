@@ -497,7 +497,16 @@ try {
   await detailsOf("Renamed layout").getByRole("button", { name: "Details for template Renamed layout" }).click();
   await page.getByRole("dialog").getByLabel("Description").fill("Launch announcement layout");
   await page.getByRole("dialog").getByLabel("Category").selectOption("social-media");
+  // F7-2: a tag that breaks a rule is explained inside the dialog, in plain words with the real limit;
+  // the dialog stays open with the person's input, no developer wording reaches a toast, and editing clears it.
+  await page.getByRole("dialog").getByLabel("Tags").fill("x".repeat(31));
+  await page.getByRole("dialog").getByRole("button", { name: "Save details" }).click();
+  await page.getByRole("dialog").getByRole("alert").filter({ hasText: "Each tag must be 30 characters or fewer." }).waitFor();
+  assert.equal(await page.locator(".toast", { hasText: "tags.0" }).count(), 0, "no raw schema path is shown");
+  assert.equal(await page.getByRole("dialog").getByLabel("Description").inputValue(), "Launch announcement layout", "the person's input is kept");
+  await axeCheck(page, "template details dialog with a validation message", '[role="dialog"]');
   await page.getByRole("dialog").getByLabel("Tags").fill("Brand, launch, brand");
+  await page.getByRole("dialog").getByRole("alert").waitFor({ state: "detached" });
   await page.getByRole("dialog").getByRole("button", { name: "Save details" }).click();
   await detailsOf("Renamed layout").getByText("Launch announcement layout").waitFor();
   await detailsOf("Renamed layout").getByText(/#brand · #launch/).waitFor();
@@ -505,14 +514,18 @@ try {
   assert.deepEqual(saved.tags, ["brand", "launch"], "tags are normalised and de-duplicated");
   assert.equal(saved.revision, revisionBefore, "details never change the design's revision");
   assert.equal((await ctx2.request.patch(`${base}/api/template-library/mine/${mineId}`, { headers: H, data: { description: "not yours" } })).status(), 404, "another account cannot change the details");
+  // F7-1: what Archive does is stated where the control is, and read to assistive technology from the button.
+  await page.getByText("Archiving hides this template from your active list. You can restore it anytime.").waitFor();
+  assert.equal(await detailsOf("Renamed layout").getByRole("button", { name: "Archive template Renamed layout" }).getAttribute("aria-describedby"), "tpl-archive-help");
   await detailsOf("Renamed layout").getByRole("button", { name: "Archive template Renamed layout" }).click();
+  await page.locator(".toast", { hasText: "archived. You can restore it anytime from “Show archived”." }).waitFor();
   await mine.getByRole("heading", { name: "Renamed layout", exact: true }).waitFor({ state: "detached" });
   await page.getByLabel(/Show archived/).check();
   await detailsOf("Renamed layout").getByText("Archived", { exact: true }).waitFor();
   await detailsOf("Renamed layout").getByRole("button", { name: "Restore template Renamed layout" }).click();
   await page.getByLabel(/Show archived/).waitFor({ state: "detached" });
   await detailsOf("Renamed layout").getByText("Private", { exact: true }).waitFor();
-  record("personal templates: description, category and tags saved without changing the design; archive and restore");
+  record("personal templates: description, category and tags saved without changing the design; plain-language validation message inside the dialog; Archive explained and read from the control; archive and restore");
 
   await mine.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Renamed layout", exact: true }) }).getByRole("button", { name: "Duplicate template Renamed layout" }).click();
   await mine.getByRole("heading", { name: "Renamed layout copy", exact: true }).waitFor();
