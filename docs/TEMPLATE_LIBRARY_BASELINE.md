@@ -42,7 +42,7 @@ APPROVAL, VERIFIED, COMPLETED. Evidence is in `docs/TEMPLATE_LIBRARY_RELEASE.md`
 | Version | v1.0 (template manifest v1) |
 | Phase | 1 to 5 and 7 approved or verified; 6 (release) not started |
 | Overall state | COMPLETED to `main`: PR #13 merged 2026-11-02 at `8cb182a` (D-BINHI-TPL-MERGE-016) and the F7-1 / F7-2 follow-up PR #15 merged 2026-11-03 at `b04b202` (D-BINHI-TPL-P7-017, D-BINHI-TPL-MERGE-018). NOT RELEASED: production review (release report section 15) and production approval remain ahead |
-| Branch / PR | `claude/binhi-template-library`, PR #13 (draft) |
+| Branch / PR | `claude/binhi-template-library`, PR #13 (merged 2026-11-02, `ab94d7a`); follow-up `claude/binhi-template-f7-copy`, PR #15 (merged 2026-11-03, `1dee170`); governance records on `claude/binhi-template-governance-pr15`, PR #16 (docs only) |
 | Dependencies | PR #4 (auth) merged first, by founder order (`0dd7c39`); icons (#2, #3) are independent |
 | Open risks | see `docs/TEMPLATE_LIBRARY_RELEASE.md` section 11 |
 
@@ -82,7 +82,7 @@ migration, merge or release; those go through the decisions in section 8.
 | #5–#11 Cursor studio work | closed, **commits merged directly into main** | Projects/Library search, view state, accessibility, lazy routes, new studio homepage. Main moved 16 commits past the icon branches. |
 | #2 Essential 250 icons | **open, not mergeable by me** | Adds the `icon` design layer and website `icon` component. Not on main. |
 | #3 Essential 250 v1 reconciliation (draft) | open, base is the catalog-plan branch | Rewrites `design.ts`, `DesignEditor.tsx`, `renderDesign.ts`. |
-| #4 Social auth (draft) | open, base `replit/auth-baseline-2026-10-26` | **Adds migrations `0002` and `0003`** and edits `src/server/db/schema.ts`. |
+| #4 Social auth | **merged to main** 2026-11-02 as `0dd7c39` (founder order: auth first; was a draft on base `replit/auth-baseline-2026-10-26` at baseline time) | **Added migrations `0002` and `0003`** and edited `src/server/db/schema.ts`; the template migration became `0004` after it. |
 
 Consequences: (a) icons are not a template dependency until #2/#3 land;
 (b) any migration I add collides in number with #4; (c) edits to the design
