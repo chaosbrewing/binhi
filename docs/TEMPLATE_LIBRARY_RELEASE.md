@@ -329,6 +329,9 @@ own approval. Approvals are the founder's words, not tooling output.
 | D-BINHI-TPL-MERGE-018 | **YES** | Merge PR #15 at exact head `b04b202`, conditional on current-head, CI, branch-protection and deployment-safety checks | 2026-11-03 | Founder, written directive | #15 | `b04b202b0f4f5c490d7e2b79630675411f2f0813` |
 | D-BINHI-TPL-DOCS-019 | **YES, corrections first** | Correct the stale status lines in `docs/TEMPLATE_LIBRARY_BASELINE.md` and this file that still described PR #13 as a draft awaiting merge approval and the F7 follow-up as not executed; docs only; CI re-run; then return for exact-head merge approval of PR #16. Merge of PR #16 NOT authorised by this decision | 2026-11-05 | Founder, written decision | #16 | review head `2c7370a93ea7a18736ee2150cbe6a631ba5c6751` |
 | D-BINHI-TPL-MERGE-020 | **YES** | Merge PR #16 (documentation only: this register's P7-017, MERGE-018 and DOCS-019 rows and the reconciled status documents) at exact head `131e394`, conditional on current-head, base, CI, review-thread and mergeability checks. No production action authorised | 2026-11-05 | Founder, written decision | #16 | `131e394efa7f99fa4e909c57432e4633d4c5f7d3` |
+| D-BINHI-TPL-MERGE-021 | **YES** | Merge PR #17 (documentation only: the MERGE-020 register row and the DOCS-019 / MERGE-020 execution record) at exact head `c538618`, conditional on current-head, base, CI, review-thread and mergeability checks. No production action authorised | 2026-11-05 | Founder, written decision | #17 | `c5386183b4d77ef734fbe1b72c3b9e299f066182` |
+| D-BINHI-GOV-022 | **YES** | Prepare a proposed standing Administrative Governance Record Exception (policy preparation only; not adoption, not execution) | 2026-11-05 | Founder, written directive BINHI-TPL-EXEC-021 | none | prepared outside the repository; text now in `docs/GOVERNANCE_ADMIN_RECORD_EXCEPTION.md` |
+| D-BINHI-GOV-022-ADOPT | **YES** | Adopt the Administrative Governance Record Exception as written in `docs/GOVERNANCE_ADMIN_RECORD_EXCEPTION.md`, subject to the founder's approval of that exact text; incorporate the MERGE-021 record into this register. The exception is not used to merge its own adoption. No production action authorised | 2026-11-05 | Founder, written directive "BINHI Governance Finalization" | the PR carrying this row | see the PR's approved head |
 
 **D-BINHI-TPL-P4: exact scope.** The additive migration design; the nullable
 provenance columns and personal-template detail columns; the new template-favorites
@@ -426,6 +429,29 @@ force-push. The MERGE-020 row was recorded after the merge by this
 documentation-only change, for the same reason as P7-017 and MERGE-018. Neither
 decision authorises production migration, publishing, deployment or configuration
 changes; §15 remains NOT STARTED.
+
+**D-BINHI-TPL-MERGE-021: executed.** PR #17 was merged into `main` on 2026-11-05
+at the exact approved head `c538618` (merge commit
+`e95e560c7db6ffe38630f56ade69bd498aea6f9b`, parents `9a462d1` and `c538618`) after
+the checks passed: exact head; base `main` at `9a462d1`; CI run `42032728161`
+green on the head; no comments, reviews or review threads; clean mergeability;
+one file, `docs/TEMPLATE_LIBRARY_RELEASE.md`, and nothing else in the diff.
+`main`'s tree equals the branch tree; no rebase, amend or force-push. Post-merge CI
+on `main` at `e95e560`: run `42049639544`, success. The decision is also in the
+merge commit message. Nothing here authorises production migration, publishing,
+deployment or configuration changes; §15 remains NOT STARTED.
+
+**D-BINHI-GOV-022 and D-BINHI-GOV-022-ADOPT: the register loop and its remedy.**
+Recording a merge decision moves the head it would be recorded on, so each record
+needed its own PR and its own merge decision (PR #16 → #17 → this PR). The founder
+authorised preparing a standing exception (GOV-022) and then adopting it
+(GOV-022-ADOPT). The policy, `docs/GOVERNANCE_ADMIN_RECORD_EXCEPTION.md`, lets a
+documentation-only record of an already authorised and completed operation be
+merged on verified exact head, documentation-only diff, green required CI, no
+blocking review and normal branch protection, with auditable evidence, and never
+covers code, migrations, authentication, security configuration, workflows,
+infrastructure, releases, financial operations or new substantive decisions. It
+was merged by an ordinary PR with its own founder decision, not under itself.
 
 Recorded by Claude Code on 2026-11-02 from the founder's written directives. The
 decisions are the founder's words, not tooling output; this record does not modify
