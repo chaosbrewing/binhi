@@ -328,6 +328,7 @@ own approval. Approvals are the founder's words, not tooling output.
 | D-BINHI-TPL-P7-017 | **YES** | Phase 7: the final F7-1 / F7-2 wording in `docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md` §8 (Archive guidance and its accessibility description, archive and restore notifications, tag-validation messages, description and category wording, in-dialog error presentation, kept input). Covers PR #15 at `b04b202` only | 2026-11-03 | Founder, written directive | #15 | `b04b202b0f4f5c490d7e2b79630675411f2f0813` |
 | D-BINHI-TPL-MERGE-018 | **YES** | Merge PR #15 at exact head `b04b202`, conditional on current-head, CI, branch-protection and deployment-safety checks | 2026-11-03 | Founder, written directive | #15 | `b04b202b0f4f5c490d7e2b79630675411f2f0813` |
 | D-BINHI-TPL-DOCS-019 | **YES, corrections first** | Correct the stale status lines in `docs/TEMPLATE_LIBRARY_BASELINE.md` and this file that still described PR #13 as a draft awaiting merge approval and the F7 follow-up as not executed; docs only; CI re-run; then return for exact-head merge approval of PR #16. Merge of PR #16 NOT authorised by this decision | 2026-11-05 | Founder, written decision | #16 | review head `2c7370a93ea7a18736ee2150cbe6a631ba5c6751` |
+| D-BINHI-TPL-MERGE-020 | **YES** | Merge PR #16 (documentation only: this register's P7-017, MERGE-018 and DOCS-019 rows and the reconciled status documents) at exact head `131e394`, conditional on current-head, base, CI, review-thread and mergeability checks. No production action authorised | 2026-11-05 | Founder, written decision | #16 | `131e394efa7f99fa4e909c57432e4633d4c5f7d3` |
 
 **D-BINHI-TPL-P4: exact scope.** The additive migration design; the nullable
 provenance columns and personal-template detail columns; the new template-favorites
@@ -413,6 +414,18 @@ with §15. Both identifiers were free; nothing historical was overwritten or
 renumbered. These two entries were recorded after the merge, by a documentation-only
 change, because recording them on PR #15 before merging would have moved its
 approved head.
+
+**D-BINHI-TPL-DOCS-019 and D-BINHI-TPL-MERGE-020: executed.** The corrections were
+pushed as `131e394` (CI run `42029608930` green, both jobs). PR #16 was then merged
+into `main` on 2026-11-05 at that exact head (merge commit
+`9a462d18ad805d8d1b962d032e76e00cd3662a05`, parents `1dee170` and `131e394`) after
+the checks passed: exact head; base `main` still at `1dee170`; CI green on the head;
+no comments, reviews or review threads; clean mergeability; three `docs/` files and
+nothing else in the diff. `main`'s tree equals the branch tree; no rebase, amend or
+force-push. The MERGE-020 row was recorded after the merge by this
+documentation-only change, for the same reason as P7-017 and MERGE-018. Neither
+decision authorises production migration, publishing, deployment or configuration
+changes; §15 remains NOT STARTED.
 
 Recorded by Claude Code on 2026-11-02 from the founder's written directives. The
 decisions are the founder's words, not tooling output; this record does not modify
