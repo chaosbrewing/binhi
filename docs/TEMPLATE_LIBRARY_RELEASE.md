@@ -41,7 +41,7 @@ production database and deployment review, are still ahead (§15).
 | 16 | Existing functionality passes regression | met | §4 |
 | 17 | CI passes | **met** on head `67364ae` (run 29): both jobs green, the template journey in 6 min 40 s | `.github/workflows/ci.yml`: "Typecheck, test, build, browser journey" and the new parallel "Template library journey (every catalog template)" |
 | 18 | Documentation describes actual capabilities | met | `docs/TEMPLATE_LIBRARY*.md`; limits stated |
-| 19 | The PR passes review | **pre-merge review done 2026-11-02** (§16, recommendation YES); founder merge approval pending | draft PR #13; no open review discussions |
+| 19 | The PR passes review | **met**: pre-merge review 2026-11-02 (§16, recommendation YES); PR #13 merged under D-BINHI-TPL-MERGE-016 (`ab94d7a`) and the F7 follow-up PR #15 under D-BINHI-TPL-MERGE-018 (`1dee170`) | no open review discussions on either PR |
 | 20 | Production deployment separately authorised and verified | **not done, out of scope** | |
 
 ## 3. Catalog results
@@ -325,6 +325,9 @@ own approval. Approvals are the founder's words, not tooling output.
 | D-BINHI-TPL-CI-014 | **YES** | Test-only correction of the favorites timing race in `e2e/templates.ts` (3 lines; no product code) | 2026-11-02 | Founder, written directive | #13 | `8cb182ab208390a0cfa042f42b4b47c583da73ae` |
 | D-BINHI-TPL-F7-015 | **YES** | Isolated implementation of F7-1 (plain-language explanation of Archive and Restore) and F7-2 (human-readable tag-validation messages), with tests and a fresh Phase 7 review; merge of that follow-up NOT authorised | 2026-11-02 | Founder, written directive | follow-up PR from `claude/binhi-template-f7-copy` | baseline `8cb182ab208390a0cfa042f42b4b47c583da73ae` |
 | D-BINHI-TPL-MERGE-016 | **YES** | Merge PR #13 at exact head `8cb182a`, conditional on final current-head checks; supersedes MERGE-013 | 2026-11-02 | Founder, written directive | #13 | `8cb182ab208390a0cfa042f42b4b47c583da73ae` |
+| D-BINHI-TPL-P7-017 | **YES** | Phase 7: the final F7-1 / F7-2 wording in `docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md` §8 (Archive guidance and its accessibility description, archive and restore notifications, tag-validation messages, description and category wording, in-dialog error presentation, kept input). Covers PR #15 at `b04b202` only | 2026-11-03 | Founder, written directive | #15 | `b04b202b0f4f5c490d7e2b79630675411f2f0813` |
+| D-BINHI-TPL-MERGE-018 | **YES** | Merge PR #15 at exact head `b04b202`, conditional on current-head, CI, branch-protection and deployment-safety checks | 2026-11-03 | Founder, written directive | #15 | `b04b202b0f4f5c490d7e2b79630675411f2f0813` |
+| D-BINHI-TPL-DOCS-019 | **YES, corrections first** | Correct the stale status lines in `docs/TEMPLATE_LIBRARY_BASELINE.md` and this file that still described PR #13 as a draft awaiting merge approval and the F7 follow-up as not executed; docs only; CI re-run; then return for exact-head merge approval of PR #16. Merge of PR #16 NOT authorised by this decision | 2026-11-05 | Founder, written decision | #16 | review head `2c7370a93ea7a18736ee2150cbe6a631ba5c6751` |
 
 **D-BINHI-TPL-P4: exact scope.** The additive migration design; the nullable
 provenance columns and personal-template detail columns; the new template-favorites
@@ -346,7 +349,8 @@ action. Every existing implementation and release hold stays in force.
 compatibility), §9 (rollback), §16 (the 2026-11-02 pre-merge review, including its
 findings).
 
-**Remaining release gates.** (1) Founder merge approval of PR #13. (2) Separately
+**Remaining release gates.** (1) Founder merge approval of PR #13: **done** (MERGE-016,
+`ab94d7a`; the F7 follow-up PR #15 likewise, MERGE-018, `1dee170`). (2) Separately
 controlled production database and deployment review (§15): `npm run db:check`,
 backup, Replit Publish schema-diff review, rollback and post-deployment
 verification. (3) Explicit production approval. (4) Any later change to the approved
@@ -368,6 +372,12 @@ authorisation, and its wording needs its own Phase 7 approval.
 | Approve the revised Phase 7 wording | NOT STARTED (needs the implemented wording and test evidence) |
 | Production migration or deployment | NOT AUTHORISED |
 
+*Status 2026-11-03 (recorded 2026-11-05 under D-BINHI-TPL-DOCS-019).* The table above is
+the record as of the MERGE-013 decision and is kept as written. Every row but the last
+has since moved: PR #13 was merged under MERGE-016; the follow-up was executed under
+F7-015; its wording was approved under P7-017; the follow-up PR #15 was merged under
+MERGE-018. Production migration and deployment remain NOT AUTHORISED.
+
 **Namespace reconciliation (2026-11-02).** The founder's later directive proposed
 recording "D-BINHI-TPL-MERGE-013 = YES". That identifier already held the NO of the
 same day. Historical decisions are never overwritten or renumbered, so the YES is
@@ -386,9 +396,23 @@ branch `claude/binhi-template-f7-copy` was pushed at the same head before mergin
 production; nothing is published or deployed; production configuration is
 unchanged (§15 remains NOT STARTED).
 
-**D-BINHI-TPL-F7-015: implemented, awaiting review.** See
-`docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md` for the final wording, tests and evidence.
-Its PR needs fresh Phase 7 approval; merging it is not authorised.
+**D-BINHI-TPL-F7-015: implemented; then approved and merged under P7-017 and
+MERGE-018.** See `docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md` for the final wording, tests
+and evidence.
+
+**D-BINHI-TPL-P7-017 and D-BINHI-TPL-MERGE-018: executed.** PR #15 was merged into
+`main` on 2026-11-03 at the exact approved head `b04b202` (merge commit
+`1dee1709b0ab86ef7ef1589e3d1460b66849a92a`, parents `ab94d7a` and `b04b202`)
+after the checks passed: exact head; base `ab94d7a`; CI run `41538920921` green on
+that head (jobs `125597774528`, `125597774877`); no review threads, reviews or
+comments; clean mergeability; no migration, server, configuration, workflow or
+dependency change in the diff; `ci.yml` the only automation on push to `main` and no
+other deploy or release configuration in the repository. Neither decision authorises
+production migration, publishing, deployment or configuration changes, which stay
+with §15. Both identifiers were free; nothing historical was overwritten or
+renumbered. These two entries were recorded after the merge, by a documentation-only
+change, because recording them on PR #15 before merging would have moved its
+approved head.
 
 Recorded by Claude Code on 2026-11-02 from the founder's written directives. The
 decisions are the founder's words, not tooling output; this record does not modify
@@ -465,9 +489,9 @@ cannot be undone.", so it does not suggest that independent projects are deleted
 Findings. None changes the approved implementation; each is reported for the founder's
 decision, because changing approved wording needs renewed Phase 7 review.
 
-* **Status 2026-11-02:** F7-1 and F7-2 are implemented on `claude/binhi-template-f7-copy`
-  under D-BINHI-TPL-F7-015 (`docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md`), awaiting fresh
-  Phase 7 review; F7-3 is not in that authorisation and is unchanged.
+* **Status 2026-11-03:** F7-1 and F7-2 are on `main` (PR #15 merged as `1dee170` under
+  D-BINHI-TPL-P7-017 and D-BINHI-TPL-MERGE-018; `docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md`).
+  F7-3 was not in that authorisation and is unchanged.
 * **F7-1 (clarity).** The meaning of Archive is not stated in the interface. Delete
   states its consequence; Archive does not say "hidden from this list, not deleted,
   restore any time". It is conveyed only by the labels, the "Archived" badge and
@@ -508,9 +532,11 @@ owner-only and plain text; nothing sensitive is stored or logged by this change;
 secret, credential or production value appears in the repository or this review.
 
 **Governance state.** Phase 4 approval recorded (D-BINHI-TPL-P4). Phase 7 approval
-recorded (D-BINHI-TPL-P7). Outstanding: founder merge approval; the separately
-controlled production review (§15); a decision on F7-1 to F7-3. Production holds:
-all in force.
+recorded (D-BINHI-TPL-P7). Outstanding at the time of this review: founder merge
+approval; the separately controlled production review (§15); a decision on F7-1 to
+F7-3. Production holds: all in force. *Status 2026-11-03:* merge approval given and
+executed (MERGE-016, MERGE-018); F7-1 and F7-2 decided and shipped (F7-015, P7-017);
+F7-3 undecided; only the §15 production review remains outstanding.
 
 **Recommendation: YES, ready for founder merge approval.** The approved
 implementation matches its approved scope, the migration is additive and compatible

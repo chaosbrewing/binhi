@@ -1,11 +1,11 @@
 # Template Library follow-up F7: Archive clarity and friendly validation messages
 
-Status: **IMPLEMENTED on `claude/binhi-template-f7-copy`, AWAITING APPROVAL (fresh
-Phase 7 review of the final wording). Merging it is NOT authorised.** Implementation
-was authorised by the founder on 2026-11-02 (D-BINHI-TPL-F7-015, register in
-`docs/TEMPLATE_LIBRARY_RELEASE.md` §14). Base: the approved head `8cb182a`, cut
-before PR #13 was merged, so the diff is exactly this follow-up. §8 lists the final
-wording as implemented, and §9 the evidence.
+Status: **COMPLETED to `main`, NOT RELEASED.** Implementation was authorised by the
+founder on 2026-11-02 (D-BINHI-TPL-F7-015); the final wording in §8 was approved on
+2026-11-03 (D-BINHI-TPL-P7-017); PR #15 was merged at its exact head `b04b202` on
+2026-11-03 (D-BINHI-TPL-MERGE-018, merge commit `1dee170`). Register:
+`docs/TEMPLATE_LIBRARY_RELEASE.md` §14. Production migration `0004`, Replit Publish,
+deployment and production configuration remain separately gated and unexecuted.
 
 ## 0. Four-Question Gate (recorded before implementation, 2026-11-02)
 
@@ -159,33 +159,44 @@ test in §5.2 must prove the server message is identical.
 `npm run test:e2e:templates` (full, not `--quick`, before the PR), `npm run
 test:e2e:studio`, `npm run db:compat` (unchanged: no migration is touched).
 
-## 6. Branch and dependency
+## 6. Branch and merge history (verified)
 
-The code exists only on `claude/binhi-template-library`, so the follow-up branch
-(`claude/binhi-template-f7-copy`) is cut from `5f536c4` and its PR targets
-`claude/binhi-template-library`, never `main` while #13 is unmerged. This is a
-declared dependency on PR #13; it is not resolved by merging #13. If #13 merges
-first, the follow-up is retargeted to `main` with a normal merge, no rebase.
+What actually happened, replacing the dependency plan written while PR #13 was on
+hold:
 
-No migration, no schema change, no new dependency, no change to production
-configuration. Expected size: under 60 changed lines in `personal.ts` and
-`PersonalTemplates.tsx`, plus tests.
+1. `claude/binhi-template-f7-copy` was cut from `8cb182a`, the approved head of PR
+   #13, before PR #13 merged, so this follow-up's diff is exactly its own change.
+2. PR #13 was merged into `main` on 2026-11-02 at `8cb182a` (merge commit
+   `ab94d7a0398fa2905199085674138025e17aa9f3`; D-BINHI-TPL-MERGE-016).
+3. The follow-up branch received two commits: the governance record (`2f3712a`) and
+   the implementation (`b04b202`).
+4. PR #15 was opened from that branch against `main` (not against the old feature
+   branch, which was no longer needed), as a draft, with CI run `41538920921` green.
+5. After the founder's Phase 7 and merge approvals, PR #15 was merged into `main` on
+   2026-11-03 at `b04b202` (merge commit `1dee1709b0ab86ef7ef1589e3d1460b66849a92a`,
+   parents `ab94d7a` and `b04b202`; D-BINHI-TPL-MERGE-018). `main`'s tree equals the
+   branch tree; no rebase, amend or force-push was used anywhere.
+
+No migration, schema change, new dependency or production configuration change was
+involved at any step.
 
 ## 7. Gates
 
 | Gate | Status |
 |---|---|
-| Planning (this document) | COMPLETED |
-| Founder authorisation to implement | AWAITING APPROVAL |
-| Implementation and tests | NOT STARTED |
-| Renewed Phase 7 approval of the actual wording, with test evidence | NOT STARTED |
-| Merge of the follow-up PR | NOT AUTHORISED |
-| PR #13 merge, production migration, Replit publish | NOT AUTHORISED (unchanged) |
+| Planning (this document) | COMPLETED (2026-11-02) |
+| Founder authorisation to implement | COMPLETED (D-BINHI-TPL-F7-015, 2026-11-02) |
+| Implementation and tests | COMPLETED (`b04b202`, §9) |
+| Phase 7 approval of the actual wording, with test evidence | COMPLETED (D-BINHI-TPL-P7-017, 2026-11-03) |
+| Merge of the follow-up PR | COMPLETED (D-BINHI-TPL-MERGE-018; PR #15 merged as `1dee170`, 2026-11-03) |
+| PR #13 (Template Library v1.0) | COMPLETED to `main` (merged as `ab94d7a`, 2026-11-02); NOT RELEASED |
+| Production migration `0004`, Replit Publish, deployment, production configuration | NOT AUTHORISED; unexecuted (release report §15) |
 
-## 8. Final wording as implemented (for Phase 7 review)
+## 8. Final wording as implemented (approved by the founder, D-BINHI-TPL-P7-017)
 
 Every sentence a person can meet from this follow-up. Items marked *founder copy*
-are the founder's approved sentences verbatim; the rest is new and needs approval.
+were the founder's sentences verbatim; the founder approved the whole table on
+2026-11-03.
 
 | Where | Wording | Source |
 |---|---|---|
@@ -214,13 +225,23 @@ the delete title) is not part of this authorisation and is unchanged.
 
 ## 9. Evidence
 
-Filled in by the implementation commit and the follow-up PR: see the PR description
-for the exact commands, counts and CI run on the follow-up head. Files changed by
-the follow-up: `src/core/templates/library/personal.ts` (messages only),
+Head `b04b202` (merged to `main` as `1dee170`). Files changed by the follow-up
+(10): `src/core/templates/library/personal.ts` (messages only),
 `src/client/templates/PersonalTemplates.tsx`, `src/client/templates/templates.css`,
 `tests/unit/template-personal.test.ts` (new), `tests/integration/template-library.test.ts`,
-`e2e/templates.ts`, and documentation. No migration, schema, authentication,
-favorites-persistence, ownership or revision change.
+`e2e/templates.ts`, `docs/TEMPLATE_LIBRARY_FOLLOWUP_F7.md`, `docs/TEMPLATE_LIBRARY.md`,
+`docs/TEMPLATE_LIBRARY_RELEASE.md`, `docs/TEMPLATE_LIBRARY_BASELINE.md`. No
+migration, schema, authentication, favorites-persistence, ownership or revision
+change.
+
+| Check | Result (local, 2026-11-02, on `b04b202`) |
+|---|---|
+| `npm run typecheck`, `npm run build` | pass |
+| `npx vitest run` (unit + integration, real Postgres) | 31 files, 312 tests; 7 added (6 unit, one per message; 1 integration: messages travel as issues, global format unchanged) |
+| `npm run test:e2e:templates` | 77 checks, 62 templates; new assertions: in-dialog message, kept input, no `tags.0` in any toast, message clears on edit, axe-core on the dialog in its error state, Archive explanation visible and `aria-describedby` from the button, archive toast |
+| `npm run test:e2e:studio` | 21 checks |
+| `npm run db:compat`, `npm run templates:assets:check` | unchanged (`0004` annotated; 62 templates) |
+| GitHub Actions run `41538920921` on `b04b202` | success: jobs `125597774528` and `125597774877` |
 
 ## 10. Separate product concern, recorded and not fixed here
 
